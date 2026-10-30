@@ -14,7 +14,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.nilearn import NilearnBaseInterface
 
-from xcp_d.utils.utils import denoise_with_nilearn
+from xcp_d.utils.utils import denoise_with_nilearn, get_col
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
@@ -226,6 +226,7 @@ class ApplyMask(NilearnBaseInterface, SimpleInterface):
             source_img=self.inputs.mask,
             target_img=self.inputs.in_file,
             interpolation='nearest',
+            copy_header=True,
         )
         img_masked = masking.unmask(
             masking.apply_mask(self.inputs.in_file, resampled_mask),
@@ -279,6 +280,7 @@ class ResampleToImage(NilearnBaseInterface, SimpleInterface):
             source_img=self.inputs.in_file,
             target_img=self.inputs.target_file,
             interpolation='continuous',
+            copy_header=True,
         )
         self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
         resampled_img.to_filename(self._results['out_file'])
@@ -359,7 +361,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             )
 
         # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
-        sample_mask = ~censoring_df['framewise_displacement'].to_numpy().astype(bool)
+        sample_mask = ~get_col(censoring_df, 'denoising').to_numpy().astype(bool)
 
         confounds_df = None
         if self.inputs.confounds_tsv:
@@ -375,7 +377,8 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
 
         voxelwise_confounds = None
         if self.inputs.confounds_images:
-            voxelwise_confounds = [read_ndata(f) for f in self.inputs.confounds_images]
+            # Transpose from SxT (xcpd order) to TxS (nilearn order), like the BOLD data
+            voxelwise_confounds = [read_ndata(f).T for f in self.inputs.confounds_images]
 
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
@@ -444,7 +447,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             )
 
         # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
-        sample_mask = ~censoring_df['framewise_displacement'].to_numpy().astype(bool)
+        sample_mask = ~get_col(censoring_df, 'denoising').to_numpy().astype(bool)
 
         confounds_df = None
         if self.inputs.confounds_tsv:
@@ -489,6 +492,13 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         pixdim = list(filtered_denoised_img.header.get_zooms())
         pixdim[3] = self.inputs.TR
         filtered_denoised_img.header.set_zooms(pixdim)
+
+        # Write the header DerivativesDataSink would give a BOLD series without a space input
+        # (scanner transform codes, mm and sec units). Otherwise the sink "fixes" the header by
+        # decompressing and recompressing the whole series.
+        filtered_denoised_img.set_qform(filtered_denoised_img.affine, 1)
+        filtered_denoised_img.set_sform(filtered_denoised_img.affine, 1)
+        filtered_denoised_img.header.set_xyzt_units('mm', 'sec')
         filtered_denoised_img.to_filename(self._results['denoised_interpolated_bold'])
 
         return runtime

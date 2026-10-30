@@ -5,6 +5,7 @@
 This is adapted from fMRIPost-AROMA.
 """
 
+import stat
 from pathlib import Path
 
 from bids.layout import Query
@@ -12,6 +13,34 @@ from nireports.assembler.report import Report
 
 from xcp_d import config, data
 from xcp_d.interfaces.execsummary import ExecutiveSummary
+
+
+def _make_reportlets_writable(reportlets_dir, subject=None, session=None):
+    """Make SVG reportlets writable so NiReports can normalize them during indexing."""
+    if reportlets_dir is None:
+        return
+
+    reportlets_dir = Path(reportlets_dir)
+    if subject:
+        subject = str(subject).removeprefix('sub-')
+        reportlets_dir = reportlets_dir / f'sub-{subject}'
+
+    if session:
+        session = str(session).removeprefix('ses-')
+        reportlets_dir = reportlets_dir / f'ses-{session}'
+
+    if not reportlets_dir.exists():
+        return
+
+    figure_dirs = list(reportlets_dir.rglob('figures'))
+    if reportlets_dir.name == 'figures':
+        figure_dirs.append(reportlets_dir)
+
+    for figure_dir in figure_dirs:
+        for svg_file in figure_dir.glob('*.svg'):
+            mode = svg_file.stat().st_mode
+            if not mode & stat.S_IWUSR:
+                svg_file.chmod(mode | stat.S_IWUSR)
 
 
 def run_reports(
@@ -26,30 +55,34 @@ def run_reports(
     **entities,
 ):
     """Run the reports."""
-    robj = Report(
-        out_dir,
-        run_uuid,
-        bootstrap_file=bootstrap_file,
-        out_filename=out_filename,
-        reportlets_dir=dataset_dir,
-        plugins=None,
-        plugin_meta=None,
-        metadata=metadata,
-        **entities,
-    )
-
     # Count nbr of subject for which report generation failed
     try:
+        _make_reportlets_writable(
+            dataset_dir,
+            subject=entities.get('subject'),
+            session=entities.get('session'),
+        )
+        robj = Report(
+            out_dir,
+            run_uuid,
+            bootstrap_file=bootstrap_file,
+            out_filename=out_filename,
+            reportlets_dir=dataset_dir,
+            plugins=None,
+            plugin_meta=None,
+            metadata=metadata,
+            **entities,
+        )
         robj.generate_report()
     except:  # noqa: E722
         import sys
         import traceback
 
         # Store the list of subjects for which report generation failed
-        traceback.print_exception(
-            *sys.exc_info(),
-            file=str(Path(out_dir) / 'logs' / errorname),
-        )
+        error_file = Path(out_dir) / 'logs' / errorname
+        error_file.parent.mkdir(exist_ok=True, parents=True)
+        with error_file.open('w') as fo:
+            traceback.print_exception(*sys.exc_info(), file=fo)
         return subject_label
 
     return None
@@ -78,13 +111,20 @@ def generate_reports(
 
     bootstrap_file = bootstrap_file or data.load('reports-spec.yml')
 
+    # Check if the parameters hash should be used
+    parameters_hash = None
+    hash_str = ''
+    if config.execution.output_layout == 'multiverse':
+        parameters_hash = config.execution.parameters_hash
+        hash_str = f'_hash-{parameters_hash}'
+
     errors = []
     for subject_label, _, sessions in processing_list:
-        subject_label = subject_label[4:] if subject_label.startswith('sub-') else subject_label
+        subject_label = subject_label.removeprefix('sub-')
         # Drop ses- prefixes
         sessions = [ses or Query.NONE for ses in sessions]  # replace "" with Query.NONE
         sessions = [ses for ses in sessions if isinstance(ses, str)]  # drop Queries
-        sessions = [ses[4:] if ses.startswith('ses-') else ses for ses in sessions]
+        sessions = [ses.removeprefix('ses-') for ses in sessions]
 
         if output_level == 'session' and not sessions:
             report_dir = dataset_dir
@@ -96,7 +136,7 @@ def generate_reports(
             )
 
         if output_level != 'session' and n_ses <= config.execution.aggr_ses_reports:
-            html_report = f'sub-{subject_label}.html'
+            html_report = f'sub-{subject_label}{hash_str}.html'
 
             if output_level == 'root':
                 report_dir = dataset_dir
@@ -130,16 +170,16 @@ def generate_reports(
                         session_id=session_label,
                     )
                     exsumm.collect_inputs()
-                    exsumm.generate_report()
+                    exsumm.generate_report(parameters_hash=parameters_hash)
         else:
             if not sessions:
                 sessions = [None]
 
             for session_label in sessions:
                 if session_label is None:
-                    html_report = f'sub-{subject_label}.html'
+                    html_report = f'sub-{subject_label}{hash_str}.html'
                 else:
-                    html_report = f'sub-{subject_label}_ses-{session_label}.html'
+                    html_report = f'sub-{subject_label}_ses-{session_label}{hash_str}.html'
 
                 if output_level == 'root':
                     report_dir = dataset_dir
@@ -176,7 +216,7 @@ def generate_reports(
                         session_id=session_label,
                     )
                     exsumm.collect_inputs()
-                    exsumm.generate_report()
+                    exsumm.generate_report(parameters_hash=parameters_hash)
 
     if errors:
         # Suboptimal to just report the subject IDs (with potential duplicates)

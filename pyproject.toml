@@ -7,7 +7,7 @@ name = "xcp_d"
 description = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
 authors = [{name = "PennLINC and DCAN labs"}]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Image Recognition",
     "License :: OSI Approved :: BSD License",
@@ -19,31 +19,32 @@ dependencies = [
     'importlib_resources; python_version < "3.11"',
     "acres",
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
-    "bids-validator <= 1.14.7.post0",
-    "h5py <= 3.14.0",  # for DCAN motion file
-    "indexed_gzip ~= 1.9.1",  # for loading imgs in nibabel
-    "jinja2 ~= 3.1.2",  # for executive summary
-    "joblib <= 1.5.1",
-    "matplotlib ~= 3.10.0",
-    "networkx <= 3.4.2",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
+    "bids-validator >= 1.14.7.post0",
+    "h5py >= 3.15.1",  # for DCAN motion file
+    "indexed_gzip >= 1.10.1",  # for loading imgs in nibabel
+    "isal >= 1.7",  # for writing compressed derivatives
+    "jinja2 >= 3.1.2",  # for executive summary
+    "joblib >= 1.5.3",
+    "matplotlib >= 3.10.0",
+    "networkx >= 3.4.2",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
     "nibabel >= 3.2.1",
-    "nilearn == 0.12.0",  # 0.10.2 raises error with compcor from fMRIPrep 23
-    "nipype ~= 1.10.0",
-    "nireports ~= 25.2.0",
-    "niworkflows == 1.13.5",
+    "nilearn >= 0.12.0,!=0.13.0,!=0.13.1",  # 0.10.2 raises error with compcor from fMRIPrep 23
+    "nipype>=1.11.0,<2",
+    "nireports >= 25.3.0",
+    "niworkflows >= 1.14.4",
     "nitime",  # for DVARS calculation in Nipype
     "num2words",  # for boilerplates
-    "numpy ~= 2.0",
+    "numpy >= 2.0",
     "packaging",  # for version string parsing
     "pandas",
     "psutil >= 5.4",  # for sentry
-    "pybids ~= 0.19.0",
+    "pybids >= 0.21.0",
     "pyyaml",
-    "scikit-learn <= 1.7.1",
-    "scipy >= 1.14.0,<= 1.15.3",  # nipype needs networkx, which needs scipy > 1.8.0
+    "scikit-learn >= 1.7.2",
+    "scipy >= 1.15.2",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.33.1",  # for usage reports
-    "templateflow ~= 24.2.0",
+    "sentry-sdk >= 2.54.0",  # for usage reports
+    "templateflow >= 25.1.1",
     "toml",
     "trimesh",
 ]
@@ -72,8 +73,8 @@ doc = [
     "sphinx_design",
 ]
 dev = [
-    "ruff ~= 0.12.0",
     "pre-commit",
+    "ruff >= 0.15,< 0.17",
 ]
 tests = [
     "coverage",
@@ -120,6 +121,63 @@ source = "vcs"
 version-file = "xcp_d/_version.py"
 
 #
+# Pixi configuration
+#
+
+[tool.pixi.workspace]
+channels = ["https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public", "conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.activation.env]
+FSLDIR = "$CONDA_PREFIX"
+FSLOUTPUTTYPE = "NIFTI_GZ"
+
+[tool.pixi.environments]
+default = { features = ["editable"], solve-group = "default" }
+test = { features = ["editable", "tests"], solve-group = "default" }
+xcp-d = { features = ["production", "container"], solve-group = "production" }
+
+[tool.pixi.feature.editable.pypi-dependencies]
+xcp_d = { path = ".", editable = true }
+
+[tool.pixi.feature.production.pypi-dependencies]
+xcp_d = { path = ".", editable = false }
+
+[tool.pixi.tasks]
+
+[tool.pixi.pypi-options.dependency-overrides]
+numpy = ">=2.2"
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+nodejs = "20.*"
+mkl = "2024.2.2.*"
+mkl-service = "2.4.2.*"
+numpy = "2.2.*"
+scipy = "1.15.*"
+matplotlib = "3.10.*"
+pandas = "2.2.*"
+h5py = "3.15.*"
+graphviz = "12.2.*"
+pandoc = "3.7.*"
+ants = "2.6.*"
+bc = "1.07.*"  # provides dc, used by FSL's slicesdir script
+fsl-base = "2602.*"
+fsl-avwutils = "2209.3.*"
+fsl-bet2 = "2111.8.*"
+fsl-flirt = "2111.4.*"
+fsl-fugue = "2201.5.*"
+fsl-mcflirt = "2111.0.*"
+fsl-miscmaths = "2412.4.*"
+fsl-miscvis = "2201.1.*"
+fsl-topup = "2203.5.*"
+fsl-warpfns = "2501.0.*"
+
+[tool.pixi.feature.container.dependencies]
+git = "*"
+git-annex = { version = "*", build = "alldep*" }
+
+#
 # Developer tool configurations
 #
 
@@ -132,9 +190,6 @@ line-length = 99
 
 [tool.ruff.lint]
 extend-select = [
-  "F",
-  "E",
-  "W",
   "I",
   "UP",
   "YTT",
@@ -142,8 +197,8 @@ extend-select = [
   "BLE",
   "B",
   "A",
-  # "CPY",
   "C4",
+  # "CPY",
   "DTZ",
   "T10",
   # "EM",
@@ -151,15 +206,34 @@ extend-select = [
   "FA",
   "ISC",
   "ICN",
+  "LOG",
+  "PIE",
+  "PYI",
   "PT",
   "Q",
+  # "SIM",
+  # "TID",
+  "FLY",
+  # "PD",
+  "PERF",
+  "W",
+  "PGH",
+  "PLC",
+  "PLE",
+  "PLW",
+  "FURB",
+  "RUF",
 ]
 ignore = [
-  "S101",  # Ignore use of assert for now
   "S105",
   "S311",  # We are not using random for cryptographic purposes
-  "ISC001",
-  "S603",
+  "S603",  # subprocess used only for trusted commands (git, pandoc, test runners)
+  "PIE790",
+  "PERF203",
+  "PLC0415",
+  "PLW2901",
+  "RUF005",
+  "RUF012",
 ]
 
 [tool.ruff.lint.flake8-quotes]
@@ -187,12 +261,12 @@ markers = [
     "fmriprep_without_freesurfer_with_main: mark integration test for fMRIPrep derivatives without FreeSurfer using main function",
     "nibabies: mark integration test for nibabies derivatives",
 ]
-env = [
-    "RUNNING_PYTEST = 1",
-]
+
+[tool.pytest_env]
+RUNNING_PYTEST = "1"
 
 [tool.coverage.run]
-branch = true
+branch = false
 omit = [
     "*/tests/*",
     "*/__init__.py",
@@ -206,3 +280,12 @@ exclude_lines = [
     'raise NotImplementedError',
     'warnings\.warn',
 ]
+
+[tool.codespell]
+skip = '.git,*.pdf,*.svg,*.html,dataset_description.json,*.gii'
+# te - TE
+# Weill - name
+# reson - Reson. abbreviation in citation
+# DNE: acronym for does not exist
+# fo: acronym for file object
+ignore-words-list = 'te,weill,reson,DNE,fo'

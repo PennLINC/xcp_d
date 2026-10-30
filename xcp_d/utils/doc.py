@@ -355,8 +355,11 @@ motion_file : :obj:`str`
 
 docdict['temporal_mask'] = """
 temporal_mask : :obj:`str`
-    Temporal mask; all values above ``fd_thresh`` set to 1.
-    This is a TSV file with one column: 'framewise_displacement'.
+    Temporal mask indicating the volumes to censor.
+    This is a TSV file with three columns: 'framewise_displacement', which flags volumes
+    above ``fd_thresh``; 'censor_between', which flags volumes caught by the
+    ``censor_between`` expansion; and 'denoising', which is the union of the other two.
+    Downstream censoring uses the 'denoising' column.
 """
 
 docdict['denoised_interpolated_bold'] = """
@@ -502,8 +505,7 @@ def fill_doc(f):
             lines = dstr.splitlines()
             try:
                 newlines = [lines[0]]
-                for line in lines[1:]:
-                    newlines.append(indent + line)
+                newlines.extend(indent + line for line in lines[1:])
                 indented[name] = '\n'.join(newlines)
             except IndexError:
                 indented[name] = dstr
@@ -512,7 +514,7 @@ def fill_doc(f):
     except (TypeError, ValueError, KeyError) as exp:
         funcname = f.__name__
         funcname = docstring.split('\n')[0] if funcname is None else funcname
-        raise RuntimeError(f'Error documenting {funcname}:\n{str(exp)}') from exp
+        raise RuntimeError(f'Error documenting {funcname}:\n{exp!s}') from exp
     return f
 
 

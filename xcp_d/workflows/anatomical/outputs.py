@@ -6,6 +6,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.doc import fill_doc
@@ -22,7 +23,7 @@ def init_copy_inputs_to_outputs_wf(name='copy_inputs_to_outputs_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.outputs import init_copy_inputs_to_outputs_wf
+            from xcp_d.workflows.anatomical.outputs import init_copy_inputs_to_outputs_wf
 
             with mock_config():
                 wf = init_copy_inputs_to_outputs_wf()
@@ -94,7 +95,10 @@ def init_copy_inputs_to_outputs_wf(name='copy_inputs_to_outputs_wf'):
     workflow.connect([(collect_files, filter_out_undefined, [('out', 'inlist')])])
 
     ds_copied_outputs = pe.MapNode(
-        DerivativesDataSink(check_hdr=False),
+        DerivativesDataSink(
+            check_hdr=False,
+            dismiss_entities=dismiss_hash(),
+        ),
         name='ds_copied_outputs',
         run_without_submitting=True,
         mem_gb=1,

@@ -74,7 +74,7 @@ def run_command(command, env=None):
 def run_tests(test_regex, test_mark, check_path):
     """Run the tests."""
     local_patch = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    mounted_code = '/usr/local/miniconda/lib/python3.10/site-packages/xcp_d'
+    mounted_code = '/app/.pixi/envs/xcp-d/lib/python3.12/site-packages/xcp_d'
 
     if check_path:
         run_str = (
@@ -87,7 +87,7 @@ def run_tests(test_regex, test_mark, check_path):
             raise FileNotFoundError(f'Path not found: {mounted_code}') from exc
     else:
         run_str = 'docker run --rm -ti '
-        run_str += f'-v {local_patch}:/usr/local/miniconda/lib/python3.10/site-packages/xcp_d '
+        run_str += f'-v {local_patch}:/app/.pixi/envs/xcp-d/lib/python3.12/site-packages/xcp_d '
         run_str += '--entrypoint pytest '
         run_str += 'pennlinc/xcp_d:unstable '
         run_str += (

@@ -7,7 +7,10 @@ XCP-D preprocessing workflow
 import os
 import sys
 
+import toml
+
 from xcp_d import config
+from xcp_d.config import hash_config
 from xcp_d.data import load as load_data
 
 
@@ -53,8 +56,15 @@ def _build_parser():
         type=Path,
         help=(
             'The output path for XCP-D derivatives. '
-            "For example, '/path/to/dset/derivatives/xcp_d'. "
-            "As of version 0.7.0, 'xcp_d' will not be appended to the output directory."
+            'If the output layout is "multiverse", "xcp_d" will be appended to output_dir, '
+            'with a hash built from the configuration. '
+            'For example, setting output_dir to "/path/to/dset/derivatives" and '
+            'output_layout to "multiverse" will result in the output directory being '
+            '"/path/to/dset/derivatives/xcp_d-<hash>".'
+            'If the output layout is "bids", "xcp_d" will not be appended to output_dir. '
+            'For example, setting output_dir to "/path/to/dset/derivatives/xcp_d" and '
+            'output_layout to "bids" will result in the output directory being '
+            '"/path/to/dset/derivatives/xcp_d".'
         ),
     )
     parser.add_argument(
@@ -76,7 +86,8 @@ def _build_parser():
             'The mode of operation for XCP-D. '
             'The mode sets several parameters, with values specific to different pipelines. '
             'For more information, see the documentation at '
-            'https://xcp-d.readthedocs.io/en/latest/workflows.html#modes'
+            'https://xcp-d.readthedocs.io/en/latest/workflows.html#modes. '
+            'the parameters manually.'
         ),
     )
 
@@ -115,12 +126,12 @@ def _build_parser():
         '--task_id',
         dest='task_id',
         action='store',
+        nargs='+',
+        type=lambda label: label.removeprefix('task-'),
         help=(
-            'The name of a specific task to postprocess. '
-            'By default, all tasks will be postprocessed. '
-            'If you want to select more than one task to postprocess (but not all of them), '
-            'you can either run XCP-D with the --task-id parameter, separately for each task, '
-            'or you can use the --bids-filter-file to specify the tasks to postprocess.'
+            'A space-delimited list of task identifiers, or a single identifier. '
+            'The "task-" prefix can be removed. '
+            'By default, all tasks will be postprocessed.'
         ),
     )
     g_bids.add_argument(
@@ -187,7 +198,8 @@ def _build_parser():
     g_perfm.add_argument(
         '--mem-mb',
         '--mem_mb',
-        dest='memory_mb',
+        metavar='MEMORY_MB',
+        dest='memory_gb',
         action='store',
         type=parser_utils._to_gb,
         help='Upper bound memory limit, in megabytes, for XCP-D processes.',
@@ -196,7 +208,10 @@ def _build_parser():
         '--low-mem',
         dest='low_mem',
         action='store_true',
-        help='Attempt to reduce memory usage (will increase disk usage in working directory).',
+        help=(
+            'Attempt to reduce memory usage (will increase disk usage in working directory). '
+            'IMPORTANT: At the moment, this option has no effect.'
+        ),
     )
     g_perfm.add_argument(
         '--use-plugin',
@@ -274,9 +289,9 @@ def _build_parser():
         action=parser_utils.YesNoAction,
         help=(
             'Despike the BOLD data before postprocessing. '
-            "If not defined, the despike option will be inferred from the 'mode'. "
-            'If defined without an argument, despiking will be enabled. '
-            'If defined with an argument (y or n), the value of the argument will be used. '
+            "If not provided, the despike option will be inferred from the 'mode'. "
+            'If provided without an argument, despiking will be enabled. '
+            'If provided with an argument (y or n), the value of the argument will be used. '
             "'y' enables despiking. 'n' disables despiking."
         ),
     )
@@ -304,9 +319,11 @@ def _build_parser():
         type=parser_utils._float_or_auto,
         metavar='{{auto,FLOAT}}',
         help=(
-            'FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD '
-            'data. '
-            'Set to 0 to disable smoothing.'
+            'Full-width at half maximum (FWHM), in millimeters, of the Gaussian smoothing kernel '
+            'to apply to the denoised BOLD data. '
+            'Set to 0 to disable smoothing. '
+            'The default value is "auto", which uses the default smoothing value for the '
+            'processing mode.'
         ),
     )
     g_param.add_argument(
@@ -319,7 +336,35 @@ def _build_parser():
         default='auto',
         choices=['y', 'n'],
         action=parser_utils.YesNoAction,
-        help='After denoising, concatenate each derivative from each task across runs.',
+        help=(
+            'After denoising, concatenate each derivative from each task across runs. '
+            'If not provided, the combine_runs option will be inferred from the '
+            'processing mode. '
+            'If provided without an argument, concatenation will be enabled. '
+            'If provided with an argument (y or n), the value of the argument will be used. '
+            "'y' enables concatenation. 'n' disables concatenation."
+        ),
+    )
+    g_param.add_argument(
+        '--skip',
+        dest='skip_outputs',
+        action='store',
+        nargs='+',
+        default=[],
+        choices=['alff', 'reho', 'parcellation', 'connectivity'],
+        help=(
+            'Skip specific outputs during postprocessing. '
+            'Options include: '
+            "'alff' (skip ALFF calculation), "
+            "'reho' (skip ReHo calculation), "
+            "'parcellation' (skip parcellation and time series extraction), "
+            "'connectivity' (skip functional connectivity calculations). "
+            'Multiple options can be specified. '
+            "Note: Skipping 'parcellation' will also skip 'connectivity'. "
+            "Skipping 'connectivity' alone will still perform parcellation "
+            'to extract time series, but will not compute correlation matrices. '
+            "Skipping 'alff' is only relevant when bandpass filtering is enabled."
+        ),
     )
 
     g_motion_filter = parser.add_argument_group(
@@ -423,10 +468,29 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         default='auto',
         type=parser_utils._float_or_auto,
         help=(
-            'Framewise displacement threshold for censoring. '
+            'Framewise displacement (FD) threshold for censoring, in mm. '
             'Any volumes with an FD value greater than the threshold will be removed from the '
             'denoised BOLD data. '
-            'A threshold of <=0 will disable censoring completely.'
+            'A threshold of <=0 will disable censoring completely. '
+            'The default value is "auto", which uses the default FD threshold for the '
+            'processing mode.'
+        ),
+    )
+    g_censor.add_argument(
+        '--censor-between',
+        '--censor_between',
+        dest='censor_between',
+        default='auto',
+        type=parser_utils._int_or_auto,
+        help=(
+            'Censor short segments of contiguous non-outlier volumes found between outliers. '
+            'For example, if the value is set to 1, then any cases where only one non-outlier '
+            'volume exists between two outlier volumes will be censored. '
+            'The beginning and end of the time series are treated as outlier boundaries as '
+            'well, so a short run of non-outlier volumes at the start or end of the scan may '
+            'also be censored. '
+            'The default value is "auto", which is equivalent to 0 (disabled) for all '
+            'processing modes.'
         ),
     )
     g_censor.add_argument(
@@ -459,7 +523,8 @@ The default is 240 (4 minutes).
             "If 'censored', the BOLD outputs (dense and parcellated time series) will be "
             'censored. '
             "If 'interpolated', the BOLD outputs (dense and parcellated time series) will be "
-            'interpolated.'
+            'interpolated. '
+            'This parameter has no effect on correlation matrix outputs.'
         ),
     )
 
@@ -536,10 +601,12 @@ The default is 240 (4 minutes).
     g_atlases.add_argument(
         '--skip-parcellation',
         '--skip_parcellation',
-        action='store_const',
-        const=[],
-        dest='atlases',
-        help='Skip parcellation and correlation steps.',
+        dest='skip_parcellation_flag',
+        action='store_true',
+        help=(
+            '(Deprecated) Skip parcellation and correlation steps. '
+            "Use the new '--skip parcellation' option instead."
+        ),
     )
 
     g_parcellation.add_argument(
@@ -569,6 +636,16 @@ The default is 240 (4 minutes).
             "If 'auto', the outputs will be inferred from the processing mode. "
         ),
     )
+    g_parcellation.add_argument(
+        '--output-run-wise-correlations',
+        '--output_run_wise_correlations',
+        dest='output_run_wise_correlations',
+        nargs='?',
+        default='auto',
+        choices=['y', 'n'],
+        action=parser_utils.YesNoAction,
+        help='Output run-wise correlation matrices.',
+    )
 
     g_dcan = parser.add_argument_group('abcd/hbcd mode options')
     g_dcan.add_argument(
@@ -580,14 +657,18 @@ The default is 240 (4 minutes).
         nargs='+',
         type=parser_utils._float_or_auto_or_none,
         help="""\
-If used, this parameter will produce correlation matrices limited to each requested amount of time.
+If used, this parameter will produce correlation matrices limited to each requested amount of time
+from the concatenated BOLD data.
 If there is more than the required amount of low-motion data,
-then volumes will be randomly selected to produce denoised outputs with the exact
+then volumes will be randomly selected to produce correlation matrices with the exact
 amounts of time requested.
 If there is less than the required amount of 'good' data,
 then the corresponding correlation matrix will not be produced.
 
-This option is only allowed for the "abcd" and "hbcd" modes.
+This option requires that `--combine-runs` be enabled.
+If run concatenation is not enabled, using this option will raise an error.
+
+This option is not supported in the "linc" mode.
 """,
     )
     g_dcan.add_argument(
@@ -644,8 +725,8 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
             '"root" will write them to the --output-dir. '
             '"subject" will write them into each subject\'s directory. '
             '"session" will write them into each session\'s directory. '
-            'The default is "auto", which will default to "root" for "none" mode, '
-            '"session" for "abcd" and "hbcd" modes, and "root" for "linc" and "nichart" modes.'
+            'The default is "auto", which will default to "root" for "none", "linc", and '
+            '"nichart" modes, and "session" for "abcd" and "hbcd" modes.'
         ),
     )
     g_other.add_argument(
@@ -657,6 +738,19 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         help=(
             "Maximum number of sessions aggregated in one subject's visual report. "
             'If exceeded, visual reports are split by session.'
+        ),
+    )
+    g_other.add_argument(
+        '--output-layout',
+        dest='output_layout',
+        action='store',
+        choices=['bids', 'multiverse'],
+        default='bids',
+        help=(
+            'Output layout for the BOLD data. '
+            'If "bids", the output will be in BIDS format, similar to fMRIPrep output. '
+            'If "multiverse", "xcp_d" will be appended to output_dir, with a hash built from '
+            'the configuration.'
         ),
     )
     g_other.add_argument(
@@ -856,7 +950,8 @@ def parse_args(args=None, namespace=None):
         )
 
         opts.fmri_dir = converted_fmri_dir
-        assert converted_fmri_dir.exists(), f'Conversion to BIDS failed: {converted_fmri_dir}'
+        if not converted_fmri_dir.exists():
+            raise ValueError(f'Conversion to BIDS failed: {converted_fmri_dir}')
 
     if not os.path.isfile(os.path.join(opts.fmri_dir, 'dataset_description.json')):
         config.loggers.cli.error(
@@ -867,9 +962,10 @@ def parse_args(args=None, namespace=None):
 
     config.execution.log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     config.from_dict(vars(opts), init=['nipype'])
-    assert config.execution.fmri_dir.exists(), (
-        f'Conversion to BIDS failed: {config.execution.fmri_dir}',
-    )
+    if not config.execution.fmri_dir.exists():
+        raise ValueError(
+            f'Conversion to BIDS failed: {config.execution.fmri_dir}',
+        )
 
     # Retrieve logging level
     build_log = config.loggers.cli
@@ -908,6 +1004,27 @@ def parse_args(args=None, namespace=None):
     # This must be done after cleaning the work directory, or we could delete an
     # open SQLite database
     config.from_dict({})
+
+    config.execution.parameters_hash = hash_config(toml.loads(config.dumps()))
+    if config.execution.output_layout == 'multiverse':
+        config.execution.output_dir = (
+            config.execution.output_dir / f'xcp_d-{config.execution.parameters_hash}'
+        )
+
+    if (config.execution.output_dir / 'dataset_description.json').exists():
+        import json
+
+        with open(config.execution.output_dir / 'dataset_description.json') as fobj:
+            desc = json.load(fobj)
+
+        generated_by = desc.get('GeneratedBy', [{}])[0]
+        if 'ConfigurationHash' in generated_by:
+            if generated_by['ConfigurationHash'] != config.execution.parameters_hash:
+                raise ValueError(
+                    'The configuration hash in the dataset description '
+                    f'({generated_by["ConfigurationHash"]}) does not match the hash in the config '
+                    f'({config.execution.parameters_hash}).'
+                )
 
     # Ensure input and output folders are not the same
     if output_dir == fmri_dir:
@@ -980,16 +1097,26 @@ def parse_args(args=None, namespace=None):
                 processing_groups.append([subject_id, '', func_sessions])
             else:
                 func_only = sorted(set(func_sessions) - set(anat_sessions))
-                if len(func_only) > 0:
+                if len(set(anat_sessions)) == 1:
+                    # Fairly uncommon scenario where only one session has anatomical data
+                    # but there are multiple functional sessions.
+                    processing_groups.append([subject_id, anat_sessions[0], func_sessions])
+                elif len(func_only) == 0:
+                    # Anatomical data for each functional session
+                    processing_groups.extend(
+                        [
+                            [subject_id, func_session, [func_session]]
+                            for func_session in func_sessions
+                        ]
+                    )
+                else:
+                    # One or more functional sessions do not have anatomical data
                     raise ValueError(
                         'XCP-D expects a one-to-one mapping between anatomical sessions '
                         'and functional sessions, or a one-to-all mapping. '
                         f'Found {len(func_only)} functional sessions that do not have '
                         f'anatomical data: {", ".join(func_only)}'
                     )
-                else:
-                    for func_session in func_sessions:
-                        processing_groups.append([subject_id, func_session, [func_session]])
 
     # Make a nicely formatted message showing what we will process
     def pretty_group(group_num, processing_group):
@@ -1048,39 +1175,73 @@ def _validate_parameters(opts, build_log, parser):
             os.environ['FS_LICENSE'] = str(fs_license_file)
 
     # Check parameter value types/valid values
-    assert opts.abcc_qc in (True, False, 'auto')
-    assert opts.combine_runs in (True, False, 'auto')
-    assert opts.despike in (True, False, 'auto')
-    assert opts.file_format in ('nifti', 'cifti', 'auto')
-    assert opts.linc_qc in (True, False, 'auto')
-    assert opts.mode in (
+    if opts.abcc_qc not in (True, False, 'auto'):
+        raise ValueError(f'Invalid abcc_qc: {opts.abcc_qc}')
+    if opts.combine_runs not in (True, False, 'auto'):
+        raise ValueError(f'Invalid combine_runs: {opts.combine_runs}')
+    if opts.despike not in (True, False, 'auto'):
+        raise ValueError(f'Invalid despike: {opts.despike}')
+    if opts.file_format not in ('nifti', 'cifti', 'auto'):
+        raise ValueError(f'Invalid file_format: {opts.file_format}')
+    if opts.linc_qc not in (True, False, 'auto'):
+        raise ValueError(f'Invalid linc_qc: {opts.linc_qc}')
+    if opts.mode not in (
         'abcd',
         'hbcd',
         'linc',
         'nichart',
         'none',
-    ), f'Unsupported mode "{opts.mode}".'
-    assert opts.output_type in ('censored', 'interpolated', 'auto')
-    assert opts.process_surfaces in (True, False, 'auto')
+    ):
+        raise ValueError(f'Unsupported mode "{opts.mode}".')
+    if opts.output_layout not in ('bids', 'multiverse'):
+        raise ValueError(f'Invalid output_layout: {opts.output_layout}')
+    if opts.output_run_wise_correlations not in (True, False, 'auto'):
+        raise ValueError(
+            f'Invalid output_run_wise_correlations: {opts.output_run_wise_correlations}'
+        )
+    if opts.output_type not in ('censored', 'interpolated', 'auto'):
+        raise ValueError(f'Invalid output_type: {opts.output_type}')
+    if opts.process_surfaces not in (True, False, 'auto'):
+        raise ValueError(f'Invalid process_surfaces: {opts.process_surfaces}')
 
     # Add internal atlas datasets to the list of datasets
     opts.datasets = opts.datasets or {}
+    # Backwards compatibility: map deprecated --skip-parcellation to new --skip behavior
+    if getattr(opts, 'skip_parcellation_flag', False):
+        build_log.warning(
+            "The '--skip-parcellation' flag is deprecated and will be removed in a future "
+            "release. Use '--skip parcellation' instead."
+        )
+        # Ensure atlases list is empty (same behavior as previous flag)
+        opts.atlases = []
+        # Add 'parcellation' to skip_outputs if not already present
+        if 'parcellation' not in opts.skip_outputs:
+            opts.skip_outputs.append('parcellation')
     if opts.atlases:
         if 'xcpdatlases' not in opts.datasets:
-            opts.datasets['xcpdatlases'] = load_data('atlases')
+            opts.datasets['xcpdatlases'] = Path('/home/xcp_d/.cache/xcp_d/XCPDAtlases')
+            if not opts.datasets['xcpdatlases'].is_dir():
+                raise NotADirectoryError(
+                    f'XCP-D atlases is not a directory: {opts.datasets["xcpdatlases"]}'
+                )
 
         if any(atlas.startswith('4S') for atlas in opts.atlases):
             if 'xcpd4s' not in opts.datasets:
-                opts.datasets['xcpd4s'] = Path('/AtlasPack')
+                opts.datasets['xcpd4s'] = Path('/home/xcp_d/.cache/xcp_d/AtlasPack')
+                if not opts.datasets['xcpd4s'].is_dir():
+                    raise NotADirectoryError(
+                        f'AtlasPack is not a directory: {opts.datasets["xcpd4s"]}'
+                    )
 
     # Check parameters based on the mode
     if opts.mode == 'abcd':
         opts.abcc_qc = True if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.censor_between = 0 if (opts.censor_between == 'auto') else opts.censor_between
         opts.combine_runs = True if (opts.combine_runs == 'auto') else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
+        opts.correlation_lengths = opts.correlation_lengths or []
         if 'auto' in opts.correlation_outputs:
             opts.correlation_outputs.remove('auto')
             opts.correlation_outputs = sorted(set(['r'] + opts.correlation_outputs))
@@ -1092,6 +1253,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
+        opts.output_run_wise_correlations = (
+            False
+            if (opts.output_run_wise_correlations == 'auto')
+            else opts.output_run_wise_correlations
+        )
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
@@ -1102,11 +1268,12 @@ def _validate_parameters(opts, build_log, parser):
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'hbcd':
         opts.abcc_qc = True if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.censor_between = 0 if (opts.censor_between == 'auto') else opts.censor_between
         opts.combine_runs = True if (opts.combine_runs == 'auto') else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
+        opts.correlation_lengths = opts.correlation_lengths or []
         if 'auto' in opts.correlation_outputs:
             opts.correlation_outputs.remove('auto')
             opts.correlation_outputs = sorted(set(['r'] + opts.correlation_outputs))
@@ -1118,6 +1285,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
+        opts.output_run_wise_correlations = (
+            False
+            if (opts.output_run_wise_correlations == 'auto')
+            else opts.output_run_wise_correlations
+        )
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
@@ -1128,6 +1300,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'linc':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.censor_between = 0 if (opts.censor_between == 'auto') else opts.censor_between
         opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
@@ -1141,6 +1314,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
+        opts.output_run_wise_correlations = (
+            True
+            if (opts.output_run_wise_correlations == 'auto')
+            else opts.output_run_wise_correlations
+        )
         if opts.output_type == 'interpolated':
             error_messages.append(
                 f"'--output-type' cannot be 'interpolated' for '{opts.mode}' mode."
@@ -1152,16 +1330,20 @@ def _validate_parameters(opts, build_log, parser):
         )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
         if opts.correlation_lengths is not None:
-            error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
-        # Patch 'all' into the list of correlation lengths
-        opts.correlation_lengths = ['all']
+            error_messages.append(f"'--create-matrices' is not supported in '{opts.mode}' mode.")
+            opts.correlation_lengths = []
+        elif opts.combine_runs:
+            opts.correlation_lengths = ['all']
+        else:
+            opts.correlation_lengths = []
     elif opts.mode == 'nichart':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.censor_between = 0 if (opts.censor_between == 'auto') else opts.censor_between
         opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else 'all'
+        opts.correlation_lengths = opts.correlation_lengths or []
         if 'auto' in opts.correlation_outputs:
             opts.correlation_outputs.remove('auto')
             opts.correlation_outputs = sorted(set(['r'] + opts.correlation_outputs))
@@ -1171,6 +1353,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
         opts.min_coverage = 0.4 if opts.min_coverage == 'auto' else opts.min_coverage
+        opts.output_run_wise_correlations = (
+            True
+            if (opts.output_run_wise_correlations == 'auto')
+            else opts.output_run_wise_correlations
+        )
         opts.output_type = 'censored' if opts.output_type == 'auto' else opts.output_type
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
         opts.report_output_level = (
@@ -1181,13 +1368,18 @@ def _validate_parameters(opts, build_log, parser):
         if opts.abcc_qc == 'auto':
             error_messages.append("'--abcc-qc' (y or n) is required for 'none' mode.")
 
+        if opts.censor_between == 'auto':
+            error_messages.append("'--censor-between' is required for 'none' mode.")
+            opts.censor_between = 0  # just to satisfy later checks, not to actually use
+
         if opts.combine_runs == 'auto':
             error_messages.append("'--combine-runs' (y or n) is required for 'none' mode.")
+            opts.combine_runs = False  # satisfy later checks
 
         if opts.confounds_config == 'auto':
             error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
 
-        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
+        opts.correlation_lengths = opts.correlation_lengths or []
 
         if 'auto' in opts.correlation_outputs:
             opts.correlation_outputs.remove('auto')
@@ -1214,6 +1406,11 @@ def _validate_parameters(opts, build_log, parser):
 
         if opts.motion_filter_type is None:
             error_messages.append("'--motion-filter-type' is required for 'none' mode.")
+
+        if opts.output_run_wise_correlations == 'auto':
+            error_messages.append(
+                "'--output-run-wise-correlations' (y or n) is required for 'none' mode."
+            )
 
         if opts.output_type == 'auto':
             error_messages.append("'--output-type' is required for 'none' mode.")
@@ -1255,13 +1452,14 @@ def _validate_parameters(opts, build_log, parser):
         build_log.warning('Bandpass filtering is disabled. ALFF outputs will not be generated.')
 
     # Scrubbing parameters
-    if opts.fd_thresh <= 0 and opts.min_time > 0:
-        ignored_params = '\n\t'.join(['--min-time'])
+    if opts.fd_thresh <= 0 and (opts.min_time > 0 or opts.censor_between > 0):
+        ignored_params = '--min-time\n\t--censor-between'
         build_log.warning(
             'Framewise displacement-based scrubbing is disabled. '
             f'The following parameters will have no effect:\n\t{ignored_params}'
         )
         opts.min_time = 0
+        opts.censor_between = 0
 
     opts.output_interpolated = True if opts.output_type == 'interpolated' else False
 
@@ -1314,6 +1512,47 @@ def _validate_parameters(opts, build_log, parser):
             "('--skip-parcellation'), '--min-coverage' will have no effect."
         )
 
+    # Handle --skip parameter
+    if opts.skip_outputs:
+        # Handle 'parcellation' skip option
+        # If parcellation is skipped, connectivity must also be skipped
+        if 'parcellation' in opts.skip_outputs:
+            if opts.atlases:
+                build_log.info(
+                    'Skipping parcellation as requested. Setting atlases to empty list.'
+                )
+                opts.atlases = []
+            # Automatically skip connectivity when parcellation is skipped
+            if 'connectivity' not in opts.skip_outputs:
+                build_log.info(
+                    'Automatically skipping connectivity because parcellation is skipped.'
+                )
+                opts.skip_outputs.append('connectivity')
+            # Clear correlation_lengths when parcellation is skipped. This
+            # prevents an inconsistent state where correlation_lengths
+            # suggests connectivity will run even though connectivity is
+            # automatically skipped when parcellation is skipped.
+            if getattr(opts, 'correlation_lengths', None):
+                build_log.info(
+                    'Parcellation is skipped; clearing correlation_lengths to disable '
+                    'connectivity calculations.'
+                )
+                opts.correlation_lengths = []
+
+        # Handle 'connectivity' skip option independently
+        # When connectivity is skipped but parcellation is not,
+        # parcellation will still run to extract time series,
+        # but no correlation matrices will be computed
+        if 'connectivity' in opts.skip_outputs and 'parcellation' not in opts.skip_outputs:
+            build_log.info(
+                'Skipping connectivity as requested. '
+                'Parcellation will still be performed to extract time series, '
+                'but no correlation matrices will be computed.'
+            )
+            # Set correlation_lengths to empty to skip connectivity calculations
+            # while still performing parcellation
+            opts.correlation_lengths = []
+
     # Some parameters are automatically set depending on the input type.
     if opts.input_type == 'ukb':
         if opts.file_format == 'cifti':
@@ -1339,6 +1578,9 @@ def _validate_parameters(opts, build_log, parser):
             'In order to perform surface normalization (--warp-surfaces-native2std), '
             'you must enable cifti processing (--file-format cifti).'
         )
+
+    if opts.correlation_lengths and not opts.combine_runs:
+        error_messages.append("'--create-matrices' requires '--combine-runs'.")
 
     if error_messages:
         error_message_str = 'Errors detected in parameter parsing:\n\t- ' + '\n\t- '.join(

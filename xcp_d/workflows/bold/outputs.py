@@ -7,7 +7,8 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
-from xcp_d.interfaces.bids import BIDSURI, DerivativesDataSink
+from xcp_d.config import dismiss_hash
+from xcp_d.interfaces.bids import BIDSURI, AddHashToTSV, DerivativesDataSink
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 
@@ -16,7 +17,7 @@ from xcp_d.utils.doc import fill_doc
 def init_postproc_derivatives_wf(
     name_source,
     source_metadata,
-    exact_scans,
+    has_multiple_runs,
     name='postproc_derivatives_wf',
 ):
     """Write out the xcp_d derivatives in BIDS format.
@@ -28,13 +29,13 @@ def init_postproc_derivatives_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.outputs import init_postproc_derivatives_wf
+            from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
 
             with mock_config():
                 wf = init_postproc_derivatives_wf(
                     name_source="/path/to/file.nii.gz",
                     source_metadata={},
-                    exact_scans=[],
+                    has_multiple_runs=False,
                     name="postproc_derivatives_wf",
                 )
 
@@ -43,7 +44,6 @@ def init_postproc_derivatives_wf(
     name_source : :obj:`str`
         bold or cifti files
     source_metadata : :obj:`dict`
-    %(exact_scans)s
     %(name)s
         Default is "connectivity_wf".
 
@@ -136,10 +136,6 @@ def init_postproc_derivatives_wf(
                 'correlations_z',
                 'correlations_var_r',
                 'correlations_var_z',
-                'correlations_r_exact',
-                'correlations_z_exact',
-                'correlations_var_r_exact',
-                'correlations_var_z_exact',
                 'qc_file',
                 'denoised_bold',
                 'smoothed_denoised_bold',
@@ -160,10 +156,6 @@ def init_postproc_derivatives_wf(
                 'correlations_z_cifti',
                 'correlations_var_r_cifti',
                 'correlations_var_z_cifti',
-                'correlations_r_exact_cifti',
-                'correlations_z_exact_cifti',
-                'correlations_var_r_exact_cifti',
-                'correlations_var_z_exact_cifti',
                 # info for filenames
                 'atlas_names',
             ],
@@ -234,10 +226,24 @@ def init_postproc_derivatives_wf(
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, 'cohort')
 
+    add_hash_motion = pe.Node(
+        AddHashToTSV(
+            add_to_columns=True,
+            add_to_rows=False,
+        ),
+        name='add_hash_motion',
+    )
+    workflow.connect([
+        (inputnode, add_hash_motion, [
+            ('motion_file', 'in_file'),
+            ('motion_metadata', 'metadata'),
+        ]),
+    ])  # fmt:skip
+
     ds_motion = pe.Node(
         DerivativesDataSink(
             source_file=name_source,
-            dismiss_entities=['segmentation', 'den', 'res', 'space', 'cohort', 'desc'],
+            dismiss_entities=dismiss_hash(['atlas', 'den', 'res', 'space', 'cohort', 'desc']),
             suffix='motion',
             extension='.tsv',
         ),
@@ -246,9 +252,9 @@ def init_postproc_derivatives_wf(
         mem_gb=1,
     )
     workflow.connect([
-        (inputnode, ds_motion, [
-            ('motion_metadata', 'meta_dict'),
-            ('motion_file', 'in_file'),
+        (add_hash_motion, ds_motion, [
+            ('metadata', 'meta_dict'),
+            ('out_file', 'in_file'),
         ]),
         (confound_sources, ds_motion, [('out', 'Sources')]),
         (ds_motion, outputnode, [('out_file', 'motion_file')]),
@@ -280,9 +286,23 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([(ds_motion, motion_src, [('out_file', 'in1')])])
 
+        add_hash_temporal_mask = pe.Node(
+            AddHashToTSV(
+                add_to_columns=True,
+                add_to_rows=False,
+            ),
+            name='add_hash_temporal_mask',
+        )
+        workflow.connect([
+            (inputnode, add_hash_temporal_mask, [
+                ('temporal_mask', 'in_file'),
+                ('temporal_mask_metadata', 'metadata'),
+            ]),
+        ])  # fmt:skip
+
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=['segmentation', 'den', 'res', 'space', 'cohort', 'desc'],
+                dismiss_entities=dismiss_hash(['atlas', 'den', 'res', 'space', 'cohort', 'desc']),
                 suffix='outliers',
                 extension='.tsv',
                 source_file=name_source,
@@ -295,9 +315,9 @@ def init_postproc_derivatives_wf(
         )
 
         workflow.connect([
-            (inputnode, ds_temporal_mask, [
-                ('temporal_mask_metadata', 'meta_dict'),
-                ('temporal_mask', 'in_file'),
+            (add_hash_temporal_mask, ds_temporal_mask, [
+                ('metadata', 'meta_dict'),
+                ('out_file', 'in_file'),
             ]),
             (motion_src, ds_temporal_mask, [('out', 'Sources')]),
             (ds_temporal_mask, outputnode, [('out_file', 'temporal_mask')]),
@@ -321,10 +341,22 @@ def init_postproc_derivatives_wf(
         if fd_thresh > 0:
             workflow.connect([(ds_temporal_mask, confounds_src, [('out_file', 'in2')])])
 
+        add_hash_confounds = pe.Node(
+            AddHashToTSV(
+                add_to_columns=True,
+                add_to_rows=False,
+            ),
+            name='add_hash_confounds',
+        )
+        workflow.connect([
+            (inputnode, add_hash_confounds, [('confounds_tsv', 'in_file')]),
+            (confounds_src, add_hash_confounds, [('metadata', 'metadata')]),
+        ])  # fmt:skip
+
         ds_confounds = pe.Node(
             DerivativesDataSink(
                 source_file=name_source,
-                dismiss_entities=['space', 'cohort', 'den', 'res'],
+                dismiss_entities=dismiss_hash(['space', 'cohort', 'den', 'res']),
                 datatype='func',
                 suffix='design',
                 extension='.tsv',
@@ -333,8 +365,10 @@ def init_postproc_derivatives_wf(
             run_without_submitting=True,
         )
         workflow.connect([
-            (inputnode, ds_confounds, [('confounds_tsv', 'in_file')]),
-            (confounds_src, ds_confounds, [('metadata', 'meta_dict')]),
+            (add_hash_confounds, ds_confounds, [
+                ('out_file', 'in_file'),
+                ('metadata', 'meta_dict'),
+            ]),
             (ds_confounds, merge_dense_src, [('out_file', f'in{3 if fd_thresh > 0 else 2}')]),
         ])  # fmt:skip
 
@@ -342,7 +376,7 @@ def init_postproc_derivatives_wf(
     ds_denoised_bold = pe.Node(
         DerivativesDataSink(
             source_file=name_source,
-            dismiss_entities=['den'],
+            dismiss_entities=dismiss_hash(['den']),
             cohort=cohort,
             desc='denoised',
             den='91k' if file_format == 'cifti' else None,
@@ -352,7 +386,6 @@ def init_postproc_derivatives_wf(
             SoftwareFilters=software_filters,
         ),
         name='ds_denoised_bold',
-        run_without_submitting=True,
         mem_gb=2,
     )
     workflow.connect([
@@ -362,10 +395,19 @@ def init_postproc_derivatives_wf(
     ])  # fmt:skip
 
     if config.workflow.linc_qc:
+        add_hash_qc_file = pe.Node(
+            AddHashToTSV(
+                add_to_columns=True,
+                add_to_rows=False,
+            ),
+            name='add_hash_qc_file',
+        )
+        workflow.connect([(inputnode, add_hash_qc_file, [('qc_file', 'in_file')])])
+
         ds_qc_file = pe.Node(
             DerivativesDataSink(
                 source_file=name_source,
-                dismiss_entities=['desc', 'den', 'res'],
+                dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
                 cohort=cohort,
                 den='91k' if file_format == 'cifti' else None,
                 desc='linc',
@@ -376,7 +418,7 @@ def init_postproc_derivatives_wf(
             run_without_submitting=True,
             mem_gb=1,
         )
-        workflow.connect([(inputnode, ds_qc_file, [('qc_file', 'in_file')])])
+        workflow.connect([(add_hash_qc_file, ds_qc_file, [('out_file', 'in_file')])])
 
     if smoothing:
         smoothed_bold_src = pe.Node(
@@ -395,7 +437,7 @@ def init_postproc_derivatives_wf(
         ds_smoothed_bold = pe.Node(
             DerivativesDataSink(
                 source_file=name_source,
-                dismiss_entities=['den'],
+                dismiss_entities=dismiss_hash(['den']),
                 cohort=cohort,
                 den='91k' if file_format == 'cifti' else None,
                 desc='denoisedSmoothed',
@@ -406,7 +448,6 @@ def init_postproc_derivatives_wf(
                 FWHM=smoothing,
             ),
             name='ds_smoothed_bold',
-            run_without_submitting=True,
             mem_gb=2,
         )
         workflow.connect([
@@ -448,10 +489,23 @@ def init_postproc_derivatives_wf(
         ])  # fmt:skip
 
         # TODO: Add brain mask to Sources (for NIfTIs).
+        add_hash_coverage = pe.MapNode(
+            AddHashToTSV(
+                add_to_columns=True,
+                add_to_rows=False,
+            ),
+            name='add_hash_coverage',
+            iterfield=['in_file', 'metadata'],
+        )
+        workflow.connect([
+            (inputnode, add_hash_coverage, [('coverage', 'in_file')]),
+            (make_atlas_dict, add_hash_coverage, [('metadata', 'metadata')]),
+        ])  # fmt:skip
+
         ds_coverage = pe.MapNode(
             DerivativesDataSink(
                 source_file=name_source,
-                dismiss_entities=['desc', 'den', 'res'],
+                dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
                 cohort=cohort,
                 statistic='coverage',
                 suffix='bold',
@@ -460,14 +514,14 @@ def init_postproc_derivatives_wf(
             name='ds_coverage',
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=['segmentation', 'in_file', 'meta_dict'],
+            iterfield=['atlas', 'in_file', 'meta_dict'],
         )
         workflow.connect([
-            (inputnode, ds_coverage, [
-                ('atlas_names', 'segmentation'),
-                ('coverage', 'in_file'),
+            (inputnode, ds_coverage, [('atlas_names', 'atlas')]),
+            (add_hash_coverage, ds_coverage, [
+                ('out_file', 'in_file'),
+                ('metadata', 'meta_dict'),
             ]),
-            (make_atlas_dict, ds_coverage, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
 
         add_coverage_to_src = pe.MapNode(
@@ -486,10 +540,23 @@ def init_postproc_derivatives_wf(
             (ds_coverage, add_coverage_to_src, [('out_file', 'in1')]),
         ])  # fmt:skip
 
+        add_hash_timeseries = pe.MapNode(
+            AddHashToTSV(
+                add_to_columns=True,
+                add_to_rows=False,
+            ),
+            name='add_hash_timeseries',
+            iterfield=['in_file', 'metadata'],
+        )
+        workflow.connect([
+            (inputnode, add_hash_timeseries, [('timeseries', 'in_file')]),
+            (add_coverage_to_src, add_hash_timeseries, [('metadata', 'metadata')]),
+        ])  # fmt:skip
+
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
                 source_file=name_source,
-                dismiss_entities=['desc', 'den', 'res'],
+                dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
                 cohort=cohort,
                 statistic='mean',
                 suffix='timeseries',
@@ -500,18 +567,18 @@ def init_postproc_derivatives_wf(
             name='ds_timeseries',
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=['segmentation', 'in_file', 'meta_dict'],
+            iterfield=['atlas', 'in_file', 'meta_dict'],
         )
         workflow.connect([
-            (inputnode, ds_timeseries, [
-                ('atlas_names', 'segmentation'),
-                ('timeseries', 'in_file'),
+            (inputnode, ds_timeseries, [('atlas_names', 'atlas')]),
+            (add_hash_timeseries, ds_timeseries, [
+                ('out_file', 'in_file'),
+                ('metadata', 'meta_dict'),
             ]),
-            (add_coverage_to_src, ds_timeseries, [('metadata', 'meta_dict')]),
             (ds_timeseries, outputnode, [('out_file', 'timeseries')]),
         ])  # fmt:skip
 
-        if 'all' in config.workflow.correlation_lengths:
+        if config.workflow.output_run_wise_correlations or not has_multiple_runs:
             make_corrs_meta_dict1 = pe.MapNode(
                 BIDSURI(
                     numinputs=1,
@@ -543,10 +610,23 @@ def init_postproc_derivatives_wf(
             ])  # fmt:skip
 
             for output in config.workflow.correlation_outputs:
+                add_hash_correlations = pe.MapNode(
+                    AddHashToTSV(
+                        add_to_columns=True,
+                        add_to_rows=True,
+                    ),
+                    name=f'add_hash_correlations_{output}',
+                    iterfield=['in_file', 'metadata'],
+                )
+                workflow.connect([
+                    (inputnode, add_hash_correlations, [(f'correlations_{output}', 'in_file')]),
+                    (make_corrs_meta_dict2, add_hash_correlations, [('metadata', 'metadata')]),
+                ])  # fmt:skip
+
                 ds_correlations = pe.MapNode(
                     DerivativesDataSink(
                         source_file=name_source,
-                        dismiss_entities=['desc', 'den', 'res'],
+                        dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
                         cohort=cohort,
                         suffix='relmat',
                         extension='.tsv',
@@ -555,14 +635,14 @@ def init_postproc_derivatives_wf(
                     name=f'ds_correlations_{output}',
                     run_without_submitting=True,
                     mem_gb=1,
-                    iterfield=['segmentation', 'in_file', 'meta_dict'],
+                    iterfield=['atlas', 'in_file', 'meta_dict'],
                 )
                 workflow.connect([
-                    (inputnode, ds_correlations, [
-                        ('atlas_names', 'segmentation'),
-                        (f'correlations_{output}', 'in_file'),
+                    (inputnode, ds_correlations, [('atlas_names', 'atlas')]),
+                    (add_hash_correlations, ds_correlations, [
+                        ('out_file', 'in_file'),
+                        ('metadata', 'meta_dict'),
                     ]),
-                    (make_corrs_meta_dict2, ds_correlations, [('metadata', 'meta_dict')]),
                 ])  # fmt:skip
 
         if file_format == 'cifti':
@@ -570,7 +650,7 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     source_file=name_source,
                     check_hdr=False,
-                    dismiss_entities=['desc'],
+                    dismiss_entities=dismiss_hash(['desc']),
                     cohort=cohort,
                     statistic='coverage',
                     suffix='boldmap',
@@ -579,11 +659,11 @@ def init_postproc_derivatives_wf(
                 name='ds_coverage_ciftis',
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=['segmentation', 'in_file', 'meta_dict'],
+                iterfield=['atlas', 'in_file', 'meta_dict'],
             )
             workflow.connect([
                 (inputnode, ds_coverage_ciftis, [
-                    ('atlas_names', 'segmentation'),
+                    ('atlas_names', 'atlas'),
                     ('coverage_ciftis', 'in_file'),
                 ]),
                 (add_denoised_to_src, ds_coverage_ciftis, [('metadata', 'meta_dict')]),
@@ -609,7 +689,7 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     source_file=name_source,
                     check_hdr=False,
-                    dismiss_entities=['desc', 'den'],
+                    dismiss_entities=dismiss_hash(['desc', 'den']),
                     cohort=cohort,
                     den='91k' if file_format == 'cifti' else None,
                     statistic='mean',
@@ -619,18 +699,18 @@ def init_postproc_derivatives_wf(
                 name='ds_timeseries_ciftis',
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=['segmentation', 'in_file', 'meta_dict'],
+                iterfield=['atlas', 'in_file', 'meta_dict'],
             )
             workflow.connect([
                 (inputnode, ds_timeseries_ciftis, [
-                    ('atlas_names', 'segmentation'),
+                    ('atlas_names', 'atlas'),
                     ('timeseries_ciftis', 'in_file'),
                 ]),
                 (add_ccoverage_to_src, ds_timeseries_ciftis, [('metadata', 'meta_dict')]),
                 (ds_timeseries_ciftis, outputnode, [('out_file', 'timeseries_ciftis')]),
             ])  # fmt:skip
 
-            if 'all' in config.workflow.correlation_lengths:
+            if config.workflow.output_run_wise_correlations or not has_multiple_runs:
                 make_ccorrs_meta_dict1 = pe.MapNode(
                     BIDSURI(
                         numinputs=1,
@@ -668,9 +748,8 @@ def init_postproc_derivatives_wf(
                         DerivativesDataSink(
                             source_file=name_source,
                             check_hdr=False,
-                            dismiss_entities=['desc', 'den'],
+                            dismiss_entities=dismiss_hash(['desc']),
                             cohort=cohort,
-                            den='91k' if file_format == 'cifti' else None,
                             suffix='boldmap',
                             extension='.pconn.nii',
                             **measure_lookup[output],
@@ -678,50 +757,17 @@ def init_postproc_derivatives_wf(
                         name=f'ds_correlation_ciftis_{output}',
                         run_without_submitting=True,
                         mem_gb=1,
-                        iterfield=['segmentation', 'in_file', 'meta_dict'],
+                        iterfield=['atlas', 'in_file', 'meta_dict'],
                     )
                     workflow.connect([
                         (inputnode, ds_correlation_ciftis, [
-                            ('atlas_names', 'segmentation'),
+                            ('atlas_names', 'atlas'),
                             (f'correlations_{output}_cifti', 'in_file'),
                         ]),
                         (make_ccorrs_meta_dict2, ds_correlation_ciftis, [
                             ('metadata', 'meta_dict'),
                         ]),
                     ])  # fmt:skip
-
-        for i_exact_scan, exact_scan in enumerate(exact_scans):
-            for output in config.workflow.correlation_outputs:
-                select_exact_scan_files = pe.MapNode(
-                    niu.Select(index=i_exact_scan),
-                    name=f'select_exact_scan_files_{i_exact_scan}_{output}',
-                    iterfield=['inlist'],
-                )
-                workflow.connect([
-                    (inputnode, select_exact_scan_files, [
-                        (f'correlations_{output}_exact', 'inlist'),
-                    ]),
-                ])  # fmt:skip
-
-                ds_correlations_exact = pe.MapNode(
-                    DerivativesDataSink(
-                        source_file=name_source,
-                        dismiss_entities=['desc', 'den', 'res'],
-                        cohort=cohort,
-                        desc=f'{exact_scan}volumes',
-                        suffix='relmat',
-                        extension='.tsv',
-                        **measure_lookup[output],
-                    ),
-                    name=f'ds_correlations_exact_{i_exact_scan}_{output}',
-                    run_without_submitting=True,
-                    mem_gb=1,
-                    iterfield=['segmentation', 'in_file'],
-                )
-                workflow.connect([
-                    (inputnode, ds_correlations_exact, [('atlas_names', 'segmentation')]),
-                    (select_exact_scan_files, ds_correlations_exact, [('out', 'in_file')]),
-                ])  # fmt:skip
 
     # Resting state metric outputs
     denoised_src = pe.Node(
@@ -736,30 +782,32 @@ def init_postproc_derivatives_wf(
     )
     workflow.connect([(ds_denoised_bold, denoised_src, [('out_file', 'in1')])])
 
-    ds_reho = pe.Node(
-        DerivativesDataSink(
-            source_file=name_source,
-            check_hdr=False,
-            dismiss_entities=['desc', 'den'],
-            cohort=cohort,
-            den='91k' if file_format == 'cifti' else None,
-            statistic='reho',
-            suffix='boldmap',
-            extension='.dscalar.nii' if file_format == 'cifti' else '.nii.gz',
-            # Metadata
-            SoftwareFilters=software_filters,
-            Neighborhood='vertices',
-        ),
-        name='ds_reho',
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    workflow.connect([
-        (inputnode, ds_reho, [('reho', 'in_file')]),
-        (denoised_src, ds_reho, [('out', 'Sources')]),
-    ])  # fmt:skip
+    # ReHo outputs: only create sinks if ReHo is not explicitly skipped
+    if 'reho' not in config.workflow.skip_outputs:
+        ds_reho = pe.Node(
+            DerivativesDataSink(
+                source_file=name_source,
+                check_hdr=False,
+                dismiss_entities=dismiss_hash(['desc', 'den']),
+                cohort=cohort,
+                den='91k' if file_format == 'cifti' else None,
+                statistic='reho',
+                suffix='boldmap',
+                extension='.dscalar.nii' if file_format == 'cifti' else '.nii.gz',
+                # Metadata
+                SoftwareFilters=software_filters,
+                Neighborhood='vertices',
+            ),
+            name='ds_reho',
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        workflow.connect([
+            (inputnode, ds_reho, [('reho', 'in_file')]),
+            (denoised_src, ds_reho, [('out', 'Sources')]),
+        ])  # fmt:skip
 
-    if config.execution.atlases:
+    if config.execution.atlases and ('reho' not in config.workflow.skip_outputs):
         add_reho_to_src = pe.MapNode(
             BIDSURI(
                 numinputs=1,
@@ -776,10 +824,23 @@ def init_postproc_derivatives_wf(
             (ds_reho, add_reho_to_src, [('out_file', 'in1')]),
         ])  # fmt:skip
 
+        add_hash_parcellated_reho = pe.MapNode(
+            AddHashToTSV(
+                add_to_columns=True,
+                add_to_rows=False,
+            ),
+            name='add_hash_parcellated_reho',
+            iterfield=['in_file', 'metadata'],
+        )
+        workflow.connect([
+            (inputnode, add_hash_parcellated_reho, [('parcellated_reho', 'in_file')]),
+            (add_reho_to_src, add_hash_parcellated_reho, [('metadata', 'metadata')]),
+        ])  # fmt:skip
+
         ds_parcellated_reho = pe.MapNode(
             DerivativesDataSink(
                 source_file=name_source,
-                dismiss_entities=['desc', 'den', 'res'],
+                dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
                 cohort=cohort,
                 statistic='reho',
                 suffix='bold',
@@ -791,22 +852,22 @@ def init_postproc_derivatives_wf(
             name='ds_parcellated_reho',
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=['segmentation', 'in_file', 'meta_dict'],
+            iterfield=['atlas', 'in_file', 'meta_dict'],
         )
         workflow.connect([
-            (inputnode, ds_parcellated_reho, [
-                ('atlas_names', 'segmentation'),
-                ('parcellated_reho', 'in_file'),
+            (inputnode, ds_parcellated_reho, [('atlas_names', 'atlas')]),
+            (add_hash_parcellated_reho, ds_parcellated_reho, [
+                ('out_file', 'in_file'),
+                ('metadata', 'meta_dict'),
             ]),
-            (add_reho_to_src, ds_parcellated_reho, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
 
-    if bandpass_filter:
+    if bandpass_filter and ('alff' not in config.workflow.skip_outputs):
         ds_alff = pe.Node(
             DerivativesDataSink(
                 source_file=name_source,
                 check_hdr=False,
-                dismiss_entities=['desc', 'den'],
+                dismiss_entities=dismiss_hash(['desc', 'den']),
                 cohort=cohort,
                 den='91k' if file_format == 'cifti' else None,
                 statistic='alff',
@@ -840,7 +901,7 @@ def init_postproc_derivatives_wf(
             ds_smoothed_alff = pe.Node(
                 DerivativesDataSink(
                     source_file=name_source,
-                    dismiss_entities=['den'],
+                    dismiss_entities=dismiss_hash(['den']),
                     cohort=cohort,
                     desc='smooth',
                     den='91k' if file_format == 'cifti' else None,
@@ -878,10 +939,23 @@ def init_postproc_derivatives_wf(
                 (ds_alff, add_alff_to_src, [('out_file', 'in1')]),
             ])  # fmt:skip
 
+            add_hash_parcellated_alff = pe.MapNode(
+                AddHashToTSV(
+                    add_to_columns=True,
+                    add_to_rows=False,
+                ),
+                name='add_hash_parcellated_alff',
+                iterfield=['in_file', 'metadata'],
+            )
+            workflow.connect([
+                (inputnode, add_hash_parcellated_alff, [('parcellated_alff', 'in_file')]),
+                (add_alff_to_src, add_hash_parcellated_alff, [('metadata', 'metadata')]),
+            ])  # fmt:skip
+
             ds_parcellated_alff = pe.MapNode(
                 DerivativesDataSink(
                     source_file=name_source,
-                    dismiss_entities=['desc', 'den', 'res'],
+                    dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
                     cohort=cohort,
                     statistic='alff',
                     suffix='bold',
@@ -890,14 +964,14 @@ def init_postproc_derivatives_wf(
                 name='ds_parcellated_alff',
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=['segmentation', 'in_file', 'meta_dict'],
+                iterfield=['atlas', 'in_file', 'meta_dict'],
             )
             workflow.connect([
-                (inputnode, ds_parcellated_alff, [
-                    ('atlas_names', 'segmentation'),
-                    ('parcellated_alff', 'in_file'),
+                (inputnode, ds_parcellated_alff, [('atlas_names', 'atlas')]),
+                (add_hash_parcellated_alff, ds_parcellated_alff, [
+                    ('out_file', 'in_file'),
+                    ('metadata', 'meta_dict'),
                 ]),
-                (add_alff_to_src, ds_parcellated_alff, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
 
     return workflow

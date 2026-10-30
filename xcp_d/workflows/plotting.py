@@ -6,6 +6,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.execsummary import FormatForBrainSwipes
 from xcp_d.interfaces.nilearn import BinaryMath
@@ -45,7 +46,7 @@ def init_plot_overlay_wf(desc, name='plot_overlay_wf'):
 
     ds_report_overlay = pe.Node(
         DerivativesDataSink(
-            dismiss_entities=['den'],
+            dismiss_entities=dismiss_hash(['den']),
             desc=desc,
             extension='.png',
         ),
@@ -66,7 +67,7 @@ def init_plot_overlay_wf(desc, name='plot_overlay_wf'):
 
     ds_report_reformatted_figure = pe.Node(
         DerivativesDataSink(
-            dismiss_entities=['den'],
+            dismiss_entities=dismiss_hash(['den']),
             desc=f'{desc}BrainSwipes',
             extension='.png',
         ),
@@ -98,7 +99,7 @@ def init_plot_custom_slices_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.execsummary import init_plot_custom_slices_wf
+            from xcp_d.workflows.plotting import init_plot_custom_slices_wf
 
             wf = init_plot_custom_slices_wf(
                 desc="AtlasOnSubcorticals",
@@ -169,7 +170,7 @@ def init_plot_custom_slices_wf(
 
     ds_report_overlay = pe.Node(
         DerivativesDataSink(
-            dismiss_entities=['den'],
+            dismiss_entities=dismiss_hash(['den']),
             desc=desc,
             extension='.png',
         ),

@@ -29,6 +29,9 @@
 		"0.6.3": "Temporal filtering may have reintroduced variance from nuisance regression; Parcellated CIFTI ReHo TSVs were not accurate",
 		"0.7.1": "Band-pass filter parameters hardcoded to 0.01 - 0.1; Parcellated CIFTI ReHo TSVs were not accurate",
 		"0.7.2": "Band-pass filter parameters hardcoded to 0.01 - 0.1; Parcellated CIFTI ReHo TSVs were not accurate",
-		"0.7.3": "Band-pass filter parameters hardcoded to 0.01 - 0.1; Parcellated CIFTI ReHo TSVs were not accurate"
+		"0.7.3": "Band-pass filter parameters hardcoded to 0.01 - 0.1; Parcellated CIFTI ReHo TSVs were not accurate",
+		"0.14.0": "Nilearn version may coerce some NIfTI outputs to int",
+		"0.14.1": "Nilearn version may coerce some NIfTI outputs to int",
+		"26.0.0": "Nilearn version may coerce some NIfTI outputs to int"
 	}
 }

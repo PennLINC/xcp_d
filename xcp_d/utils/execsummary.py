@@ -9,7 +9,7 @@ LOGGER = logging.getLogger('nipype.utils')
 
 
 def plot_gii(mesh, coord, color, slicer, view, max_distance=10.0):
-    _ax = slicer.axes[list(slicer.axes.keys())[0]]
+    _ax = slicer.axes[next(iter(slicer.axes.keys()))]
 
     if view == 'x':
         plane_origin = [coord, 0, 0]
@@ -104,6 +104,7 @@ def modify_pngs_scene_template(
 
     paths = {
         'TX_IMG': anat_file,
+        'T2_IMG': anat_file,
         'RPIAL': rh_pial_surf,
         'LPIAL': lh_pial_surf,
         'RWHITE': rh_wm_surf,

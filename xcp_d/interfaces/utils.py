@@ -20,8 +20,9 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import downcast_to_32
+from xcp_d.utils.modified_data import censor_between_outliers, downcast_to_32
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -141,10 +142,9 @@ class FilterUndefined(SimpleInterface):
 
     def _run_interface(self, runtime):
         inlist = self.inputs.inlist
-        outlist = []
-        for item in inlist:
-            if item is not None and traits_extension.isdefined(item):
-                outlist.append(item)
+        outlist = [
+            item for item in inlist if item is not None and traits_extension.isdefined(item)
+        ]
         self._results['outlist'] = outlist
         return runtime
 
@@ -245,14 +245,14 @@ class LINCQC(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        preproc_fd = motion_df['framewise_displacement'].to_numpy()
-        rmsd = motion_df['rmsd'].to_numpy()
+        preproc_fd = get_col(motion_df, 'framewise_displacement').to_numpy()
+        rmsd = get_col(motion_df, 'rmsd').to_numpy()
 
         # Determine number of dummy volumes and load temporal mask
         dummy_scans = self.inputs.dummy_scans
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
-            tmask_arr = censoring_df['framewise_displacement'].values
+            tmask_arr = get_col(censoring_df, 'denoising').values
         else:
             tmask_arr = np.zeros(preproc_fd.size, dtype=int)
 
@@ -461,6 +461,10 @@ class _ABCCQCInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc='',
     )
+    censor_between = traits.Int(
+        mandatory=True,
+        desc='Censor short segments of contiguous non-outlier volumes found between outliers.',
+    )
     TR = traits.Float(mandatory=True, desc='Repetition Time')
 
 
@@ -506,14 +510,19 @@ class ABCCQC(SimpleInterface):
 
         # Load filtered framewise_displacement values from file
         motion_df = pd.read_table(self.inputs.motion_file)
-        if 'framewise_displacement_filtered' in motion_df.columns:
-            fd = motion_df['framewise_displacement_filtered'].values
+        if any(col.startswith('framewise_displacement_filtered') for col in motion_df.columns):
+            fd = get_col(motion_df, 'framewise_displacement_filtered').values
         else:
-            fd = motion_df['framewise_displacement'].values
+            fd = get_col(motion_df, 'framewise_displacement').values
 
         with h5py.File(self._results['qc_file'], 'w') as dcan:
             for thresh in np.linspace(0, 1, 101):
                 thresh = np.around(thresh, 2)
+
+                outlier_mask = fd > thresh
+                between_mask = censor_between_outliers(outlier_mask, self.inputs.censor_between)
+                mask = ((outlier_mask + between_mask) > 0).astype(int)
+                keep_idx = ~mask.astype(bool)
 
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/skip',
@@ -522,7 +531,7 @@ class ABCCQC(SimpleInterface):
                 )
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/binary_mask',
-                    data=(fd > thresh).astype(int),
+                    data=mask,
                     dtype='float',
                 )
                 dcan.create_dataset(
@@ -537,17 +546,17 @@ class ABCCQC(SimpleInterface):
                 )
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/remaining_total_frame_count',
-                    data=len(fd[fd <= thresh]),
+                    data=np.sum(keep_idx),
                     dtype='float',
                 )
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/remaining_seconds',
-                    data=len(fd[fd <= thresh]) * TR,
+                    data=np.sum(keep_idx) * TR,
                     dtype='float',
                 )
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/remaining_frame_mean_FD',
-                    data=(fd[fd <= thresh]).mean(),
+                    data=fd[keep_idx].mean(),
                     dtype='float',
                 )
 

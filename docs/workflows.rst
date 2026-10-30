@@ -77,7 +77,6 @@ and correlation matrices, will be censored.
        low_pass = 0.08
        bpf_order = 2
        min_coverage = 0.5
-       correlation_lengths = [ "all",]
        process_surfaces = false
        abcc_qc = false
        linc_qc = true
@@ -92,10 +91,12 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0``: Censoring is disabled by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--linc-qc``: The LINC QC file will be created by default.
 -  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
 -  ``--smoothing 6``: Smoothing is enabled by default.
+-  ``--output-run-wise-correlations``: Per-run full correlations are computed by default.
 
 Optional Parameters
 -------------------
@@ -105,6 +106,8 @@ Optional Parameters
    If you would like to create these files, you must include the ``--abcc-qc`` flag.
 -  ``--combine-runs``: By default, *XCP-D* will not combine runs when run in the ``linc`` mode.
    If you would like to combine runs, you must include the ``--combine-runs`` flag.
+   When ``--combine-runs`` is enabled, a full-timeseries correlation matrix will be produced from the
+   concatenated data in addition to the per-run correlation matrices.
 -  ``--warp-surfaces-native2std``: By default, *XCP-D* will not warp surfaces to standard space when
    run in the ``linc`` mode.
    If you would like to warp surfaces, you must include the ``--warp-surfaces-native2std`` flag.
@@ -112,9 +115,9 @@ Optional Parameters
 Prohibited Parameters
 ---------------------
 
--  ``--create-matrices``: This option is not allowed in the ``linc`` mode.
-   Instead, correlation matrices will be created from the full (censored) time series,
-   which is equivalent to running ``--create-matrices all``.
+-  ``--create-matrices``: This option is not supported in ``linc`` mode.
+   When ``--combine-runs`` is enabled, a full-timeseries (``"all"`` volumes) correlation matrix is
+   produced automatically from the concatenated data; exact-N sub-sampled matrices are not available.
 
 
 abcd Mode
@@ -169,6 +172,7 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0.3``: The censoring threshold is set to 0.3 mm by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
@@ -192,9 +196,11 @@ Optional Parameters
 -------------------
 
 -  ``--create-matrices``: By default, *XCP-D* will not create correlation matrices when run in the ``abcd`` mode.
-   If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
+   If you would like to create correlation matrices from the concatenated data, you must include
+   the ``--create-matrices`` flag (``--combine-runs`` is enabled by default in this mode).
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
-   as well as the special value "all", which uses all of the low-motion data from the run.
+   as well as the special value "all", which uses all of the low-motion data from the concatenated run.
+-  ``--output-run-wise-correlations``: To obtain per-run correlation matrices, use this flag.
 
 
 hbcd Mode
@@ -249,6 +255,7 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0.3``: The censoring threshold is set to 0.3 mm by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type nibabies``: Nibabies outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
@@ -272,9 +279,11 @@ Optional Parameters
 -------------------
 
 -  ``--create-matrices``: By default, *XCP-D* will not create correlation matrices when run in the ``hbcd`` mode.
-   If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
+   If you would like to create correlation matrices from the concatenated data, you must include
+   the ``--create-matrices`` flag (``--combine-runs`` is enabled by default in this mode).
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
-   as well as the special value "all", which uses all of the low-motion data from the run.
+   as well as the special value "all", which uses all of the low-motion data from the concatenated run.
+-  ``--output-run-wise-correlations``: To obtain per-run correlation matrices, use this flag.
 
 
 nichart Mode
@@ -321,6 +330,7 @@ which may be overridden by the user:
 -  ``--file-format nifti``: NIfTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0``: Motion-based censoring is disabled by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--linc-qc``: The LINC QC file will be created by default.
 -  ``--min-coverage 0.4``: The default coverage threshold is 0.4 instead of the more common 0.5.
@@ -328,59 +338,56 @@ which may be overridden by the user:
 -  ``--smoothing 0``: Smoothing is disabled by default.
 
 
-Major Differences Between Modes
-===============================
+**********************
+Skipping Output Steps
+**********************
 
-Interpolated vs. Censored Time Series
--------------------------------------
+*XCP-D* includes a ``--skip`` parameter that allows users to
+selectively skip certain postprocessing steps to optimize processing time.
+This is particularly useful when you only need a subset of the outputs.
 
-The ``abcd`` and ``hbcd`` modes output denoised BOLD data and parcellated time series with
-interpolated volumes.
-The ``linc`` mode outputs denoised BOLD data and parcellated time series with censored volumes
-instead.
+The ``--skip`` parameter accepts the following options:
 
-The benefit to writing out interpolated data is that the outputs retain the temporal structure of
-the original data.
-This may make it easier to use the post-processed BOLD data in conjunction with other data acquired
-at the same time, such as physiological recordings or task regressors.
-Additionally, some tools, such as `biceps <https://biceps-cmdln.readthedocs.io/en/latest/>`_,
-are designed to perform additional post-processing, such as additional censoring and parcellation,
-on interpolated data.
+-  ``alff``: Skip ALFF (Amplitude of Low-Frequency Fluctuation) calculation.
+   ALFF is only calculated when bandpass filtering is enabled,
+   so this option only has an effect when ``--bandpass-filter`` is used.
 
-The risk to working with interpolated data is that the interpolated volumes should not be used for
-actual analyses, as the values do not reflect real data.
-Thus, with the ``abcd`` and ``hbcd`` modes, it is imperative that users understand that additional
-steps must be taken before using the interpolated data for analyses.
+-  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
 
-The benefit to writing out censored data is that the outputs are more directly usable for analyses,
-and there is less of a chance that users will accidentally use interpolated data in their analyses.
+-  ``parcellation``: Skip parcellation and time series extraction.
+   This is functionally equivalent to setting ``--atlases`` to an empty list.
 
-In this sense, the ``abcd`` and ``hbcd`` modes are designed to be used with additional tools,
-such as ``biceps``, or with additional steps taken by the user to ensure that the interpolated data
-are re-censored appropriately before being used in analyses.
-Conversely, the ``linc`` mode is designed to output data that is directly usable for analyses,
-at the cost of losing the temporal structure of the original data and making it harder to pass the
-data along to other tools that require the original temporal structure.
+   .. admonition:: Deprecated option
 
-Correlation Matrices From Matching Lengths
-------------------------------------------
+      Historically, users could pass the legacy ``--skip-parcellation`` flag to
+      achieve this behavior. That flag is now deprecated — use
+      ``--skip parcellation`` instead.
 
-The ``abcd`` and ``hbcd`` modes allow the ``--create-matrices`` parameter,
-which will create correlation matrices from subsampled data,
-while ``linc`` mode does not allow this parameter.
+   **Note that skipping parcellation will automatically skip connectivity as well,
+   since connectivity requires parcellated data.**
 
-This parameter exists because motion (and thus censoring) can exhibit a non-linear relationship
-with functional connectivity estimates.
-By randomly selecting a subset of volumes from each run before calculating correlations,
-the user can ensure that every run has the same number of data points contributing to its
-functional connectivity estimate, which may ameliorate the effect of motion on the estimates.
-This is the DCAN lab's recommended approach.
+-  ``connectivity``: Skip functional connectivity matrix calculations.
+   Parcellation will still be performed to extract parcellated time series,
+   but correlation matrices will not be computed.
+   This is useful when you need time series but not connectivity matrices.
 
-Conversely, the LINC lab does not recommend doing this,
-as it removes meaningful data that may contribute to the functional connectivity estimates.
-Instead, the LINC lab recommends accounting for the number of volumes in group-level models,
-or using other methods, such as xDF :footcite:p:`afyouni2019effective`,
-to account for the effect of motion on functional connectivity estimates (or their variance).
+Multiple options can be specified simultaneously.
+For example, ``--skip alff reho`` will skip both ALFF and ReHo calculations.
+
+.. note::
+
+   Skipping certain steps can significantly reduce processing time and disk usage,
+   especially for large datasets.
+
+   - Use ``--skip connectivity`` if you need parcellated time series but not correlation matrices.
+   - Use ``--skip parcellation`` if you don't need either parcellated time series or connectivity
+     matrices (this automatically skips connectivity too).
+
+.. tip::
+
+   The ``--skip`` parameter is compatible with all processing modes (``linc``, ``abcd``, ``hbcd``,
+   etc.) and will not affect other outputs.
+   For example, skipping ALFF will not affect ReHo or connectivity calculations.
 
 
 ****************
@@ -842,6 +849,31 @@ The same interpolation is applied to the confounds.
 Interpolation (and later censoring) can be disabled by setting ``--fd-thresh 0``.
 
 
+Censoring short retained segments [OPTIONAL]
+--------------------------------------------
+:class:`~xcp_d.interfaces.censoring.ExpandTemporalMask`
+
+When outliers are dense, the volumes that survive framewise displacement censoring can be
+scattered as very short segments, which contribute little usable signal and interact poorly
+with interpolation and bandpass filtering.
+
+``--censor-between N`` censors any contiguous segment of non-outlier volumes whose length is
+``N`` or fewer. The beginning and end of the time series are treated as outlier boundaries, so
+short segments at the start and end of the time series are censored as well. Equivalently, the
+shortest segment of volumes that ``--censor-between N`` will retain is ``N + 1`` volumes long.
+
+The expansion runs after dummy volumes are removed, so the beginning of the time series refers
+to the first volume that is actually analyzed rather than the first volume of the preprocessed
+file.
+
+The volumes flagged this way are recorded in the "censor_between" column of the temporal mask,
+and the union of these volumes and the framewise displacement outliers is recorded in the
+"denoising" column, which is what all later censoring steps use.
+
+This step is disabled by default (``--censor-between 0``), and has no effect when censoring is
+disabled with ``--fd-thresh 0``.
+
+
 Detrending
 ----------
 
@@ -997,7 +1029,13 @@ These atlases are documented in :doc:`outputs`.
 
 Users can control which atlases are used with the ``--atlases`` parameter
 (by default, all atlases are used),
-or can skip this step entirely with ``--skip-parcellation``.
+or can skip this step entirely with the unified ``--skip parcellation`` option.
+
+.. admonition:: Deprecated option
+
+   The legacy ``--skip-parcellation`` flag is deprecated and will be removed in a
+   future release. It is still accepted for backward compatibility, but please
+   migrate to ``--skip parcellation``.
 
 The resulting parcellated time series for each atlas is then used to generate static functional
 connectivity matrices, as measured with Pearson correlation coefficients.
@@ -1022,10 +1060,11 @@ connectivity estimate.
 We have implemented this behavior via the optional ``--create-matrices`` parameter,
 which allows the user to provide a list of durations, in seconds,
 to be used for functional connectivity estimates.
+This parameter applies only to concatenated data and therefore requires ``--combine-runs``.
 These subsampled correlation matrices will be written out with ``desc-<numberOfVolumes>volumes``
 in the filenames.
 The correlation matrices *without* the ``desc`` entity still include all of the post-censoring
-volumes.
+volumes from the concatenated timeseries.
 
 The ``--random-seed`` parameter controls the random seed used to select the reduced set of volumes,
 which improves reproducibility.

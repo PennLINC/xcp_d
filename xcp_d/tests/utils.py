@@ -1,6 +1,7 @@
 """Utility functions for tests."""
 
 import os
+import re
 import subprocess
 import tarfile
 from contextlib import contextmanager
@@ -39,12 +40,20 @@ def update_resources(parameters):
     case, the number should be kept. Otherwise, try to read the
     env variable (specified in each job in config.yml). If
     this variable doesn't work, just set it to 4.
+
+    ``--omp-nthreads`` is set to a quarter of ``--nthreads``, but at least 2
+    (and no more than ``--nthreads``).
+    If it matched ``--nthreads``, every node that requests ``omp_nthreads`` CPUs would
+    claim all of them, so the scheduler would run those nodes one at a time.
+    The floor of 2 keeps the multithreaded code paths exercised on small runners.
     """
     nthreads = get_cpu_count()
     if not _check_arg_specified('--nthreads', parameters):
         parameters.append(f'--nthreads={nthreads}')
+
     if not _check_arg_specified('--omp-nthreads', parameters):
-        parameters.append(f'--omp-nthreads={nthreads}')
+        omp_nthreads = min(nthreads, max(2, nthreads // 4))
+        parameters.append(f'--omp-nthreads={omp_nthreads}')
     return parameters
 
 
@@ -129,6 +138,10 @@ def check_generated_files(output_dir, output_list_file):
     # Ignore logs
     found_files = [f for f in found_files if 'log' not in f.split(os.path.sep)]
 
+    # Replace hash entity values with a placeholder (label)
+    pattern = 'hash-([a-zA-Z0-9]+)'
+    found_files = [re.sub(pattern, 'hash-label', f) for f in found_files]
+
     with open(output_list_file) as fo:
         expected_files = fo.readlines()
         expected_files = [f.rstrip() for f in expected_files]
@@ -203,7 +216,9 @@ def check_affines(data_dir, out_dir, input_type):
     img2 = nb.load(denoised_file)
 
     if input_type == 'cifti':
-        assert img1._nifti_header.get_intent() == img2._nifti_header.get_intent()
+        if img1._nifti_header.get_intent() != img2._nifti_header.get_intent():
+            i1, i2 = img1._nifti_header.get_intent(), img2._nifti_header.get_intent()
+            raise ValueError(f'Intent mismatch: {i1} != {i2}')
         np.testing.assert_array_equal(img1.nifti_header.get_zooms(), img2.nifti_header.get_zooms())
     else:
         np.testing.assert_array_equal(img1.affine, img2.affine)

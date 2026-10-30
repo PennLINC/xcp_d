@@ -188,7 +188,7 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
         (bad_morph_dir / 'sub-1648798153/ses-PNC1/anat').joinpath(f).touch()
 
     layout = BIDSLayout(bad_morph_dir, validate=False)
-    with pytest.raises(ValueError, match='More than one .* found'):
+    with pytest.raises(ValueError, match=r'More than one .* found'):
         xbids.collect_morphometry_data(
             layout,
             '1648798153',
@@ -221,6 +221,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
         xbids.write_derivative_description(
             tmpdir,
             tmpdir,
+            parameters_hash='1234567890',
             atlases=None,
             dataset_links={},
         )
@@ -231,6 +232,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         fmri_dir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=['Gordon'],
         dataset_links={'preprocessed': '/fake/path1', 'confounds': '/fake/path4'},
     )
@@ -245,6 +247,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         tmpdir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=['Gordon'],
         dataset_links={'preprocessed': '/fake/path2', 'confounds': '/fake/path5'},
     )
@@ -260,6 +263,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         fmri_dir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=None,
         dataset_links={},
     )
@@ -274,6 +278,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         tmpdir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=None,
         dataset_links={},
     )
@@ -284,10 +289,11 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     with open(dset_description, 'w') as fo:
         json.dump(desc, fo, indent=4)
 
-    with pytest.raises(ValueError, match='XCP-D only works on derivative datasets.'):
+    with pytest.raises(ValueError, match=r'XCP-D only works on derivative datasets\.'):
         xbids.write_derivative_description(
             tmpdir,
             tmpdir,
+            parameters_hash='1234567890',
             atlases=None,
             dataset_links={},
         )
@@ -426,6 +432,70 @@ def test_group_across_runs():
         '/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz',
         '/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz',
     ]
+
+
+def test_check_group_trs_consistent():
+    """No warning when all runs in a group share the same TR."""
+    from unittest.mock import patch
+
+    groups = [
+        ['/path/sub-01_task-rest_run-01_bold.nii.gz', '/path/sub-01_task-rest_run-02_bold.nii.gz'],
+    ]
+
+    with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
+        with patch('xcp_d.utils.bids._get_tr', return_value=2.0):
+            with patch('xcp_d.utils.bids.nb.load', return_value=object()):
+                xbids.check_group_trs(groups, combine_runs=False)
+
+    mock_logger.warning.assert_not_called()
+
+
+def test_check_group_trs_single_run():
+    """No warning or error for a group with only one run — nothing to compare."""
+    from unittest.mock import patch
+
+    groups = [['/path/sub-01_task-rest_bold.nii.gz']]
+
+    with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
+        with patch('xcp_d.utils.bids._get_tr', return_value=2.0):
+            with patch('xcp_d.utils.bids.nb.load', return_value=object()):
+                xbids.check_group_trs(groups, combine_runs=True)
+
+    mock_logger.warning.assert_not_called()
+
+
+def test_check_group_trs_mismatch_warning():
+    """Warn when runs in a group have different TRs and combine_runs is False."""
+    from unittest.mock import patch
+
+    groups = [
+        ['/path/sub-01_task-rest_run-01_bold.nii.gz', '/path/sub-01_task-rest_run-02_bold.nii.gz'],
+    ]
+
+    with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
+        with patch('xcp_d.utils.bids._get_tr', side_effect=[2.0, 1.0]):
+            with patch('xcp_d.utils.bids.nb.load', return_value=object()):
+                xbids.check_group_trs(groups, combine_runs=False)
+
+    mock_logger.warning.assert_called_once()
+    warning_msg = mock_logger.warning.call_args[0][0]
+    assert 'inconsistent TRs' in warning_msg
+    assert 'run-01' in warning_msg
+    assert 'run-02' in warning_msg
+
+
+def test_check_group_trs_mismatch_error_combine_runs():
+    """Raise ValueError when TRs differ and combine_runs is True."""
+    from unittest.mock import patch
+
+    groups = [
+        ['/path/sub-01_task-rest_run-01_bold.nii.gz', '/path/sub-01_task-rest_run-02_bold.nii.gz'],
+    ]
+
+    with patch('xcp_d.utils.bids._get_tr', side_effect=[2.0, 1.0]):
+        with patch('xcp_d.utils.bids.nb.load', return_value=object()):
+            with pytest.raises(ValueError, match='TR'):
+                xbids.check_group_trs(groups, combine_runs=True)
 
 
 def test_collect_mesh_data_crosssectional(tmp_path_factory, caplog):

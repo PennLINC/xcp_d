@@ -2,6 +2,7 @@
 
 import os
 import sys
+from pathlib import Path
 
 import nibabel as nb
 import numpy as np
@@ -9,7 +10,6 @@ import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d import config
-from xcp_d.data import load as load_data
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
@@ -25,6 +25,9 @@ from xcp_d.workflows.parcellation import init_load_atlases_wf
 
 np.set_printoptions(threshold=sys.maxsize)
 
+_XCPD_ATLASES = str(Path.home() / '.cache' / 'xcp_d' / 'XCPDAtlases')
+_ATLAS_PACK = str(Path.home() / '.cache' / 'xcp_d' / 'AtlasPack')
+
 
 def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a nifti input."""
@@ -37,8 +40,8 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         config.workflow.file_format = 'nifti'
         config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
-            'xcpdatlases': str(load_data('atlases')),
-            'xcpd4s': '/AtlasPack',
+            'xcpdatlases': _XCPD_ATLASES,
+            'xcpd4s': _ATLAS_PACK,
         }
         config.nipype.omp_nthreads = 1
 
@@ -66,8 +69,8 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         config.workflow.file_format = 'cifti'
         config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
-            'xcpdatlases': str(load_data('atlases')),
-            'xcpd4s': '/AtlasPack',
+            'xcpdatlases': _XCPD_ATLASES,
+            'xcpd4s': _ATLAS_PACK,
         }
         config.nipype.omp_nthreads = 1
 
@@ -110,11 +113,12 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     censoring_df = pd.DataFrame(
-        columns=['framewise_displacement', 'exact_10'],
-        data=np.stack(
-            (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
-            axis=1,
-        ),
+        {
+            'framewise_displacement': np.zeros(n_volumes),
+            'censor_between': np.zeros(n_volumes),
+            'denoising': np.zeros(n_volumes),
+            'exact_10': np.concatenate((np.ones(10), np.zeros(n_volumes - 10))),
+        }
     )
     temporal_mask = os.path.join(tmpdir, 'temporal_mask.tsv')
     censoring_df.to_csv(temporal_mask, sep='\t', index=False)
@@ -122,18 +126,12 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Load atlases
     atlas_names = ['Gordon', 'Glasser']
     atlas_files = [
-        str(
-            load_data('atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz')
-        ),
-        str(
-            load_data(
-                'atlases/atlas-Glasser/atlas-Glasser_space-MNI152NLin6Asym_res-01_dseg.nii.gz'
-            )
-        ),
+        f'{_XCPD_ATLASES}/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz',
+        f'{_XCPD_ATLASES}/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.nii.gz',
     ]
     atlas_labels_files = [
-        str(load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv')),
-        str(load_data('atlases/atlas-Glasser/atlas-Glasser_dseg.tsv')),
+        f'{_XCPD_ATLASES}/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv',
+        f'{_XCPD_ATLASES}/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.tsv',
     ]
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
@@ -174,7 +172,9 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_nifti_wf(
             mem_gb=mem_gbx,
+            has_multiple_runs=False,
             name='connectivity_wf',
+            skip_alff=True,  # bandpass_filter=False so skip ALFF
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
@@ -213,12 +213,13 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         # Now to get ground truth correlations
         labels_df = pd.read_table(atlas_labels_file)
-        labels_df['name'] = labels_df['label']
+        labels_df = labels_df[['index', 'name']]
         masker = NiftiLabelsMasker(
             labels_img=atlas_file,
             lut=labels_df,
             smoothing_fwhm=None,
             standardize=False,
+            keep_masked_labels=True,
         )
         masker.fit(fake_bold_file)
         signals = masker.transform(fake_bold_file)
@@ -263,11 +264,12 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     censoring_df = pd.DataFrame(
-        columns=['framewise_displacement', 'exact_10'],
-        data=np.stack(
-            (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
-            axis=1,
-        ),
+        {
+            'framewise_displacement': np.zeros(n_volumes),
+            'censor_between': np.zeros(n_volumes),
+            'denoising': np.zeros(n_volumes),
+            'exact_10': np.concatenate((np.ones(10), np.zeros(n_volumes - 10))),
+        }
     )
     temporal_mask = os.path.join(tmpdir, 'temporal_mask.tsv')
     censoring_df.to_csv(temporal_mask, sep='\t', index=False)
@@ -275,18 +277,18 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     # Load atlases
     atlas_names = ['4S1056Parcels', '4S156Parcels', '4S456Parcels', 'Gordon', 'Glasser']
     atlas_files = [
-        '/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
-        '/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
-        '/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
-        str(load_data('atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii')),
-        str(load_data('atlases/atlas-Glasser/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii')),
+        f'{_ATLAS_PACK}/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.dlabel.nii',
+        f'{_ATLAS_PACK}/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.dlabel.nii',
+        f'{_ATLAS_PACK}/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.dlabel.nii',
+        f'{_XCPD_ATLASES}/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii',
+        f'{_XCPD_ATLASES}/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.dlabel.nii',
     ]
     atlas_labels_files = [
-        '/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_dseg.tsv',
-        '/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_dseg.tsv',
-        '/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_dseg.tsv',
-        str(load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv')),
-        str(load_data('atlases/atlas-Glasser/atlas-Glasser_dseg.tsv')),
+        f'{_ATLAS_PACK}/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.tsv',
+        f'{_ATLAS_PACK}/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.tsv',
+        f'{_ATLAS_PACK}/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.tsv',
+        f'{_XCPD_ATLASES}/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv',
+        f'{_XCPD_ATLASES}/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.tsv',
     ]
 
     # Create the node and a tmpdir to write its results out to
@@ -300,8 +302,9 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gbx,
-            exact_scans=[],
+            has_multiple_runs=False,
             name='connectivity_wf',
+            skip_alff=True,  # bandpass_filter=False so skip ALFF
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
@@ -392,3 +395,37 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         if not np.allclose(pconn_arr, calculated_correlations, atol=0.01, equal_nan=True):
             diff = pconn_arr - calculated_correlations
             raise ValueError(np.nanmax(np.abs(diff)))
+
+
+def test_init_concatenate_data_wf_exact_scans(tmp_path):
+    """Test that RandomCensor node is added when exact_scans is non-empty."""
+    from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
+
+    with mock_config():
+        config.workflow.correlation_lengths = ['300']
+        config.workflow.combine_runs = True
+        config.workflow.fd_thresh = 0.3
+        config.workflow.file_format = 'nifti'
+        config.execution.atlases = []
+
+        # With exact_scans, random_censor node should be present
+        wf_with = init_concatenate_data_wf(
+            TR=2.0,
+            head_radius=50,
+            exact_scans=[150],
+            mem_gb={'bold': 1.0, 'volume': 0.01},
+            name='concat_with_exact',
+        )
+        node_names = [node.name for node in wf_with._graph.nodes()]
+        assert 'random_censor' in node_names
+
+        # Without exact_scans, random_censor node should not be present
+        wf_without = init_concatenate_data_wf(
+            TR=2.0,
+            head_radius=50,
+            exact_scans=[],
+            mem_gb={'bold': 1.0, 'volume': 0.01},
+            name='concat_without_exact',
+        )
+        node_names = [node.name for node in wf_without._graph.nodes()]
+        assert 'random_censor' not in node_names

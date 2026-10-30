@@ -32,6 +32,7 @@ from templateflow.api import get as get_template
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es, surf_data_from_cifti
 from xcp_d.utils.qcmetrics import compute_dvars
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -69,13 +70,14 @@ class CensoringPlot(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        preproc_fd_timeseries = motion_df['framewise_displacement'].values
+        preproc_fd_timeseries = get_col(motion_df, 'framewise_displacement').values
 
         # Load temporal mask
         censoring_df = pd.read_table(self.inputs.temporal_mask)
 
-        # The number of colors in the palette depends on whether there are random censors or not
-        palette = sns.color_palette('colorblind', 4 + censoring_df.shape[1])
+        # Slots 0-4 are fixed; each set of randomly censored volumes takes one slot after that.
+        exact_columns = [col for col in censoring_df.columns if col.startswith('exact_')]
+        palette = sns.color_palette('colorblind', 5 + len(exact_columns))
 
         time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
 
@@ -140,7 +142,6 @@ class CensoringPlot(SimpleInterface):
         # Plot randomly censored volumes as well
         # These vertical lines start at the top and only go 20% of the way down the plot.
         # They are plotted in non-overlapping segments.
-        exact_columns = [col for col in censoring_df.columns if col.startswith('exact_')]
         vline_ymax = 1
         for i_col, exact_col in enumerate(exact_columns):
             tmask_arr = censoring_df[exact_col].values
@@ -155,15 +156,19 @@ class CensoringPlot(SimpleInterface):
                     ymin=vline_ymin,
                     ymax=vline_ymax,
                     label=label,
-                    color=palette[4 + i_col],
+                    color=palette[5 + i_col],
                     alpha=0.8,
                 )
 
             vline_ymax = vline_ymin
 
         # Plot motion-censored volumes as vertical lines
-        tmask_arr = censoring_df['framewise_displacement'].values
-        assert preproc_fd_timeseries.size == tmask_arr.size
+        tmask_arr = get_col(censoring_df, 'framewise_displacement').values
+        if preproc_fd_timeseries.size != tmask_arr.size:
+            raise ValueError(
+                f'preproc_fd_timeseries.size ({preproc_fd_timeseries.size}) != '
+                f'tmask_arr.size ({tmask_arr.size})'
+            )
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
             label = 'Motion-Censored Volumes' if i_idx == 0 else ''
@@ -171,6 +176,20 @@ class CensoringPlot(SimpleInterface):
                 idx * self.inputs.TR,
                 label=label,
                 color=palette[3],
+                alpha=0.5,
+            )
+
+        # Plot volumes flagged by the censor-between expansion as dashed vertical lines,
+        # so that they remain distinguishable from motion-censored volumes in grayscale.
+        between_arr = get_col(censoring_df, 'censor_between').values
+        between_idx = np.where(between_arr)[0]
+        for i_idx, idx in enumerate(between_idx):
+            label = 'Censor-Between Volumes' if i_idx == 0 else ''
+            ax.axvline(
+                idx * self.inputs.TR,
+                label=label,
+                color=palette[4],
+                linestyle='--',
                 alpha=0.5,
             )
 
@@ -236,19 +255,24 @@ class QCPlots(SimpleInterface):
     Examples
     --------
     .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
+
+        >>> from tempfile import TemporaryDirectory
+        >>> tmpdir = TemporaryDirectory()
+        >>> os.chdir(tmpdir.name)
+
     .. doctest::
-    qcplots = QCPlots()
-    qcplots.inputs.cleaned_file = datafile
-    qcplots.inputs.bold_file = rawbold
-    qcplots.inputs.TR = TR
-    qcplots.inputs.temporal_mask = temporalmask
-    qcplots.inputs.mask_file = mask
-    qcplots.run()
+
+        qcplots = QCPlots()
+        qcplots.inputs.cleaned_file = datafile
+        qcplots.inputs.bold_file = rawbold
+        qcplots.inputs.TR = TR
+        qcplots.inputs.temporal_mask = temporalmask
+        qcplots.inputs.mask_file = mask
+        qcplots.run()
+
     .. testcleanup::
-    >>> tmpdir.cleanup()
+
+        >>> tmpdir.cleanup()
     """
 
     input_spec = _QCPlotsInputSpec
@@ -257,15 +281,15 @@ class QCPlots(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        if 'framewise_displacement_filtered' in motion_df.columns:
-            preproc_fd_timeseries = motion_df['framewise_displacement_filtered'].values
+        if any(col.startswith('framewise_displacement_filtered') for col in motion_df.columns):
+            preproc_fd_timeseries = get_col(motion_df, 'framewise_displacement_filtered').values
         else:
-            preproc_fd_timeseries = motion_df['framewise_displacement'].values
+            preproc_fd_timeseries = get_col(motion_df, 'framewise_displacement').values
 
         # Determine number of dummy volumes and load temporal mask
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
-            tmask_arr = censoring_df['framewise_displacement'].values
+            tmask_arr = get_col(censoring_df, 'denoising').values
         else:
             tmask_arr = np.zeros(preproc_fd_timeseries.size, dtype=int)
 
@@ -520,8 +544,9 @@ class _SlicesDirInputSpec(FSLCommandInputSpec):
         desc='output every second axial slice rather than just 9 ortho slices',
     )
 
+    # Copy in_files from the original location to the runtime.cwd
     in_files = InputMultiPath(
-        File(exists=True),
+        File(exists=True, copyfile=False),
         argstr='%s',
         mandatory=True,
         position=-1,
@@ -546,17 +571,70 @@ class SlicesDir(FSLCommand):
 
     Notes
     -----
-    Usage: slicesdir [-o] [-p <image>] [-e <thr>] [-S] <filelist>
-    -o         :  filelist is pairs ( <underlying> <red-outline> ) of images
-    -p <image> :  use <image> as red-outline image on top of all images in <filelist>
-    -e <thr>   :  use the specified threshold for edges (if >0 use this proportion of max-min,
-                  if <0, use the absolute value)
-    -S         :  output every second axial slice rather than just 9 ortho slices
+    Usage: ``slicesdir [-o] [-p <image>] [-e <thr>] [-S] <filelist>``
+
+    - ``-o`` :  filelist is pairs ( <underlying> <red-outline> ) of images
+    - ``-p <image>`` :  use <image> as red-outline image on top of all images in <filelist>
+    - ``-e <thr>`` :  use the specified threshold for edges (if >0 use this proportion of
+      max-min, if <0, use the absolute value)
+    - ``-S`` :  output every second axial slice rather than just 9 ortho slices
     """
 
     _cmd = 'slicesdir'
     input_spec = _SlicesDirInputSpec
     output_spec = _SlicesDirOutputSpec
+    _short_basenames = None
+    _short_outline = None
+
+    def _run_interface(self, runtime):
+        """Create symlinks with short names before running slicesdir.
+
+        ``slicesdir`` names its output files by replacing path separators in the input
+        file paths with underscores. When input paths are long (e.g., in deep working
+        directories), the derived output filenames can exceed the OS's 255-character
+        filename limit (see https://github.com/PennLINC/xcp_d/issues/1545).
+
+        We work around this by creating symlinks with short names in the working
+        directory, and passing those short names to ``slicesdir`` instead of the
+        original long paths.
+        """
+        self._short_basenames = []
+        for i, f in enumerate(self.inputs.in_files):
+            ext = '.nii.gz' if f.endswith('.nii.gz') else os.path.splitext(f)[1]
+            basename = f'img{i}{ext}'
+            symlink_path = os.path.join(runtime.cwd, basename)
+            if os.path.lexists(symlink_path):
+                os.unlink(symlink_path)
+
+            os.symlink(os.path.abspath(f), symlink_path)
+            self._short_basenames.append(basename)
+
+        if isdefined(self.inputs.outline_image):
+            f = self.inputs.outline_image
+            ext = '.nii.gz' if f.endswith('.nii.gz') else os.path.splitext(f)[1]
+            self._short_outline = f'outline{ext}'
+            symlink_path = os.path.join(runtime.cwd, self._short_outline)
+            if os.path.lexists(symlink_path):
+                os.unlink(symlink_path)
+
+            os.symlink(os.path.abspath(f), symlink_path)
+
+        runtime = super()._run_interface(runtime)
+        return runtime
+
+    def _format_arg(self, name, spec, value):
+        """Use short symlink basenames for in_files and outline_image.
+
+        This ensures the ``slicesdir`` command line uses short paths, producing
+        short output filenames that won't exceed the OS filename length limit.
+        """
+        if name == 'in_files' and self._short_basenames is not None:
+            return ' '.join(self._short_basenames)
+
+        if name == 'outline_image' and self._short_outline is not None:
+            return spec.argstr % self._short_outline
+
+        return super()._format_arg(name, spec, value)
 
     def _list_outputs(self):
         """Create a Bunch which contains all possible files generated by running the interface.
@@ -575,13 +653,21 @@ class SlicesDir(FSLCommand):
 
         out_dir = os.path.abspath(os.path.join(os.getcwd(), 'slicesdir'))
         outputs['out_dir'] = out_dir
+
+        # Use short basenames if available (set by _run_interface),
+        # otherwise fall back to the original path-based naming.
+        if self._short_basenames is not None:
+            in_basenames = self._short_basenames
+        else:
+            in_basenames = [f.replace(os.sep, '_') for f in self.inputs.in_files]
+
         outputs['out_files'] = [
             self._gen_fname(
-                basename=f.replace(os.sep, '_'),
+                basename=name,
                 cwd=out_dir,
                 ext=self.inputs.out_extension,
             )
-            for f in self.inputs.in_files
+            for name in in_basenames
         ]
         temp_files = [
             'grota.png',
@@ -628,9 +714,10 @@ class PNGAppend(FSLCommand):
 
     Usage: pngappend <input 1> <+|-> [n] <input 2> [<+|-> [n] <input n>]  output>
 
-    + appends horizontally,
-    - appends vertically (i.e. works like a linebreak)
-    [n] number ofgap pixels
+    - ``+`` appends horizontally,
+    - ``-`` appends vertically (i.e. works like a linebreak)
+    - ``[n]`` number of gap pixels
+
     note that files with .gif extension will be input/output in GIF format
     """
 
@@ -718,8 +805,11 @@ class PlotCiftiParcellation(SimpleInterface):
     output_spec = _PlotCiftiParcellationOutputSpec
 
     def _run_interface(self, runtime):
-        assert len(self.inputs.in_files) == len(self.inputs.labels)
-        assert len(self.inputs.cortical_atlases) > 0
+        if len(self.inputs.in_files) != len(self.inputs.labels):
+            n_files, n_labels = len(self.inputs.in_files), len(self.inputs.labels)
+            raise ValueError(f'Number of in_files ({n_files}) must match labels ({n_labels})')
+        if len(self.inputs.cortical_atlases) <= 0:
+            raise ValueError('At least one cortical atlas must be provided.')
 
         if not (isdefined(self.inputs.lh_underlay) and isdefined(self.inputs.rh_underlay)):
             self._results['desc'] = f'{self.inputs.base_desc}ParcellatedStandard'
@@ -730,6 +820,7 @@ class PlotCiftiParcellation(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
             lh = str(
@@ -739,6 +830,7 @@ class PlotCiftiParcellation(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
         else:
@@ -948,6 +1040,7 @@ class PlotDenseCifti(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
             lh = str(
@@ -957,6 +1050,7 @@ class PlotDenseCifti(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
         else:
@@ -1124,7 +1218,13 @@ class PlotNifti(SimpleInterface):
         cohort = get_entity(self.inputs.name_source, 'cohort')
         entities_to_use['cohort'] = cohort
 
-        template_file = get_template(template=space, **entities_to_use, suffix='T1w', desc=None)
+        template_file = get_template(
+            template=space,
+            **entities_to_use,
+            suffix='T1w',
+            desc=None,
+            raise_empty=True,
+        )
         if isinstance(template_file, list):
             template_file = template_file[0]
 

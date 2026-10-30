@@ -3,11 +3,14 @@
 """Utilities to read and write nifiti and cifti data."""
 
 import os
+import shutil
 
 import nibabel as nb
 import numpy as np
+from isal import igzip
 from nilearn import masking
 from nipype import logging
+from niworkflows.utils.misc import _copy_any as niworkflows_copy_any
 from templateflow.api import get as get_template
 
 from xcp_d.utils.doc import fill_doc
@@ -39,7 +42,8 @@ def read_ndata(datafile, maskfile=None):
 
     # or nifti data, mask is required
     elif datafile.endswith('.nii.gz'):
-        assert maskfile is not None, 'Input `maskfile` must be provided if `datafile` is a nifti.'
+        if maskfile is None:
+            raise ValueError('Input `maskfile` must be provided if `datafile` is a nifti.')
         data = masking.apply_mask(datafile, maskfile)
 
     else:
@@ -103,8 +107,10 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     -----
     This function currently only works for NIfTIs and .dtseries.nii and .dscalar.nii CIFTIs.
     """
-    assert data_matrix.ndim in (1, 2), f'Input data must be a 1-2D array, not {data_matrix.ndim}.'
-    assert os.path.isfile(template)
+    if data_matrix.ndim not in (1, 2):
+        raise ValueError(f'Input data must be a 1-2D array, not {data_matrix.ndim}.')
+    if not os.path.isfile(template):
+        raise FileNotFoundError(f'Template file does not exist: {template}')
 
     cifti_intents = get_cifti_intents()
 
@@ -113,8 +119,10 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         file_format = 'cifti'
     elif template.endswith('.nii.gz'):
         file_format = 'nifti'
-        assert mask is not None, 'A binary mask must be provided for nifti inputs.'
-        assert os.path.isfile(mask), f'The mask file does not exist: {mask}'
+        if mask is None:
+            raise ValueError('A binary mask must be provided for nifti inputs.')
+        if not os.path.isfile(mask):
+            raise FileNotFoundError(f'The mask file does not exist: {mask}')
     else:
         raise ValueError(f'Unknown extension for {template}')
 
@@ -202,7 +210,14 @@ def write_gii(datat, template, filename, hemi):
     """
     datax = np.array(datat, dtype='float32')
     template = str(
-        get_template('fsLR', hemi=hemi, suffix='midthickness', density='32k', desc='vaavg')
+        get_template(
+            'fsLR',
+            hemi=hemi,
+            suffix='midthickness',
+            density='32k',
+            desc='vaavg',
+            raise_empty=True,
+        )
     )
     template = nb.load(template)
     dataimg = nb.gifti.GiftiImage(
@@ -218,6 +233,52 @@ def write_gii(datat, template, filename, hemi):
     dataimg.add_gifti_data_array(d_timepoint)
     dataimg.to_filename(filename)
     return filename
+
+
+def write_nifti_isal(fname, header, data):
+    """Write a NIfTI image as niworkflows does, compressing with ISA-L.
+
+    niworkflows' DerivativesDataSink writes every image it rewrites through
+    ``unsafe_write_nifti_header_and_data``, which compresses with zlib at level
+    9. ISA-L writes the same gzip format, at nearly the same size, an order of
+    magnitude faster. As in niworkflows, the gzip header holds no file name or
+    modification time, so the output is deterministic. :func:`copy_any_isal`
+    covers the sink's other compression path.
+    """
+    compress = str(fname).endswith('.gz')
+    with open(fname, 'wb') as fobj:
+        if compress:
+            fobj = igzip.IGzipFile('', 'wb', fileobj=fobj, mtime=0)
+        header.write_to(fobj)
+        nb.volumeutils.array_to_file(
+            data, fobj, header.get_data_dtype(), offset=header.get_data_offset()
+        )
+        if compress:
+            fobj.close()
+
+
+def copy_any_isal(src, dst):
+    """Copy a file as niworkflows does, compressing with ISA-L.
+
+    When DerivativesDataSink leaves an image's header and data alone, it copies the
+    file with ``_copy_any``, which decompresses every gzipped output and recompresses
+    it with zlib at level 9 to strip the file name from the gzip header. This does
+    the same with ISA-L. Uncompressed outputs (e.g., CIFTIs) are handed to
+    niworkflows' copy unchanged.
+    """
+    if not str(dst).endswith('.gz'):
+        return niworkflows_copy_any(src, dst)
+
+    if os.path.exists(dst):
+        os.unlink(dst)
+
+    src_open = igzip.open if str(src).endswith('.gz') else open
+    with src_open(src, 'rb') as f_in, open(dst, 'wb') as f_out:
+        gz_out = igzip.IGzipFile('', 'wb', fileobj=f_out, mtime=0)
+        shutil.copyfileobj(f_in, gz_out)
+        gz_out.close()
+
+    return True
 
 
 def read_gii(surf_gii):

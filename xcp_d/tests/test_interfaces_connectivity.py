@@ -19,7 +19,7 @@ def test_nifti_parcellate(tmp_path_factory):
     arr[0, 2, :] = 5
     atlas_img = nb.Nifti1Image(arr.astype(np.int32), np.eye(4))
     lut = pd.DataFrame(
-        columns=['index', 'label'],
+        columns=['index', 'name'],
         data=[[1, 'Region A'], [2, 'Region B'], [3, 'Region C'], [4, 'Region D'], [5, 'Region E']],
     )
 
@@ -40,7 +40,7 @@ def test_nifti_parcellate(tmp_path_factory):
         atlas_labels=lut_file,
         min_coverage=0.5,
     )
-    results = parcellator.run()
+    results = parcellator.run(cwd=tmpdir)
     coverage = results.outputs.coverage
     timeseries = results.outputs.timeseries
     assert os.path.isfile(coverage)
@@ -70,7 +70,7 @@ def test_nifti_parcellate(tmp_path_factory):
         atlas_labels=lut_file,
         min_coverage=0.5,
     )
-    results = parcellator.run()
+    results = parcellator.run(cwd=tmpdir)
     coverage = results.outputs.coverage
     timeseries = results.outputs.timeseries
     assert os.path.isfile(coverage)
@@ -85,3 +85,44 @@ def test_nifti_parcellate(tmp_path_factory):
         np.array([[np.nan, np.nan, 3, 4, np.nan]]),
         equal_nan=True,
     )
+
+
+def test_correlate_timeseries_uses_denoising_column(tmp_path_factory):
+    """correlate_timeseries drops every volume flagged by the denoising column."""
+    import os
+
+    import pandas as pd
+
+    from xcp_d.interfaces.connectivity import correlate_timeseries
+
+    tmpdir = tmp_path_factory.mktemp('test_correlate_timeseries_denoising')
+    n_volumes = 40
+
+    rng = np.random.default_rng(0)
+    timeseries_df = pd.DataFrame({'roi_a': rng.random(n_volumes), 'roi_b': rng.random(n_volumes)})
+    timeseries = os.path.join(tmpdir, 'timeseries.tsv')
+    timeseries_df.to_csv(timeseries, sep='\t', index=False)
+
+    # FD flags volumes 0-1; the expansion additionally flags volumes 2-3.
+    fd_arr = np.zeros(n_volumes, dtype=int)
+    fd_arr[:2] = 1
+    between_arr = np.zeros(n_volumes, dtype=int)
+    between_arr[2:4] = 1
+    censoring_df = pd.DataFrame(
+        {
+            'framewise_displacement': fd_arr,
+            'censor_between': between_arr,
+            'denoising': ((fd_arr + between_arr) > 0).astype(int),
+        }
+    )
+    temporal_mask = os.path.join(tmpdir, 'tmask.tsv')
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
+
+    correlations_df, _ = correlate_timeseries(timeseries, temporal_mask=temporal_mask)
+
+    # Correlating on `denoising` drops 4 volumes; correlating on `framewise_displacement`
+    # would drop only 2, giving a different value.
+    expected = timeseries_df.iloc[4:].corr()
+    wrong = timeseries_df.iloc[2:].corr()
+    assert np.isclose(correlations_df.loc['roi_a', 'roi_b'], expected.loc['roi_a', 'roi_b'])
+    assert not np.isclose(correlations_df.loc['roi_a', 'roi_b'], wrong.loc['roi_a', 'roi_b'])

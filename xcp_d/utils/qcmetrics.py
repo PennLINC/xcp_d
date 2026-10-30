@@ -252,16 +252,17 @@ def compute_dvars(
     from nipype.algorithms.confounds import _AR_est_YW, regress_poly
 
     # Robust standard deviation (we are using "lower" interpolation because this is what FSL does
+    IQR_TO_STD_CONVERSION_FACTOR = 1.349  # Magic number
     try:
         func_sd = (
             np.percentile(datat, 75, axis=1, method='lower')
             - np.percentile(datat, 25, axis=1, method='lower')
-        ) / 1.349
+        ) / IQR_TO_STD_CONVERSION_FACTOR
     except TypeError:  # NP < 1.22
         func_sd = (
             np.percentile(datat, 75, axis=1, interpolation='lower')
             - np.percentile(datat, 25, axis=1, interpolation='lower')
-        ) / 1.349
+        ) / IQR_TO_STD_CONVERSION_FACTOR
 
     if remove_zerovariance:
         zero_variance_voxels = func_sd > variance_tol

@@ -21,6 +21,26 @@ which tracks the latest release
 (see :doc:`installation` for the basic procedure for running).
 
 
+***************************
+Guidelines for contributing
+***************************
+
+We appreciate contributions from outside the core development team,
+but with the increasing popularity of LLMs we have experienced a number of unsolicited pull requests
+with changes we don't necessarily want.
+This increases maintenance burden.
+Therefore, we ask anyone who wants to contribute to XCP-D to follow these guidelines:
+
+1. Do not open an unsolicited pull request. If you would like to contribute to XCP-D,
+   either open a new issue or comment on an existing one expressing an interest in making a change.
+   Wait for a developer to respond affirmatively before opening a pull request.
+2. Do not open or comment on issues with LLM-generated text. Please review any text drafted by an LLM yourself.
+   LLMs often include a level of detail and poor wording that are not helpful for maintainers.
+3. Honestly report the level to which you used an LLM in drafting your code within the PR.
+4. LLM/Bot accounts' PRs will not be accepted.
+   Yes, they can lie, but if we suspect an account is a bot, we will block it.
+
+
 .. _contrib_modes:
 
 *******************
@@ -169,7 +189,7 @@ image yourself.
    .. code-block:: bash
 
       docker run \
-         -v /path/to/local/xcp_d:/usr/local/miniconda/lib/python3.10/site-packages/xcp_d \
+         -v /path/to/local/xcp_d:/app/.pixi/envs/xcp-d/lib/python3.12/site-packages/xcp_d \
          pennlinc/xcp_d:unstable \
          ...  # see the usage documentation for info on what else to include in this command
 
@@ -221,17 +241,16 @@ Adding or modifying dependencies
 If you think *XCP-D* needs to use a library (Python or not) that is not installed in the Docker
 image already, then you will need to build a new Docker image to test out your proposed changes.
 
-*XCP-D* uses a "base Docker image" defined in https://github.com/PennLINC/xcpd_build.
-We try to define the majority of non-Python requirements in that Docker image.
-If you want to add or modify a non-Python dependency, then you will need to clone that repository
-modify its Dockerfile, and build its Docker image to ensure that the new dependency installs
-correctly.
-Once that's done, you can open a pull request to the ``xcpd_build`` repository with your change.
+*XCP-D* uses an in-repo base Docker image defined in ``Dockerfile.base``.
+We try to define the majority of non-Python requirements in that image.
+If you want to add or modify a non-Python dependency, update ``Dockerfile.base``
+and build the base image locally to ensure the new dependency installs correctly.
+Once that's done, you can open a pull request to ``xcp_d`` with your change.
 
 .. tip::
 
-   Given that this method requires contributing to two repositories, it's a good idea to link to
-   the associated *XCP-D* issue in your ``xcpd_build`` PR.
+   Keep dependency and packaging changes together in one PR so the base and production
+   Docker images evolve together.
 
 For Python dependencies, you can update the requirements defined in *XCP-D*'s ``setup.cfg``
 and rebuild the *XCP-D* Docker image locally to test out your change.

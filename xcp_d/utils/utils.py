@@ -1,5 +1,6 @@
 """Miscellaneous utility functions for xcp_d."""
 
+import itertools
 import multiprocessing
 
 import nibabel as nb
@@ -11,6 +12,109 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger('nipype.utils')
 
 
+def _get_template_transform(template, from_space, cohort=None):
+    """Get a TemplateFlow transform path as a string.
+
+    Parameters
+    ----------
+    template : :obj:`str`
+        Template name to query from TemplateFlow.
+    from_space : :obj:`str`
+        Source space for the transform, passed via the ``from`` entity.
+    cohort : :obj:`str` or None
+        Cohort label to include when the target template requires it.
+
+    Returns
+    -------
+    transform_path : :obj:`str`
+        Path to the transform file.
+
+    Raises
+    ------
+    ValueError
+        If the TemplateFlow query cannot be resolved.
+    """
+    from templateflow.api import get as get_template
+
+    template_kwargs = {'from': from_space}
+    if cohort is not None:
+        template_kwargs['cohort'] = cohort
+
+    return str(
+        get_template(
+            template=template,
+            mode='image',
+            suffix='xfm',
+            extension='.h5',
+            raise_empty=True,
+            **template_kwargs,
+        )
+    )
+
+
+def _build_mni_chain(source_space, target_space, source_cohort=None, target_cohort=None):
+    """Build a transform chain between supported MNI template spaces.
+
+    Parameters
+    ----------
+    source_space : :obj:`str`
+        The source space for the transform chain.
+    target_space : :obj:`str`
+        The target space for the transform chain.
+    source_cohort : :obj:`str` or None
+        Cohort label for MNIInfant source spaces.
+    target_cohort : :obj:`str` or None
+        Cohort label for MNIInfant target spaces.
+
+    Returns
+    -------
+    transforms : :obj:`list` of :obj:`str`
+        Transform chain from ``source_space`` to ``target_space``.
+
+    Raises
+    ------
+    ValueError
+        If the spaces are not supported or cohort is missing for MNIInfant sources.
+    """
+    if source_space == target_space:
+        return ['identity']
+
+    if target_space == 'MNI152NLin6Asym':
+        if source_space == 'MNI152NLin2009cAsym':
+            return [_get_template_transform('MNI152NLin6Asym', 'MNI152NLin2009cAsym')]
+        if source_space == 'MNIInfant':
+            if source_cohort is None:
+                raise ValueError('Source cohort is required for MNIInfant transforms.')
+            return [_get_template_transform('MNI152NLin6Asym', f'MNIInfant+{source_cohort}')]
+
+    if target_space == 'MNI152NLin2009cAsym':
+        if source_space == 'MNI152NLin6Asym':
+            return [_get_template_transform('MNI152NLin2009cAsym', 'MNI152NLin6Asym')]
+        if source_space == 'MNIInfant':
+            if source_cohort is None:
+                raise ValueError('Source cohort is required for MNIInfant transforms.')
+            return [
+                _get_template_transform('MNI152NLin2009cAsym', 'MNI152NLin6Asym'),
+                _get_template_transform('MNI152NLin6Asym', f'MNIInfant+{source_cohort}'),
+            ]
+
+    if target_space == 'MNIInfant':
+        target_to_infant = _get_template_transform(
+            'MNIInfant',
+            'MNI152NLin6Asym',
+            cohort=target_cohort,
+        )
+        if source_space == 'MNI152NLin6Asym':
+            return [target_to_infant]
+        if source_space == 'MNI152NLin2009cAsym':
+            return [
+                target_to_infant,
+                _get_template_transform('MNI152NLin6Asym', 'MNI152NLin2009cAsym'),
+            ]
+
+    raise ValueError(f'Transform chain not supported: {source_space} -> {target_space}')
+
+
 def check_deps(workflow):
     """Make sure dependencies are present in this system."""
     from nipype.utils.filemanip import which
@@ -20,6 +124,19 @@ def check_deps(workflow):
         for node in workflow._get_all_nodes()
         if (hasattr(node.interface, '_cmd') and which(node.interface._cmd.split()[0]) is None)
     )
+
+
+def _validate_space(space, cohort, supported_spaces, label, context=None):
+    if space not in supported_spaces:
+        raise ValueError(f'{label} "{space}" not supported.')
+
+    if space == 'MNIInfant' and cohort is None:
+        prefix = label.split()[0]
+        context_str = f' for {context}' if context else ''
+        raise ValueError(
+            f'{prefix} cohort is not specified{context_str}. '
+            'Please specify the cohort using the "cohort" entity.'
+        )
 
 
 def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
@@ -56,78 +173,48 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     Only used for QCReport in init_postprocess_nifti_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    from templateflow.api import get as get_template
-
-    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
+    from xcp_d.utils.utils import _build_mni_chain, _validate_space
 
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, 'space')
+    bold_cohort = get_entity(bold_file, 'cohort')
 
     if bold_space in ('native', 'T1w'):
-        base_std_space = get_entity(template_to_anat_xfm, 'from')
-        raise ValueError(f"BOLD space '{bold_space}' not supported.")
+        raise ValueError(f'BOLD space "{bold_space}" not supported.')
     elif f'from-{bold_space}' not in template_to_anat_xfm:
         raise ValueError(
             f'Transform does not match BOLD space: {bold_space} != {template_to_anat_xfm}'
         )
+
+    _validate_space(
+        space=bold_space,
+        cohort=bold_cohort,
+        supported_spaces=('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'),
+        label='BOLD space',
+        context=bold_file,
+    )
 
     # Pull out the correct transforms based on bold_file name and string them together.
     xforms_to_T1w = [template_to_anat_xfm]  # used for all spaces except T1w and native
     xforms_to_T1w_invert = [False]
     if bold_space == 'MNI152NLin2009cAsym':
         # Data already in MNI152NLin2009cAsym space.
-        xforms_to_MNI = ['identity']
-        xforms_to_MNI_invert = [False]
-
+        xforms_to_MNI = _build_mni_chain('MNI152NLin2009cAsym', 'MNI152NLin2009cAsym')
     elif bold_space == 'MNI152NLin6Asym':
         # MNI152NLin6Asym --> MNI152NLin2009cAsym
-        MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
-            get_template(
-                template='MNI152NLin2009cAsym',
-                mode='image',
-                suffix='xfm',
-                extension='.h5',
-                **{'from': 'MNI152NLin6Asym'},
-            ),
-        )
-        xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-        xforms_to_MNI_invert = [False]
-
+        xforms_to_MNI = _build_mni_chain('MNI152NLin6Asym', 'MNI152NLin2009cAsym')
     elif bold_space == 'MNIInfant':
         # MNIInfant --> MNI152NLin2009cAsym
-        MNIInfant_to_MNI152NLin2009cAsym = str(
-            load_data(
-                'transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5',
-            )
+        xforms_to_MNI = _build_mni_chain(
+            'MNIInfant',
+            'MNI152NLin2009cAsym',
+            source_cohort=bold_cohort,
         )
-        xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
-        xforms_to_MNI_invert = [False]
-
-    elif bold_space == 'T1w':
-        # T1w --> ?? (extract from template_to_anat_xfm) --> MNI152NLin2009cAsym
-        # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
-        if base_std_space != 'MNI152NLin2009cAsym':
-            std_to_mni_xfm = str(
-                get_template(
-                    template='MNI152NLin2009cAsym',
-                    mode='image',
-                    suffix='xfm',
-                    extension='.h5',
-                    **{'from': base_std_space},
-                ),
-            )
-            xforms_to_MNI = [std_to_mni_xfm, template_to_anat_xfm]
-            xforms_to_MNI_invert = [False, True]
-        else:
-            xforms_to_MNI = [template_to_anat_xfm]
-            xforms_to_MNI_invert = [True]
-
-        xforms_to_T1w = ['identity']
-        xforms_to_T1w_invert = [False]
-
     else:
-        raise ValueError(f"Space '{bold_space}' in {bold_file} not supported.")
+        raise ValueError(f'Space "{bold_space}" in {bold_file} not supported.')
+
+    xforms_to_MNI_invert = [False] * len(xforms_to_MNI)
 
     return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
@@ -165,85 +252,47 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
     Does not include inversion flag output because there is no need (yet).
     Can easily be added in the future.
     """
-    from templateflow.api import get as get_template
-
-    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
+    from xcp_d.utils.utils import _build_mni_chain, _validate_space
 
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, 'space')
+    bold_cohort = get_entity(bold_file, 'cohort')
 
+    source_cohort = None
     if source_space is None:
         # If a source space is not provided, extract the space of the source file
         # First try tpl because that won't raise an error
         source_space = get_entity(source_file, 'tpl')
+        source_cohort = get_entity(source_file, 'cohort')
         if source_space is None:
             # If tpl isn't available, try space.
             # get_entity will raise an error if space isn't there.
             source_space = get_entity(source_file, 'space')
+    elif '+' in source_space:
+        source_space, source_cohort = source_space.split('+')
 
-    if source_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
-        raise ValueError(f"Source space '{source_space}' not supported.")
-
-    if bold_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
-        raise ValueError(f"BOLD space '{bold_space}' not supported.")
-
-    # Load useful inter-template transforms from templateflow and package data
-    MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
-        get_template(
-            template='MNI152NLin2009cAsym',
-            mode='image',
-            suffix='xfm',
-            extension='.h5',
-            **{'from': 'MNI152NLin6Asym'},
-        ),
+    _validate_space(
+        space=source_space,
+        cohort=source_cohort,
+        supported_spaces=('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'),
+        label='Source space',
+        context=source_file,
     )
-    MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
-        get_template(
-            template='MNI152NLin6Asym',
-            mode='image',
-            suffix='xfm',
-            extension='.h5',
-            **{'from': 'MNI152NLin2009cAsym'},
-        ),
-    )
-    MNIInfant_to_MNI152NLin2009cAsym = str(
-        load_data(
-            'transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5',
-        )
-    )
-    MNI152NLin2009cAsym_to_MNIInfant = str(
-        load_data(
-            'transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5',
-        )
+    _validate_space(
+        space=bold_space,
+        cohort=bold_cohort,
+        supported_spaces=('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'),
+        label='BOLD space',
+        context=bold_file,
     )
 
-    if bold_space == source_space:
-        transforms = ['identity']
-
-    elif bold_space == 'MNI152NLin6Asym':
-        if source_space == 'MNI152NLin2009cAsym':
-            transforms = [MNI152NLin2009cAsym_to_MNI152NLin6Asym]
-        elif source_space == 'MNIInfant':
-            transforms = [
-                MNI152NLin2009cAsym_to_MNI152NLin6Asym,
-                MNIInfant_to_MNI152NLin2009cAsym,
-            ]
-
-    elif bold_space == 'MNI152NLin2009cAsym':
-        if source_space == 'MNI152NLin6Asym':
-            transforms = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-        elif source_space == 'MNIInfant':
-            transforms = [MNIInfant_to_MNI152NLin2009cAsym]
-
-    elif bold_space == 'MNIInfant':
-        if source_space == 'MNI152NLin6Asym':
-            transforms = [
-                MNI152NLin2009cAsym_to_MNIInfant,
-                MNI152NLin6Asym_to_MNI152NLin2009cAsym,
-            ]
-        elif source_space == 'MNI152NLin2009cAsym':
-            transforms = [MNI152NLin2009cAsym_to_MNIInfant]
+    transforms = _build_mni_chain(
+        source_space,
+        bold_space,
+        source_cohort=source_cohort,
+        target_cohort=bold_cohort,
+    )
 
     return transforms
 
@@ -317,25 +366,50 @@ def denoise_with_nilearn(
     """A wrapper to call _denoise_with_nilearn using multiprocessing"""
     if num_threads < 1:
         raise Exception('num_threads must be a positive integer')
-    elif num_threads == 1:
-        return _denoise_with_nilearn(
-            preprocessed_bold.copy(),
-            confounds,
-            voxelwise_confounds,
-            sample_mask,
-            low_pass,
-            high_pass,
-            filter_order,
-            TR,
-        )
 
-    # Split the bold data into chunks to br processed in parallel
+    # An empty list of voxelwise confounds is the same as no voxelwise confounds
+    if voxelwise_confounds is not None and len(voxelwise_confounds) == 0:
+        voxelwise_confounds = None
+
+    if voxelwise_confounds is not None:
+        for i_confound, voxelwise_arr in enumerate(voxelwise_confounds):
+            if voxelwise_arr.shape != preprocessed_bold.shape:
+                raise ValueError(
+                    f'Voxelwise confound {i_confound} has shape {voxelwise_arr.shape}, '
+                    f'but BOLD data has shape {preprocessed_bold.shape} (T x S).'
+                )
+
+    # Each process gets one BLAS thread, so the BLAS libraries (e.g., OpenBLAS) don't start
+    # one thread per CPU in every process and oversubscribe the num_threads CPUs.
+    if num_threads == 1:
+        from threadpoolctl import threadpool_limits
+
+        with threadpool_limits(limits=1, user_api='blas'):
+            return _denoise_with_nilearn(
+                preprocessed_bold.copy(),
+                confounds,
+                voxelwise_confounds,
+                sample_mask,
+                low_pass,
+                high_pass,
+                filter_order,
+                TR,
+            )
+
+    # Split the bold data into chunks of voxels to be processed in parallel
     preprocessed_bold_chunks = np.array_split(preprocessed_bold, num_threads, axis=1)
-    # This np.array_split works on lists too - we just don't use an axis arg
     if voxelwise_confounds is None:
         voxelwise_confounds_chunks = [None] * num_threads
     else:
-        voxelwise_confounds_chunks = np.array_split(voxelwise_confounds, num_threads)
+        # Split each voxelwise confound along the voxel axis, the same way as the BOLD data,
+        # then regroup so that each chunk gets a list with one array per voxelwise confound.
+        split_voxelwise_confounds = [
+            np.array_split(voxelwise_arr, num_threads, axis=1)
+            for voxelwise_arr in voxelwise_confounds
+        ]
+        voxelwise_confounds_chunks = [
+            list(chunk) for chunk in zip(*split_voxelwise_confounds, strict=True)
+        ]
 
     arg_chunks = [
         (
@@ -355,10 +429,21 @@ def denoise_with_nilearn(
         )
     ]
 
-    with multiprocessing.Pool(processes=num_threads) as pool:
+    with multiprocessing.Pool(
+        processes=num_threads,
+        initializer=_limit_blas_threads,
+        initargs=(1,),
+    ) as pool:
         results = pool.starmap(_denoise_with_nilearn, arg_chunks)
 
     return np.column_stack(results)
+
+
+def _limit_blas_threads(n_threads):
+    """Limit the number of BLAS threads in the current (worker) process."""
+    from threadpoolctl import threadpool_limits
+
+    threadpool_limits(limits=n_threads, user_api='blas')
 
 
 @fill_doc
@@ -438,7 +523,6 @@ def _denoise_with_nilearn(
     from nilearn.signal import butterworth, standardize_signal
 
     n_volumes = preprocessed_bold.shape[0]
-    n_voxels = preprocessed_bold.shape[1]
 
     # Coerce 0 filter values to None
     low_pass = low_pass if low_pass != 0 else None
@@ -480,10 +564,14 @@ def _denoise_with_nilearn(
             confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
 
         if have_voxelwise_confounds:
-            voxelwise_confounds = [
-                standardize_signal(arr, detrend=True, standardize=False)
-                for arr in voxelwise_confounds
-            ]
+            # Replace one array at a time, so only one extra (T, S) array is held at once
+            for i_confound, arr in enumerate(voxelwise_confounds):
+                voxelwise_confounds[i_confound] = standardize_signal(
+                    arr,
+                    detrend=True,
+                    standardize=False,
+                )
+                del arr
 
     if low_pass or high_pass:
         # Now apply the bandpass filter to the interpolated data and confounds
@@ -506,11 +594,9 @@ def _denoise_with_nilearn(
                 ]
 
     if detrend_and_denoise:
-        # Censor the data and confounds
-        censored_bold = preprocessed_bold[sample_mask, :]
-
         if have_confounds and not voxelwise_confounds:
             # Estimate betas using only the censored data
+            censored_bold = preprocessed_bold[sample_mask, :]
             censored_confounds = confounds_arr[sample_mask, :]
             betas = np.linalg.lstsq(censored_confounds, censored_bold, rcond=None)[0]
 
@@ -519,31 +605,134 @@ def _denoise_with_nilearn(
             # denoised, censored data.
             preprocessed_bold = preprocessed_bold - np.dot(confounds_arr, betas)
         else:
-            # Loop over voxels
-            for i_voxel in range(n_voxels):
-                design_matrix = []
-                if have_confounds:
-                    design_matrix.append(confounds_arr.copy())
+            preprocessed_bold = _regress_voxelwise_confounds(
+                preprocessed_bold=preprocessed_bold,
+                confounds_arr=confounds_arr if have_confounds else None,
+                voxelwise_confounds=voxelwise_confounds,
+                sample_mask=sample_mask,
+            )
 
-                for voxelwise_arr in voxelwise_confounds:
-                    temp_voxelwise = voxelwise_arr[:, i_voxel]
-                    design_matrix.append(temp_voxelwise[:, None])
+    return preprocessed_bold
 
-                # Estimate betas using only the censored data
-                design_matrix = np.hstack(design_matrix)
-                censored_design_matrix = design_matrix[sample_mask, :]
+
+def _regress_voxelwise_confounds(
+    *,
+    preprocessed_bold,
+    confounds_arr,
+    voxelwise_confounds,
+    sample_mask,
+):
+    """Regress global and voxelwise confounds out of each voxel, in place.
+
+    The result is the same as fitting, for each voxel, one design matrix with the global
+    confounds and that voxel's voxelwise confounds, but the global confounds are only fit once.
+    By the Frisch-Waugh-Lovell theorem, the voxelwise betas from that combined model equal the
+    betas from regressing the BOLD data's residuals after the global confounds on the voxelwise
+    confounds' residuals after the global confounds:
+
+    1.  Regress the global confounds out of the BOLD data.
+    2.  Regress the global confounds out of each voxelwise confound.
+    3.  For each voxel, regress the residualized voxelwise confounds out of the residualized
+        BOLD data.
+
+    Betas are estimated from the low-motion volumes and applied to all volumes,
+    so the interpolated volumes are denoised too.
+
+    Parameters
+    ----------
+    preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
+        Detrended and filtered BOLD data. Overwritten with the denoised data.
+    confounds_arr : :obj:`numpy.ndarray` of shape (T, C1) or None
+        Detrended and filtered global confounds.
+    voxelwise_confounds : :obj:`list` of :obj:`numpy.ndarray` of shape (T, S)
+        Detrended and filtered voxelwise confounds. Overwritten with their residuals after the
+        global confounds.
+    sample_mask : :obj:`numpy.ndarray` of shape (T,)
+        Low-motion volumes are True and high-motion volumes are False.
+
+    Returns
+    -------
+    preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The denoised data.
+
+    Notes
+    -----
+    The arrays are residualized in place, in chunks of voxels, so that no new full-size arrays
+    are allocated.
+    """
+    n_volumes, n_voxels = preprocessed_bold.shape
+    n_censored_volumes = int(sample_mask.sum())
+    n_voxelwise_confounds = len(voxelwise_confounds)
+    n_columns = n_voxelwise_confounds
+    if confounds_arr is not None:
+        n_columns += confounds_arr.shape[1]
+        censored_confounds = confounds_arr[sample_mask, :]
+        # Use the same singular-value cutoff as np.linalg.lstsq(rcond=None).
+        # The pseudoinverse's default cutoff (1e-15) is lower, so a rank-deficient set of
+        # confounds (e.g., a duplicated column) would get huge, noise-fitting betas.
+        confounds_pinv = np.linalg.pinv(
+            censored_confounds,
+            rcond=np.finfo(np.float64).eps * max(censored_confounds.shape),
+        )
+
+    # Work on chunks of voxels, so the temporary arrays are about 64 MB at most
+    chunk_size = max(1, (2**23) // n_volumes)
+
+    # Each voxelwise confound's norm before residualization is used to tell when a residualized
+    # voxelwise confound is numerically zero (i.e., it lies in the span of the global confounds).
+    reference_norms = np.zeros(n_voxels)
+    for start in range(0, n_voxels, chunk_size):
+        voxels = slice(start, start + chunk_size)
+        for voxelwise_arr in voxelwise_confounds:
+            reference_norms[voxels] = np.maximum(
+                reference_norms[voxels],
+                np.linalg.norm(voxelwise_arr[sample_mask, voxels], axis=0),
+            )
+
+        if confounds_arr is not None:
+            # Steps 1 and 2: regress the global confounds out of the BOLD data and out of each
+            # voxelwise confound, in place.
+            for arr in [preprocessed_bold, *voxelwise_confounds]:
+                betas = confounds_pinv @ arr[sample_mask, voxels]
+                arr[:, voxels] -= confounds_arr @ betas
+
+    if confounds_arr is not None:
+        reference_norms = np.maximum(reference_norms, np.linalg.norm(censored_confounds, ord=2))
+
+    # The combined-design lstsq treats singular values below eps * max(M, N) times the largest
+    # singular value of the combined design as zero, so the same cutoff is used here.
+    eps = np.finfo(np.float64).eps
+    cutoffs = eps * max(n_censored_volumes, n_columns) * reference_norms
+
+    # Step 3: for each voxel, regress the residualized voxelwise confounds out of the
+    # residualized BOLD data.
+    # The fit is done in float64, like the combined design (the global confounds are float64).
+    for i_voxel in range(n_voxels):
+        design_matrix = np.column_stack(
+            [voxelwise_arr[:, i_voxel] for voxelwise_arr in voxelwise_confounds]
+        ).astype(np.float64)
+        censored_design_matrix = design_matrix[sample_mask, :]
+        censored_bold = preprocessed_bold[sample_mask, i_voxel].astype(np.float64)
+        betas, _, _, singular_values = np.linalg.lstsq(
+            censored_design_matrix,
+            censored_bold,
+            rcond=None,
+        )
+        if singular_values[-1] < cutoffs[i_voxel]:
+            # Drop the directions that are numerically zero, as the combined-design lstsq would
+            if singular_values[0] < cutoffs[i_voxel]:
+                betas = np.zeros(n_voxelwise_confounds)
+            else:
                 betas = np.linalg.lstsq(
                     censored_design_matrix,
-                    censored_bold[:, i_voxel],
-                    rcond=None,
+                    censored_bold,
+                    rcond=cutoffs[i_voxel] / singular_values[0],
                 )[0]
 
-                # Denoise the interpolated data.
-                # The low-motion volumes of the denoised, interpolated data will be the same as the
-                # denoised, censored data.
-                preprocessed_bold[:, i_voxel] = preprocessed_bold[:, i_voxel] - np.dot(
-                    design_matrix, betas
-                )
+        # Denoise the interpolated data.
+        # The low-motion volumes of the denoised, interpolated data will be the same as the
+        # denoised, censored data.
+        preprocessed_bold[:, i_voxel] -= design_matrix @ betas
 
     return preprocessed_bold
 
@@ -568,31 +757,39 @@ def _interpolate(*, arr, sample_mask, TR):
     -------
     interpolated_arr : :obj:`numpy.ndarray` of shape (T, S)
         The interpolated data.
+        This is ``arr``, modified in place.
 
     Notes
     -----
     This function won't work if sample_mask is all zeros, but that should never happen.
+
+    The spline is fit in float64, with several (T, S) intermediate arrays,
+    so the data are interpolated in chunks of voxels to keep that overhead small.
+    Each voxel's spline only depends on that voxel's time series,
+    so chunking doesn't change the result.
     """
     from nilearn import signal
 
     outlier_idx = list(np.where(~sample_mask)[0])
-    n_volumes = arr.shape[0]
+    n_volumes, n_voxels = arr.shape
 
-    interpolated_arr = signal._interpolate_volumes(
-        arr,
-        sample_mask=sample_mask,
-        t_r=TR,
-        extrapolate=True,
-    )
+    # About 8 MiB of float64 values per chunk
+    chunk_size = max(1, (2**20) // n_volumes)
+    for start in range(0, n_voxels, chunk_size):
+        # _interpolate_volumes replaces the high-motion volumes of the view in place
+        signal._interpolate_volumes(
+            arr[:, start : start + chunk_size],
+            sample_mask=sample_mask,
+            t_r=TR,
+            extrapolate=True,
+        )
+
+    interpolated_arr = arr
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
     # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
-    gaps = [
-        [start, end]
-        for start, end in zip(outlier_idx, outlier_idx[1:], strict=False)
-        if start + 1 < end
-    ]
-    edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
+    gaps = [[start, end] for start, end in itertools.pairwise(outlier_idx) if start + 1 < end]
+    edges = iter(outlier_idx[:1] + list(itertools.chain.from_iterable(gaps)) + outlier_idx[-1:])
     consecutive_outliers_idx = list(zip(edges, edges, strict=False))
     first_outliers = consecutive_outliers_idx[0]
     last_outliers = consecutive_outliers_idx[-1]
@@ -641,24 +838,96 @@ def _transpose_lol(lol):
 
 
 def _create_mem_gb(bold_fname):
-    import os
+    # Load only the header to get shape and data type information
+    bold_img = nb.load(bold_fname)
 
-    bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
-    bold_tlen = nb.load(bold_fname).shape[-1]
+    # Calculate uncompressed memory size from header information
+    # This accounts for compression (e.g., .nii.gz files)
+    n_voxels = np.prod(bold_img.shape)
+    dtype_size = bold_img.get_data_dtype().itemsize
+    uncompressed_size_gb = (n_voxels * dtype_size) / (1024**3)
+
+    n_volumes = bold_img.shape[-1]
+
+    # Estimate memory usage based on uncompressed size
     mem_gbz = {
-        'derivative': bold_size_gb,
-        'resampled': bold_size_gb * 4,
-        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
+        'bold': uncompressed_size_gb,
+        'volume': uncompressed_size_gb / n_volumes,
     }
 
-    if mem_gbz['timeseries'] < 4.0:
-        mem_gbz['timeseries'] = 6.0
-        mem_gbz['resampled'] = 2
-    elif mem_gbz['timeseries'] > 8.0:
-        mem_gbz['timeseries'] = 8.0
-        mem_gbz['resampled'] = 3
-
     return mem_gbz
+
+
+def _estimate_denoise_mem_gb(
+    *,
+    bold_file,
+    mask_file=None,
+    n_voxelwise_confounds=0,
+    n_procs=1,
+):
+    """Estimate the peak memory of denoising one BOLD run with DenoiseNifti or DenoiseCifti.
+
+    Parameters
+    ----------
+    bold_file : :obj:`str`
+        The BOLD file to denoise. Only the header is read.
+    mask_file : :obj:`str` or None
+        The brain mask, for NIfTI data. It is read to count the in-mask voxels.
+    n_voxelwise_confounds : :obj:`int`
+        The number of voxel-wise confound images.
+    n_procs : :obj:`int`
+        The number of processes the denoising node uses.
+
+    Returns
+    -------
+    mem_gb : :obj:`float`
+        Estimated peak memory, in GB.
+
+    Notes
+    -----
+    The peak is the largest of three phases, in units of one in-mask data array
+    (volumes x voxels, float32 for NIfTI and float64 for CIFTI):
+
+    -   Loading: each image is read as a full-grid float32 array (NIfTI only, about 2.3 times
+        its size while decompressing), plus the in-mask arrays of the BOLD data and confounds.
+    -   Denoising: 3.2 + 2 arrays per voxel-wise confound (at least one) in one process,
+        plus 2.5 arrays to cast float32 data to float64 when there are no voxel-wise confounds.
+        With several processes, 4 + 3 arrays per voxel-wise confound (6 without any),
+        plus 0.3 GiB per process.
+    -   Writing: the full-grid output (float64 when there are no voxel-wise confounds,
+        which costs about 2.3 times the float32 grid), the in-mask arrays, and 0.25 GiB.
+
+    The coefficients were measured on MNI152NLin6Asym 2 mm NIfTI and fsLR 91k CIFTI data,
+    with 0 to 3 voxel-wise confounds and 1 to 8 processes. A fixed 0.25 GiB covers the process.
+    """
+    gib = 1024**3
+    bold_img = nb.load(bold_file)
+    if bold_img.ndim == 2:  # CIFTI, read as float64
+        n_volumes, n_elements = bold_img.shape
+        itemsize = 8
+        grid_bytes = 0
+    else:  # NIfTI, masked as float32
+        n_volumes = bold_img.shape[3]
+        mask = np.asanyarray(nb.load(mask_file).dataobj)
+        n_elements = int(np.count_nonzero(mask))
+        itemsize = 4
+        grid_bytes = np.prod(bold_img.shape) * 4
+
+    data_bytes = n_volumes * n_elements * itemsize
+    n_arrays = 1 + n_voxelwise_confounds
+    upcast = (n_voxelwise_confounds == 0) and (itemsize < 8)
+
+    load_bytes = 2.3 * grid_bytes + n_arrays * data_bytes
+    if n_procs > 1:
+        n_working = 6 if n_voxelwise_confounds == 0 else 4 + 3 * n_voxelwise_confounds
+        denoise_bytes = n_working * data_bytes + 0.3 * gib * n_procs
+    else:
+        n_working = 3.2 + 2 * max(n_voxelwise_confounds, 1) + (2.5 if upcast else 0)
+        denoise_bytes = n_working * data_bytes
+
+    write_bytes = grid_bytes * (2.3 if upcast else 1) + n_arrays * data_bytes + 0.25 * gib
+
+    return (0.25 * gib + max(load_bytes, denoise_bytes, write_bytes)) / gib
 
 
 def is_number(s):
@@ -1084,3 +1353,44 @@ def shrinkme(ac, T):
         BreakPoint[i] = BreakPoint_tmp
 
     return ac * msk, BreakPoint
+
+
+def get_col(df, col):
+    """Get a column from a dataframe, with support for `_hash-<hash>` suffixes.
+
+    Parameters
+    ----------
+    df : :obj:`pandas.DataFrame`
+        The dataframe to get the column from.
+    col : :obj:`str`
+        The column name to get. The actual column name in the DataFrame may have a `_hash-<hash>`
+        suffix.
+
+    Returns
+    -------
+    :obj:`pandas.Series`
+        The column from the dataframe.
+    """
+    import re
+
+    # Pattern to match the base name with optional hash suffix
+    # The hash can contain alphanumeric characters and plus signs
+    pattern = f'^{re.escape(col)}(_hash-[0-9a-zA-Z+]+)?$'
+
+    # Find columns that match the pattern
+    matching_cols = [c for c in df.columns if re.match(pattern, c)]
+
+    if not matching_cols:
+        raise ValueError(
+            f'No column found matching pattern "{pattern}" in DataFrame. '
+            f'Available columns: {list(df.columns)}'
+        )
+
+    # If multiple columns match, prefer the one without hash suffix
+    # (exact match first, then hash variants)
+    exact_match = [c for c in matching_cols if c == col]
+    if exact_match:
+        return df[exact_match[0]]
+    else:
+        # If no exact match, use the first hash variant
+        return df[matching_cols[0]]

@@ -1,7 +1,7 @@
-exclude: ".*/data/.*"
+exclude: ".*/data/.*|.maint/.*_author.*.py|.vscode/.*.json"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         exclude: '.*\.svg'
@@ -11,11 +11,18 @@ repos:
       - id: check-json
       - id: check-toml
       - id: check-added-large-files
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.2
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
     hooks:
-      - id: ruff
-        args: [ --fix ]
+      - id: rst-backticks
+        exclude: ^CHANGES.rst
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.11
+    hooks:
+      - id: ruff-check
+        args: [ --fix, --show-fixes ]
       - id: ruff-format
-      - id: ruff
-        args: [ --select, ISC001, --fix ]
+ci:
+  autoupdate_schedule: monthly

@@ -19,10 +19,12 @@ from nipype.interfaces.base import (
     traits,
 )
 from nipype.interfaces.io import add_traits
+from niworkflows.interfaces import bids as niworkflows_bids
 from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDataSink
 
 from xcp_d.data import load as load_data
 from xcp_d.utils.bids import _get_bidsuris, get_entity
+from xcp_d.utils.write_save import copy_any_isal, write_nifti_isal
 
 # NOTE: Modified for xcpd's purposes
 xcp_d_spec = loads(load_data('xcp_d_bids_config.json').read_text())
@@ -37,6 +39,10 @@ merged_entities = [{'name': k, 'pattern': v} for k, v in merged_entities.items()
 config_entities = frozenset({e['name'] for e in merged_entities})
 
 LOGGER = logging.getLogger('nipype.interface')
+
+# Compress what niworkflows' DerivativesDataSink rewrites or copies with ISA-L instead of zlib.
+niworkflows_bids.unsafe_write_nifti_header_and_data = write_nifti_isal
+niworkflows_bids._copy_any = copy_any_isal
 
 
 class DerivativesDataSink(BaseDerivativesDataSink):
@@ -106,6 +112,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='164k',
                     desc=None,
                     suffix='sphere',
+                    raise_empty=True,
                 )
             )
 
@@ -129,6 +136,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='32k',
                     desc=None,
                     suffix='sphere',
+                    raise_empty=True,
                 )
             )
 
@@ -141,6 +149,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='41k',
                     desc=None,
                     suffix='sphere',
+                    raise_empty=True,
                 ),
             )
 
@@ -153,6 +162,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='41k',
                     desc='reg',
                     suffix='sphere',
+                    raise_empty=True,
                 ),
             )
 
@@ -165,6 +175,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='32k',
                     desc=None,
                     suffix='sphere',
+                    raise_empty=True,
                 ),
             )
 
@@ -253,28 +264,45 @@ class CopyAtlas(SimpleInterface):
         atlas = self.inputs.atlas
         Sources = self.inputs.Sources
 
-        atlas_out_dir = os.path.join(output_dir, f'atlases/atlas-{atlas}')
+        tpl = get_entity(name_source, 'tpl')
+        if not tpl:
+            tpl = get_entity(name_source, 'space')
 
-        if in_file.endswith('.tsv'):
-            out_basename = f'atlas-{atlas}_dseg'
-            extension = '.tsv'
-        else:
-            extension = '.nii.gz' if name_source.endswith('.nii.gz') else '.dlabel.nii'
-            space = get_entity(name_source, 'space')
-            res = get_entity(name_source, 'res')
-            den = get_entity(name_source, 'den')
+        if not tpl:
+            raise ValueError(f'Could not determine template from {name_source}')
+
+        cohort, cohort_str = None, ''
+        if '+' in tpl:
+            # Split the template and cohort
+            tpl, cohort = tpl.split('+')
+            cohort_str = f'cohort-{cohort}_'
+
+        if not cohort:
             cohort = get_entity(name_source, 'cohort')
+            cohort_str = f'cohort-{cohort}_' if cohort else ''
 
-            cohort_str = f'_cohort-{cohort}' if cohort else ''
-            res_str = f'_res-{res}' if res else ''
-            den_str = f'_den-{den}' if den else ''
-            if extension == '.dlabel.nii':
-                out_basename = f'atlas-{atlas}_space-{space}{den_str}{cohort_str}_dseg'
-            elif extension == '.nii.gz':
-                out_basename = f'atlas-{atlas}_space-{space}{res_str}{cohort_str}_dseg'
+        tpl_str = f'tpl-{tpl}_'
 
-        os.makedirs(atlas_out_dir, exist_ok=True)
-        out_file = os.path.join(atlas_out_dir, f'{out_basename}{extension}')
+        output_dir = os.path.join(output_dir, f'tpl-{tpl}')
+        if cohort:
+            output_dir = os.path.join(output_dir, f'cohort-{cohort}')
+
+        res = get_entity(name_source, 'res')
+        res_str = f'_res-{res}' if res else ''
+
+        den = get_entity(name_source, 'den')
+        den_str = f'_den-{den}' if den else ''
+
+        out_basename = f'{tpl_str}{cohort_str}atlas-{atlas}{res_str}{den_str}_dseg'
+        if in_file.endswith('.tsv'):
+            extension = '.tsv'
+        elif in_file.endswith('.dlabel.nii'):
+            extension = '.dlabel.nii'
+        else:
+            extension = '.nii.gz'
+
+        os.makedirs(output_dir, exist_ok=True)
+        out_file = os.path.join(output_dir, f'{out_basename}{extension}')
 
         if out_file.endswith('.nii.gz') and os.path.isfile(out_file):
             # Check that native-resolution atlas doesn't have a different resolution from the last
@@ -290,14 +318,14 @@ class CopyAtlas(SimpleInterface):
         # Don't copy the file if it exists, to prevent any race conditions between parallel
         # processes.
         if not os.path.isfile(out_file):
-            lock_file = os.path.join(atlas_out_dir, f'{out_basename}{extension}.lock')
+            lock_file = os.path.join(output_dir, f'{out_basename}{extension}.lock')
             with filelock.SoftFileLock(lock_file, timeout=60):
                 shutil.copyfile(in_file, out_file)
 
         # Only write out a sidecar if metadata are provided
         if meta_dict or Sources:
-            meta_file = os.path.join(atlas_out_dir, f'{out_basename}.json')
-            lock_meta = os.path.join(atlas_out_dir, f'{out_basename}.json.lock')
+            meta_file = os.path.join(output_dir, f'{out_basename}.json')
+            lock_meta = os.path.join(output_dir, f'{out_basename}.json.lock')
             meta_dict = meta_dict or {}
             meta_dict = meta_dict.copy()
             if Sources:
@@ -306,6 +334,69 @@ class CopyAtlas(SimpleInterface):
             with filelock.SoftFileLock(lock_meta, timeout=60):
                 with open(meta_file, 'w') as fo:
                     dump(meta_dict, fo, sort_keys=True, indent=4)
+
+        self._results['out_file'] = out_file
+
+        return runtime
+
+
+class _CopyAtlasDescriptionInputSpec(BaseInterfaceInputSpec):
+    in_dir = Directory(
+        exists=True,
+        desc='The atlas directory to copy the description file from.',
+        mandatory=True,
+    )
+    atlas_name = traits.Str(
+        desc='The name of the atlas.',
+        mandatory=True,
+    )
+    output_dir = Directory(
+        exists=True,
+        desc='The output directory.',
+        mandatory=True,
+    )
+
+
+class _CopyAtlasDescriptionOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc='The copied atlas file.',
+    )
+
+
+class CopyAtlasDescription(SimpleInterface):
+    """Copy atlas description file to output directory.
+
+    Parameters
+    ----------
+    in_file : :obj:`str`
+        The atlas file to copy.
+    output_dir : :obj:`str`
+        The output directory.
+
+    Returns
+    -------
+    out_file : :obj:`str`
+        The path to the copied atlas description file.
+    """
+
+    input_spec = _CopyAtlasDescriptionInputSpec
+    output_spec = _CopyAtlasDescriptionOutputSpec
+
+    def _run_interface(self, runtime):
+        output_dir = self.inputs.output_dir
+        in_dir = self.inputs.in_dir
+        atlas_name = self.inputs.atlas_name
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        in_file = os.path.join(in_dir, f'atlas-{atlas_name}_description.json')
+        if not os.path.isfile(in_file):
+            raise FileNotFoundError(f'Atlas description file not found: {in_file}')
+
+        out_file = os.path.join(output_dir, f'atlas-{atlas_name}_description.json')
+        if not os.path.isfile(out_file):
+            shutil.copyfile(in_file, out_file)
 
         self._results['out_file'] = out_file
 
@@ -360,6 +451,101 @@ class BIDSURI(SimpleInterface):
         metadata = self.inputs.metadata or {}
         metadata = metadata.copy()
         metadata[self.inputs.field] = metadata.get(self.inputs.field, []) + uris
+        self._results['metadata'] = metadata
+
+        return runtime
+
+
+class _AddHashToTSVInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        desc='The TSV file to add the hash to.',
+        mandatory=True,
+    )
+    parameters_hash = traits.Str(
+        desc='The hash to add to the TSV file.',
+        mandatory=False,
+    )
+    add_to_columns = traits.Bool(
+        False,
+        usedefault=True,
+        desc='Whether to add the hash to the columns of the TSV file.',
+    )
+    add_to_rows = traits.Bool(
+        False,
+        usedefault=True,
+        desc='Whether to add the hash to the rows of the TSV file.',
+    )
+    metadata = traits.Dict(
+        desc='The metadata dictionary.',
+        mandatory=False,
+    )
+
+
+class _AddHashToTSVOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc='The TSV file with the hash added.',
+    )
+    metadata = traits.Dict(
+        desc='The metadata dictionary.',
+    )
+
+
+class AddHashToTSV(SimpleInterface):
+    """Add a hash to columns and/or rows of a TSV file."""
+
+    input_spec = _AddHashToTSVInputSpec
+    output_spec = _AddHashToTSVOutputSpec
+
+    def _run_interface(self, runtime):
+        import pandas as pd
+        from nipype.interfaces.base import isdefined
+
+        if not isdefined(self.inputs.parameters_hash):
+            self._results['out_file'] = self.inputs.in_file
+            self._results['metadata'] = self.inputs.metadata
+            return runtime
+
+        metadata = self.inputs.metadata or {}
+        hash_ = self.inputs.parameters_hash
+
+        # Read the TSV file
+        df = pd.read_table(self.inputs.in_file)
+        index_col = df.columns[0]
+        if self.inputs.add_to_rows:
+            df[index_col] = [
+                f'{idx}_hash-{hash_}' if '_hash-' not in idx else idx
+                for idx in df[index_col].tolist()
+            ]
+
+        if self.inputs.add_to_columns:
+            cols_to_rename = df.columns.tolist()
+            if self.inputs.add_to_rows:
+                # Don't rename the first column (specific to correlation matrices)
+                cols_to_rename = cols_to_rename[1:]
+
+            cols_to_rename = [c for c in cols_to_rename if '_hash-' not in c]
+
+            if isdefined(self.inputs.metadata):
+                metadata = self.inputs.metadata.copy()
+                for col in cols_to_rename:
+                    if col in self.inputs.metadata:
+                        # Rename the key to include the hash
+                        metadata[f'{col}_hash-{hash_}'] = metadata.pop(col)
+
+            df.rename(
+                columns={col: f'{col}_hash-{hash_}' for col in cols_to_rename},
+                inplace=True,
+            )
+
+        # Write the updated TSV file
+        out_file = os.path.abspath(os.path.basename(self.inputs.in_file))
+        df.to_csv(out_file, sep='\t', index=False, na_rep='n/a')
+        self._results['out_file'] = out_file
+
+        # Update the metadata dictionary
+        metadata['ConfigurationHash'] = hash_
         self._results['metadata'] = metadata
 
         return runtime

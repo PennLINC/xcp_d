@@ -15,6 +15,7 @@ from xcp_d.cli.parser import parse_args
 from xcp_d.cli.workflow import build_boilerplate, build_workflow
 from xcp_d.reports.core import generate_reports
 from xcp_d.tests.utils import (
+    chdir,
     check_affines,
     check_generated_files,
     download_test_data,
@@ -57,10 +58,12 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         '--nuisance-regressors=aroma_gsr',
         '--dummy-scans=4',
         '--fd-thresh=0.2',
+        '--censor-between=0',
         '--head_radius=40',
         '--motion-filter-type=lp',
         '--band-stop-min=6',
-        '--skip-parcellation',
+        '--skip',
+        'parcellation',
         '--min-coverage=0.4',
         '--min-time=100',
         '--smoothing=6',
@@ -73,6 +76,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         '--input-type=fmriprep',
         '--warp-surfaces-native2std=n',
         '--report-output-level=root',
+        '--output-run-wise-correlations=y',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -116,10 +120,9 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         '--create-matrices',
         '80',
         '200',
+        'all',
         '--atlases',
         '4S156Parcels',
-        '4S256Parcels',
-        '4S356Parcels',
         '4S456Parcels',
         '--linc-qc',
         '--report-output-level=subject',
@@ -275,12 +278,15 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         '--create-matrices=all',
         '--linc-qc=n',
         '--report-output-level=root',
+        '--output-layout=multiverse',
+        '--skip',
+        'reho',
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
         input_type='cifti',
-        test_main=False,
+        test_main=True,
     )
 
 
@@ -334,7 +340,8 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     )
 
     # Run combine-qc too
-    combineqc.main([out_dir, 'summary'])
+    with chdir(out_dir):
+        combineqc.main([out_dir, 'summary'])
 
 
 @pytest.mark.integration
@@ -388,7 +395,8 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
     )
 
     # Run combine-qc too
-    combineqc.main([out_dir, 'summary'])
+    with chdir(out_dir):
+        combineqc.main([out_dir, 'summary'])
 
 
 @pytest.mark.integration
@@ -461,10 +469,11 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         write_derivative_description(
             config.execution.fmri_dir,
             config.execution.output_dir,
+            parameters_hash=config.execution.parameters_hash,
             dataset_links=config.execution.dataset_links,
         )
         if config.execution.atlases:
-            write_atlas_dataset_description(config.execution.output_dir / 'atlases')
+            write_atlas_dataset_description(config.execution.output_dir / 'sourcedata' / 'atlases')
 
         build_boilerplate(str(config_file), xcpd_wf)
         generate_reports(

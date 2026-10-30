@@ -227,6 +227,13 @@ class FilterOutFailedRuns(SimpleInterface):
         if len(successful_runs) < n_runs:
             LOGGER.warning(f'Of {n_runs} runs, only runs {successful_runs} were successful.')
 
+        if not successful_runs:
+            LOGGER.warning('No successful runs found. Returning empty outputs.')
+            self._results['denoised_bold'] = []
+            for input_name in inputs_to_filter:
+                self._results[input_name] = []
+            return runtime
+
         self._results['denoised_bold'] = [denoised_bold[i] for i in successful_runs]
 
         for input_name, input_list in inputs_to_filter.items():
@@ -409,7 +416,8 @@ class ConcatenateInputs(SimpleInterface):
                     else:
                         concatenate_niimgs(parc_files, out_file=out_file)
 
-                    assert os.path.isfile(out_file), f'Output file {out_file} not created.'
+                    if not os.path.isfile(out_file):
+                        raise RuntimeError(f'Output file {out_file} not created.')
                     out_files.append(out_file)
 
                 self._results[name] = out_files
@@ -422,7 +430,8 @@ class ConcatenateInputs(SimpleInterface):
                 else:
                     concatenate_niimgs(run_files, out_file=out_file)
 
-                assert os.path.isfile(out_file), f'Output file {out_file} not created.'
+                if not os.path.isfile(out_file):
+                    raise RuntimeError(f'Output file {out_file} not created.')
                 self._results[name] = out_file
 
         return runtime

@@ -234,8 +234,10 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
     is_modified = False
     if motion_filter_type == 'lp':  # low-pass filter
         # Remove any frequencies above band_stop_min.
-        assert band_stop_min is not None
-        assert band_stop_min > 0
+        if band_stop_min is None:
+            raise ValueError('band_stop_min must be set for low-pass motion filter.')
+        if band_stop_min <= 0:
+            raise ValueError(f'band_stop_min must be positive, got {band_stop_min}.')
         if band_stop_max:
             warnings.warn("The parameter 'band_stop_max' will be ignored.", stacklevel=2)
 
@@ -261,11 +263,18 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
 
     elif motion_filter_type == 'notch':  # notch filter
         # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
-        assert band_stop_max is not None
-        assert band_stop_min is not None
-        assert band_stop_max > 0
-        assert band_stop_min > 0
-        assert band_stop_min < band_stop_max, f'{band_stop_min} >= {band_stop_max}'
+        if band_stop_max is None:
+            raise ValueError('band_stop_max must be set for notch motion filter.')
+        if band_stop_min is None:
+            raise ValueError('band_stop_min must be set for notch motion filter.')
+        if band_stop_max <= 0:
+            raise ValueError(f'band_stop_max must be positive, got {band_stop_max}.')
+        if band_stop_min <= 0:
+            raise ValueError(f'band_stop_min must be positive, got {band_stop_min}.')
+        if band_stop_min >= band_stop_max:
+            raise ValueError(
+                f'band_stop_min ({band_stop_min}) must be < band_stop_max ({band_stop_max}).'
+            )
 
         stopband = np.array([band_stop_min, band_stop_max])
         stopband_hz = stopband / 60  # change BPM to Hertz

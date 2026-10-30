@@ -25,8 +25,7 @@ Additionally, each of these should be in directories that can be parsed by the B
 (even if it is not BIDS valid - we do not require BIDS valid directories).
 The directories must also include a valid `dataset_description.json`.
 
-The exact command to run in *XCP-D* depends on the :doc:`installation` method and data that needs to be
-processed.
+The exact command to run in *XCP-D* depends on the :doc:`installation` method and data that needs to be processed.
 We start first with the *bare-metal* :ref:`installation_manually_prepared_environment`
 installation, as the command line is simpler.
 *XCP-D* can be executed on the command line, processesing fMRIPrep outputs, using the following
@@ -141,6 +140,41 @@ Command-Line Arguments
             -  A very-inflated midthicknesss surface (also for visualization).
                This is derived from the HCP midthickness file.
                This file is only created if the input type is "fmriprep" or "nibabies".
+
+   --skip : @after
+      The ``--skip`` parameter allows you to selectively skip certain postprocessing steps,
+      which can significantly reduce processing time when you don't need all outputs.
+
+      Available options:
+
+      -  ``alff``: Skip ALFF (Amplitude of Low-Frequency Fluctuation) calculation.
+         Note that ALFF is only calculated when bandpass filtering is enabled (``--bandpass-filter``).
+      -  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
+      -  ``parcellation``: Skip parcellation and time series extraction.
+         This is equivalent to using ``--atlases`` with an empty list.
+         **This will automatically skip connectivity as well, since connectivity requires parcellated data.**
+      -  ``connectivity``: Skip functional connectivity matrix calculations.
+         Parcellation will still be performed to extract time series,
+         but correlation matrices will not be computed.
+
+      You can specify multiple options to skip several steps at once.
+
+      .. code-block:: bash
+
+         # Skip ALFF and ReHo calculations
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip alff reho
+
+         # Skip only connectivity (parcellation still runs to extract time series)
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip connectivity
+
+         # Skip parcellation (this automatically skips connectivity too)
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip parcellation
+
+      .. tip::
+
+         Use ``--skip`` to optimize processing time when you only need specific outputs.
+         For example, if you need parcellated time series but not connectivity matrices,
+         use ``--skip connectivity``. If you don't need either, use ``--skip parcellation``.
 
 
 **************
@@ -552,31 +586,24 @@ External Atlases
 While *XCP-D* comes with many built-in parcellations,
 we understand that many users will want to use different ones.
 
-As long as the parcellation is organized in a BIDS-Atlas dataset and is in
+As long as the parcellation is organized according to BIDS v1.11.0 and is in
 fsLR-32k space (for CIFTI processing) or
 MNIInfant, MNI152NLin6Asym, or MNI152NLin2009cAsym space (for NIfTI processing),
 you can use it with *XCP-D*.
 
-.. warning::
-   BIDS Extension Proposal 38 (Atlas Specification) has not been integrated in BIDS yet,
-   so the organization and naming for atlas datasets may change in the future.
-
-   We have attempted to follow the proposed structure in *XCP-D*,
-   but we cannot guarantee that this will not change.
-
 .. tip::
    The main elements from the BIDS-Atlas dataset that *XCP-D* uses are:
 
-   1. There must be a dataset_description.json file with DatasetType set to "atlas".
+   1. There must be a dataset_description.json file with DatasetType set to "derivative".
    2. The atlas metadata files must have the same entities as the atlas image files,
-      as PyBIDS does not support the inheritance principle when querying BIDS-Atlas datasets (yet).
-   3. There must be a TSV file for the atlas, with "index" and "label" columns.
+      as PyBIDS does not support the inheritance principle when querying atlas datasets (yet).
+   3. There must be a TSV file for the atlas, with "index" and "name" columns.
 
 To do this, use the ``--datasets`` and ``--atlases`` parameters.
 The ``--datasets`` parameter should point to the directory containing the BIDS-Atlas dataset,
 and the ``--atlases`` parameter should include the names of the atlases in the dataset to use.
 
-For example, consider a scenario where you have two BIDS-Atlas datasets, one containing all of the
+For example, consider a scenario where you have two BIDS atlas datasets, one containing all of the
 Schaefer 2018 resolutions and one containing the AAL atlas.
 These datasets are in ``/data/atlases/schaefer`` and ``/data/atlases/aal``, respectively.
 The file structure for these two datasets might look like this:
@@ -586,25 +613,28 @@ The file structure for these two datasets might look like this:
    /data/atlases/
       schaefer/
          dataset_description.json
-         atlas-Schaefer100/
-            atlas-Schaefer100_dseg.tsv
-            atlas-Schaefer100_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-Schaefer100_space-fsLR_den-32k_dseg.json
-         atlas-Schaefer200/
-            atlas-Schaefer200_dseg.tsv
-            atlas-Schaefer200_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-Schaefer200_space-fsLR_den-32k_dseg.json
+         atlas-Schaefer100_description.json
+         atlas-Schaefer200_description.json
          ...
-         atlas-Schaefer1000/
-            atlas-Schaefer1000_dseg.tsv
-            atlas-Schaefer1000_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-Schaefer1000_space-fsLR_den-32k_dseg.json
+         atlas-Schaefer1000_description.json
+         tpl-fsLR/
+            tpl-fsLR_atlas-Schaefer100_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-Schaefer100_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer100_den-32k_dseg.tsv
+            tpl-fsLR_atlas-Schaefer200_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-Schaefer200_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer200_den-32k_dseg.tsv
+            ...
+            tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.tsv
       aal/
          dataset_description.json
-         atlas-AAL/
-            atlas-AAL_dseg.tsv
-            atlas-AAL_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-AAL_space-fsLR_den-32k_dseg.json
+         atlas-AAL_description.json
+         tpl-fsLR/
+            tpl-fsLR_atlas-AAL_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-AAL_den-32k_dseg.json
+            tpl-fsLR_atlas-AAL_den-32k_dseg.tsv
 
 You may want to only apply the Schaefer100 atlas from the ``schaefer`` dataset and the AAL atlas
 from the ``aal`` dataset, along with one of *XCP-D*'s built-in atlases (``4S156Parcels``).
@@ -618,7 +648,7 @@ Here's what the *XCP-D* call might look like:
       /home/user/data/path/to/output_dir \
       participant \ # analysis_level
       --mode <mode> \ # required
-      --datasets schaefer=/home/user/data/path/to/schaefer_atlas aal==/home/user/data/path/to/aal_atlas \
+      --datasets schaefer=/data/atlases/schaefer aal==/data/atlases/aal \
       --atlases Schaefer100 AAL 4S156Parcels
 
 *XCP-D* will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
@@ -627,7 +657,7 @@ If the atlases are found, then they will be used for parcellation.
 
 .. important::
 
-   Atlas names must be unique across BIDS-Atlas datasets.
+   Atlas names must be unique across BIDS atlas datasets.
    If two atlases have the same name, *XCP-D* will raise an error.
 
 

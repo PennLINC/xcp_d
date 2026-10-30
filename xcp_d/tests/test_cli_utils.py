@@ -12,11 +12,11 @@ def test_int_or_auto():
     """Test parser_utils._int_or_auto."""
     with pytest.raises(
         ArgumentTypeError,
-        match="Argument must be a nonnegative integer or 'auto'.",
+        match="Argument must be a nonnegative integer or 'auto'",
     ):
         parser_utils._int_or_auto('hello')
 
-    with pytest.raises(ArgumentTypeError, match='Int argument must be nonnegative.'):
+    with pytest.raises(ArgumentTypeError, match='Int argument must be nonnegative'):
         parser_utils._int_or_auto(-2)
 
     out = parser_utils._int_or_auto('auto')
@@ -33,11 +33,11 @@ def test_float_or_auto():
     """Test parser_utils._float_or_auto."""
     with pytest.raises(
         ArgumentTypeError,
-        match="Argument must be a nonnegative float or 'auto'.",
+        match="Argument must be a nonnegative float or 'auto'",
     ):
         parser_utils._float_or_auto('hello')
 
-    with pytest.raises(ArgumentTypeError, match='Float argument must be nonnegative.'):
+    with pytest.raises(ArgumentTypeError, match='Float argument must be nonnegative'):
         parser_utils._float_or_auto(-2)
 
     out = parser_utils._float_or_auto('auto')
@@ -69,11 +69,11 @@ def test_float_or_auto_or_none():
     """Test parser_utils._float_or_auto_or_none."""
     with pytest.raises(
         ArgumentTypeError,
-        match="Argument must be a nonnegative float, 'all', or 'none', not 'hello'.",
+        match="Argument must be a nonnegative float, 'all', or 'none', not 'hello'",
     ):
         parser_utils._float_or_auto_or_none('hello')
 
-    with pytest.raises(ArgumentTypeError, match='Float argument must be nonnegative.'):
+    with pytest.raises(ArgumentTypeError, match='Float argument must be nonnegative'):
         parser_utils._float_or_auto_or_none(-2)
 
     out = parser_utils._float_or_auto_or_none('all')
@@ -232,3 +232,38 @@ def test_confounds_action(tmp_path):
     # Path to a non-existent file should raise an error
     with pytest.raises(SystemExit):
         parser.parse_args(['--confounds', '/invalid/path/to/confounds.yml'])
+
+
+def test_task_id_argument(tmp_path_factory):
+    """Test that --task-id accepts space-delimited list and removes 'task-' prefix."""
+    from xcp_d.cli.parser import _build_parser
+
+    # Create temporary directories for input and output
+    tmpdir = tmp_path_factory.mktemp('test_task_id')
+    input_dir = tmpdir / 'input'
+    output_dir = tmpdir / 'output'
+    input_dir.mkdir()
+    output_dir.mkdir()
+
+    parser = _build_parser()
+    base_args = [str(input_dir), str(output_dir), 'participant', '--mode', 'none']
+
+    # Single task-id without prefix
+    args = parser.parse_args(base_args + ['--task-id', 'rest'])
+    assert args.task_id == ['rest']
+
+    # Single task-id with prefix
+    args = parser.parse_args(base_args + ['--task-id', 'task-rest'])
+    assert args.task_id == ['rest']
+
+    # Multiple task-ids without prefix
+    args = parser.parse_args(base_args + ['--task-id', 'rest', 'imagery', 'nback'])
+    assert args.task_id == ['rest', 'imagery', 'nback']
+
+    # Multiple task-ids with prefix
+    args = parser.parse_args(base_args + ['--task-id', 'task-rest', 'task-imagery'])
+    assert args.task_id == ['rest', 'imagery']
+
+    # Mixed prefix usage
+    args = parser.parse_args(base_args + ['--task-id', 'rest', 'task-imagery'])
+    assert args.task_id == ['rest', 'imagery']

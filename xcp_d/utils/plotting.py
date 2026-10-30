@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting tools."""
 
+import itertools
 import os
 
 import matplotlib.pyplot as plt
@@ -11,8 +12,8 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import gridspec as mgs
 from matplotlib.colors import ListedColormap
-from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import safe_get_data
+from nilearn._utils.niimg_conversions import check_niimg_4d
 from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
@@ -103,7 +104,7 @@ def plot_confounds(
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    xticks = list(range(ntsteps)[::interval])
     time_series_axis.set_xticks(xticks)
 
     # Set x_axis
@@ -261,7 +262,7 @@ def plot_dvars_es(time_series, ax, run_index=None):
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    xticks = list(range(ntsteps)[::interval])
     ax.set_xticks(xticks)
     ax.set_xticklabels([])
 
@@ -314,7 +315,7 @@ def plot_global_signal_es(time_series, ax, run_index=None):
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    xticks = list(range(ntsteps)[::interval])
     ax.set_xticks(xticks)
     ax.set_xticklabels([])
 
@@ -389,7 +390,7 @@ def plot_framewise_displacement_es(
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    xticks = list(range(ntsteps)[::interval])
     ax.set_xticks(xticks)
 
     # Set the x-axis labels based on time, not index
@@ -527,6 +528,8 @@ def plot_fmri_es(
         An index indicating splits between runs, for concatenated data.
         If not None, this should be an array/list of integers, indicating the volumes.
     """
+    from xcp_d.utils.utils import get_col
+
     # Compute dvars correctly if not already done
     preprocessed_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     denoised_interpolated_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
@@ -550,13 +553,14 @@ def plot_fmri_es(
     )
 
     motion_df = pd.read_table(motion_file)
-    if 'framewise_displacement_filtered' in motion_df.columns:
-        fd_regressor = motion_df['framewise_displacement_filtered'].values
+    if any(col.startswith('framewise_displacement_filtered') for col in motion_df.columns):
+        fd_regressor = get_col(motion_df, 'framewise_displacement_filtered').values
     else:
-        fd_regressor = motion_df['framewise_displacement'].values
+        fd_regressor = get_col(motion_df, 'framewise_displacement').values
 
     if temporal_mask:
-        tmask_arr = pd.read_table(temporal_mask)['framewise_displacement'].values.astype(bool)
+        tmask_df = pd.read_table(temporal_mask)
+        tmask_arr = get_col(tmask_df, 'denoising').values.astype(bool)
     else:
         tmask_arr = np.zeros(fd_regressor.shape, dtype=bool)
 
@@ -708,7 +712,7 @@ class FMRIPlot:
     spikes_files
     """
 
-    __slots__ = ('func_file', 'mask_data', 'TR', 'seg_data', 'confounds', 'spikes')
+    __slots__ = ('TR', 'confounds', 'func_file', 'mask_data', 'seg_data', 'spikes')
 
     def __init__(
         self,
@@ -866,9 +870,8 @@ def plot_carpet(
     img = nb.load(func)
 
     if isinstance(img, nb.Cifti2Image):  # CIFTI
-        assert img.nifti_header.get_intent()[0] == 'ConnDenseSeries', (
-            f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}'
-        )
+        if img.nifti_header.get_intent()[0] != 'ConnDenseSeries':
+            raise ValueError(f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}')
 
         # Get required information
         data = img.get_fdata().T
@@ -890,7 +893,8 @@ def plot_carpet(
                 lidx = 3
             index_final = brain_model.index_offset + brain_model.index_count
             seg_data[brain_model.index_offset : index_final] = lidx
-        assert len(seg_data[seg_data < 1]) == 0, 'Unassigned labels'
+        if len(seg_data[seg_data < 1]) != 0:
+            raise ValueError('Unassigned labels')
 
     else:  # Volumetric NIfTI
         img_nii = check_niimg_4d(img, dtype='auto')  # Check the image is in nifti format
@@ -917,9 +921,8 @@ def plot_carpet(
         order = seg_data.argsort(kind='stable')
         # Get color maps
         cmap = ListedColormap([plt.get_cmap('Paired').colors[i] for i in (1, 0, 7, 3)])
-        assert len(cmap.colors) == len(struct_map), (
-            'Mismatch between expected # of structures and colors'
-        )
+        if len(cmap.colors) != len(struct_map):
+            raise ValueError('Mismatch between expected # of structures and colors')
     else:
         # Order following segmentation labels
         order = np.argsort(seg_data)[::-1]
@@ -981,9 +984,7 @@ def plot_carpet(
         labels = ['Left Cortex', 'Right Cortex', 'Subcortical', 'Cerebellum']
 
     # Formatting the plot
-    tick_locs = []
-    for y in np.unique(seg_data[order]):
-        tick_locs.append(np.argwhere(seg_data[order] == y).mean())
+    tick_locs = [np.argwhere(seg_data[order] == y).mean() for y in np.unique(seg_data[order])]
 
     ax0.set_yticks(tick_locs)
     ax0.set_yticklabels(labels, fontdict={'fontsize': labelsize}, rotation=0, va='center')
@@ -1012,12 +1013,10 @@ def plot_carpet(
     if temporal_mask is not None:
         # Add color bands to the carpet plot corresponding to censored volumes
         outlier_idx = list(np.where(temporal_mask)[0])
-        gaps = [
-            [start, end]
-            for start, end in zip(outlier_idx, outlier_idx[1:], strict=False)
-            if start + 1 < end
-        ]
-        edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
+        gaps = [[start, end] for start, end in itertools.pairwise(outlier_idx) if start + 1 < end]
+        edges = iter(
+            outlier_idx[:1] + list(itertools.chain.from_iterable(gaps)) + outlier_idx[-1:]
+        )
         consecutive_outliers_idx = list(zip(edges, edges, strict=False))
         for band in consecutive_outliers_idx:
             start = band[0] - 0.5
@@ -1063,7 +1062,8 @@ def surf_data_from_cifti(data, axis, surf_name):
     https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/\
     we-nibabel-markiewicz/NiBabel.ipynb
     """
-    assert isinstance(axis, nb.cifti2.BrainModelAxis | nb.cifti2.ParcelsAxis)
+    if not isinstance(axis, (nb.cifti2.BrainModelAxis, nb.cifti2.ParcelsAxis)):
+        raise TypeError(f'axis must be BrainModelAxis or ParcelsAxis, got {type(axis)}')
     if isinstance(axis, nb.cifti2.BrainModelAxis):
         for name, data_indices, model in axis.iter_structures():
             # Iterates over volumetric and surface structures
@@ -1117,15 +1117,17 @@ def plot_design_matrix(design_matrix, temporal_mask=None):
     import pandas as pd
     from nilearn import plotting
 
+    from xcp_d.utils.utils import get_col
+
     design_matrix_df = pd.read_table(design_matrix)
     if temporal_mask:
         censoring_df = pd.read_table(temporal_mask)
-        n_motion_outliers = censoring_df['framewise_displacement'].sum()
+        n_motion_outliers = get_col(censoring_df, 'denoising').sum()
         motion_outliers_df = pd.DataFrame(
             data=np.zeros((censoring_df.shape[0], n_motion_outliers), dtype=np.int16),
             columns=[f'outlier{i}' for i in range(1, n_motion_outliers + 1)],
         )
-        motion_outlier_idx = np.where(censoring_df['framewise_displacement'])[0]
+        motion_outlier_idx = np.where(get_col(censoring_df, 'denoising'))[0]
         for i_outlier, outlier_col in enumerate(motion_outliers_df.columns):
             outlier_row = motion_outlier_idx[i_outlier]
             motion_outliers_df.loc[outlier_row, outlier_col] = 1

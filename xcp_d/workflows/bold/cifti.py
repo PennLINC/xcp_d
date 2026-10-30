@@ -11,7 +11,7 @@ from num2words import num2words
 from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _create_mem_gb
+from xcp_d.utils.utils import _estimate_denoise_mem_gb
 from xcp_d.workflows.bold.connectivity import init_functional_connectivity_cifti_wf
 from xcp_d.workflows.bold.metrics import init_alff_wf, init_reho_cifti_wf
 from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
@@ -20,6 +20,7 @@ from xcp_d.workflows.bold.plotting import (
     init_qc_report_wf,
 )
 from xcp_d.workflows.bold.postprocessing import (
+    _count_voxelwise_confounds,
     init_denoise_bold_wf,
     init_despike_wf,
     init_prepare_confounds_wf,
@@ -36,7 +37,8 @@ def init_postprocess_cifti_wf(
     t1w_available,
     t2w_available,
     n_runs,
-    exact_scans,
+    has_multiple_runs,
+    mem_gb,
     name='cifti_postprocess_wf',
 ):
     """Organize the cifti processing workflow.
@@ -54,6 +56,7 @@ def init_postprocess_cifti_wf(
             from xcp_d.workflows.bold.cifti import init_postprocess_cifti_wf
 
             with mock_config():
+                layout = config.execution.layout
                 bold_file = str(
                     config.execution.fmri_dir / "sub-01" / "func" /
                     "sub-01_task-imagery_run-01_space-fsLR_den-91k_bold.dtseries.nii"
@@ -61,10 +64,13 @@ def init_postprocess_cifti_wf(
 
                 run_data = collect_run_data(
                     layout=layout,
-                    input_type="fmriprep",
                     bold_file=bold_file,
-                    cifti=True,
+                    file_format="cifti",
+                    target_space="MNI152NLin2009cAsym",
                 )
+                run_data['confounds'] = None
+
+                from xcp_d.utils.utils import _create_mem_gb
 
                 wf = init_postprocess_cifti_wf(
                     bold_file=bold_file,
@@ -73,7 +79,8 @@ def init_postprocess_cifti_wf(
                     t1w_available=True,
                     t2w_available=True,
                     n_runs=1,
-                    exact_scans=[],
+                    has_multiple_runs=False,
+                    mem_gb=_create_mem_gb(bold_file),
                     name="cifti_postprocess_wf",
                 )
 
@@ -88,7 +95,11 @@ def init_postprocess_cifti_wf(
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
-    %(exact_scans)s
+    has_multiple_runs
+        Whether there are multiple runs for this task or not.
+        Interacts with the output_run_wise_correlations parameter.
+    mem_gb : :obj:`dict`
+        Dictionary of memory allocations with keys ``'bold'`` and ``'volume'``.
     %(name)s
         Default is "cifti_postprocess_wf".
 
@@ -201,12 +212,10 @@ the following post-processing was performed.
         name='outputnode',
     )
 
-    mem_gbx = _create_mem_gb(bold_file)
-
     downcast_data = pe.Node(
         ConvertTo32(),
         name='downcast_data',
-        mem_gb=mem_gbx['timeseries'],
+        mem_gb=mem_gb['bold'],
     )
 
     workflow.connect([
@@ -219,8 +228,8 @@ the following post-processing was performed.
 
     prepare_confounds_wf = init_prepare_confounds_wf(
         TR=TR,
-        exact_scans=exact_scans,
         head_radius=head_radius,
+        mem_gb=mem_gb,
     )
 
     workflow.connect([
@@ -236,7 +245,12 @@ the following post-processing was performed.
         ]),
     ])  # fmt:skip
 
-    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb=mem_gbx)
+    denoise_mem_gb = _estimate_denoise_mem_gb(
+        bold_file=bold_file,
+        n_voxelwise_confounds=_count_voxelwise_confounds(),
+        n_procs=config.nipype.omp_nthreads,
+    )
+    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb={**mem_gb, 'denoise': denoise_mem_gb})
 
     workflow.connect([
         (prepare_confounds_wf, denoise_bold_wf, [
@@ -251,7 +265,7 @@ the following post-processing was performed.
     ])  # fmt:skip
 
     if despike:
-        despike_wf = init_despike_wf(TR=TR)
+        despike_wf = init_despike_wf(TR=TR, mem_gb=mem_gb)
 
         workflow.connect([
             (prepare_confounds_wf, despike_wf, [
@@ -269,8 +283,13 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
-    if bandpass_filter:
-        alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gbx)
+    # Determine whether ALFF should be skipped. ALFF is only meaningful when
+    # bandpass filtering is enabled; users may also explicitly request it be
+    # skipped via the --skip parameter.
+    skip_alff = (not bandpass_filter) or ('alff' in config.workflow.skip_outputs)
+
+    if not skip_alff:
+        alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gb)
 
         workflow.connect([
             (inputnode, alff_wf, [
@@ -285,21 +304,25 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
-    reho_wf = init_reho_cifti_wf(name_source=bold_file, mem_gb=mem_gbx)
+    # Skip ReHo calculation if requested
+    skip_reho = 'reho' in config.workflow.skip_outputs
+    if not skip_reho:
+        reho_wf = init_reho_cifti_wf(name_source=bold_file, mem_gb=mem_gb)
 
-    workflow.connect([
-        (inputnode, reho_wf, [
-            ('lh_midthickness', 'inputnode.lh_midthickness'),
-            ('rh_midthickness', 'inputnode.rh_midthickness'),
-        ]),
-        (denoise_bold_wf, reho_wf, [
-            ('outputnode.censored_denoised_bold', 'inputnode.denoised_bold'),
-        ]),
-    ])  # fmt:skip
+        workflow.connect([
+            (inputnode, reho_wf, [
+                ('lh_midthickness', 'inputnode.lh_midthickness'),
+                ('rh_midthickness', 'inputnode.rh_midthickness'),
+            ]),
+            (denoise_bold_wf, reho_wf, [
+                ('outputnode.censored_denoised_bold', 'inputnode.denoised_bold'),
+            ]),
+        ])  # fmt:skip
 
     qc_report_wf = init_qc_report_wf(
         TR=TR,
         head_radius=head_radius,
+        mem_gb=mem_gb,
         name='qc_report_wf',
     )
 
@@ -320,7 +343,7 @@ the following post-processing was performed.
     postproc_derivatives_wf = init_postproc_derivatives_wf(
         name_source=bold_file,
         source_metadata=run_data['bold_metadata'],
-        exact_scans=exact_scans,
+        has_multiple_runs=has_multiple_runs,
     )
 
     workflow.connect([
@@ -342,7 +365,6 @@ the following post-processing was performed.
             ('outputnode.temporal_mask', 'inputnode.temporal_mask'),
             ('outputnode.temporal_mask_metadata', 'inputnode.temporal_mask_metadata'),
         ]),
-        (reho_wf, postproc_derivatives_wf, [('outputnode.reho', 'inputnode.reho')]),
         (postproc_derivatives_wf, outputnode, [
             ('outputnode.motion_file', 'motion_file'),
             ('outputnode.temporal_mask', 'temporal_mask'),
@@ -353,7 +375,14 @@ the following post-processing was performed.
         ]),
     ])  # fmt:skip
 
-    if bandpass_filter:
+    # Connect ReHo workflow if not skipped
+    if not skip_reho:
+        workflow.connect([
+            (reho_wf, postproc_derivatives_wf, [('outputnode.reho', 'inputnode.reho')]),
+        ])  # fmt:skip
+
+    # Connect ALFF workflow if not skipped
+    if not skip_alff:
         workflow.connect([
             (alff_wf, postproc_derivatives_wf, [
                 ('outputnode.alff', 'inputnode.alff'),
@@ -363,8 +392,10 @@ the following post-processing was performed.
 
     if config.execution.atlases:
         connectivity_wf = init_functional_connectivity_cifti_wf(
-            mem_gb=mem_gbx,
-            exact_scans=exact_scans,
+            mem_gb=mem_gb,
+            has_multiple_runs=has_multiple_runs,
+            skip_reho=skip_reho,
+            skip_alff=skip_alff,
         )
 
         workflow.connect([
@@ -382,7 +413,6 @@ the following post-processing was performed.
             (denoise_bold_wf, connectivity_wf, [
                 ('outputnode.denoised_bold', 'inputnode.denoised_bold'),
             ]),
-            (reho_wf, connectivity_wf, [('outputnode.reho', 'inputnode.reho')]),
             (connectivity_wf, postproc_derivatives_wf, [
                 ('outputnode.coverage_ciftis', 'inputnode.coverage_ciftis'),
                 ('outputnode.timeseries_ciftis', 'inputnode.timeseries_ciftis'),
@@ -392,29 +422,24 @@ the following post-processing was performed.
                 ('outputnode.correlations_z', 'inputnode.correlations_z'),
                 ('outputnode.correlations_var_r', 'inputnode.correlations_var_r'),
                 ('outputnode.correlations_var_z', 'inputnode.correlations_var_z'),
-                ('outputnode.correlations_r_exact', 'inputnode.correlations_r_exact'),
-                ('outputnode.correlations_z_exact', 'inputnode.correlations_z_exact'),
-                ('outputnode.correlations_var_r_exact', 'inputnode.correlations_var_r_exact'),
-                ('outputnode.correlations_var_z_exact', 'inputnode.correlations_var_z_exact'),
                 ('outputnode.correlations_r_cifti', 'inputnode.correlations_r_cifti'),
                 ('outputnode.correlations_z_cifti', 'inputnode.correlations_z_cifti'),
                 ('outputnode.correlations_var_r_cifti', 'inputnode.correlations_var_r_cifti'),
                 ('outputnode.correlations_var_z_cifti', 'inputnode.correlations_var_z_cifti'),
-                ('outputnode.correlations_r_exact_cifti', 'inputnode.correlations_r_exact_cifti'),
-                ('outputnode.correlations_z_exact_cifti', 'inputnode.correlations_z_exact_cifti'),
-                (
-                    'outputnode.correlations_var_r_exact_cifti',
-                    'inputnode.correlations_var_r_exact_cifti',
-                ),
-                (
-                    'outputnode.correlations_var_z_exact_cifti',
-                    'inputnode.correlations_var_z_exact_cifti',
-                ),
-                ('outputnode.parcellated_reho', 'inputnode.parcellated_reho'),
             ]),
         ])  # fmt:skip
 
-        if bandpass_filter:
+        # Connect ReHo to connectivity workflow if not skipped
+        if not skip_reho:
+            workflow.connect([
+                (reho_wf, connectivity_wf, [('outputnode.reho', 'inputnode.reho')]),
+                (connectivity_wf, postproc_derivatives_wf, [
+                    ('outputnode.parcellated_reho', 'inputnode.parcellated_reho'),
+                ]),
+            ])  # fmt:skip
+
+        # Connect ALFF to connectivity workflow if not skipped
+        if not skip_alff:
             workflow.connect([
                 (alff_wf, connectivity_wf, [('outputnode.alff', 'inputnode.alff')]),
                 (connectivity_wf, postproc_derivatives_wf, [
@@ -428,7 +453,7 @@ the following post-processing was performed.
             preproc_nifti=run_data['nifti_file'],
             t1w_available=t1w_available,
             t2w_available=t2w_available,
-            mem_gb=mem_gbx,
+            mem_gb=mem_gb,
         )
         workflow.connect([
             (inputnode, execsummary_functional_plots_wf, [

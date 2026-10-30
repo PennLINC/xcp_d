@@ -21,13 +21,14 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from packaging.version import Version
 
-from xcp_d import config
-from xcp_d.__about__ import __version__
+from xcp_d import __version__, config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     _get_tr,
+    check_group_trs,
     collect_confounds,
     collect_data,
     collect_mesh_data,
@@ -39,7 +40,7 @@ from xcp_d.utils.bids import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import calculate_exact_scans, flag_bad_run
-from xcp_d.utils.utils import estimate_brain_radius, is_number
+from xcp_d.utils.utils import _create_mem_gb, estimate_brain_radius, is_number
 from xcp_d.workflows.anatomical.parcellation import init_parcellate_surfaces_wf
 from xcp_d.workflows.anatomical.surface import init_postprocess_surfaces_wf
 from xcp_d.workflows.anatomical.volume import init_postprocess_anat_wf
@@ -115,7 +116,7 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
             from xcp_d.workflows.base import init_single_subject_wf
 
             with mock_config():
-                wf = init_single_subject_wf("01", "01", ["01"])
+                wf = init_single_subject_wf("01", "", [""])
 
     Parameters
     ----------
@@ -153,6 +154,9 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
         bids_filters=config.execution.bids_filters,
         anat_session=anat_session or Query.NONE,
     )
+    reg_sphere_available = (
+        mesh_files['lh_reg_sphere'] is not None and mesh_files['rh_reg_sphere'] is not None
+    )
     morph_file_types, morphometry_files = collect_morphometry_data(
         layout=config.execution.layout,
         participant_label=subject_id,
@@ -185,6 +189,8 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
                 'rh_wm_surf',
                 'lh_subject_sphere',
                 'rh_subject_sphere',
+                'lh_reg_sphere',
+                'rh_reg_sphere',
                 # morphometry files
                 'sulcal_depth',
                 'sulcal_curv',
@@ -196,6 +202,7 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
         ),
         name='inputnode',
     )
+    # TODO: Replace with BIDSDataGrabber interface
     inputnode.inputs.t1w = subj_data['t1w']
     inputnode.inputs.t2w = subj_data['t2w']
     inputnode.inputs.anat_brainmask = subj_data['anat_brainmask']
@@ -211,6 +218,8 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
     inputnode.inputs.rh_wm_surf = mesh_files['rh_wm_surf']
     inputnode.inputs.lh_subject_sphere = mesh_files['lh_subject_sphere']
     inputnode.inputs.rh_subject_sphere = mesh_files['rh_subject_sphere']
+    inputnode.inputs.lh_reg_sphere = mesh_files['lh_reg_sphere']
+    inputnode.inputs.rh_reg_sphere = mesh_files['rh_reg_sphere']
 
     # optional surface shape files (used by surface-warping workflow)
     inputnode.inputs.sulcal_depth = morphometry_files['sulcal_depth']
@@ -283,6 +292,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ds_report_summary = pe.Node(
         DerivativesDataSink(
             source_file=preproc_files[0],
+            dismiss_entities=dismiss_hash(),
             desc='summary',
         ),
         name='ds_report_summary',
@@ -291,6 +301,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ds_report_about = pe.Node(
         DerivativesDataSink(
             source_file=preproc_files[0],
+            dismiss_entities=dismiss_hash(),
             desc='about',
         ),
         name='ds_report_about',
@@ -386,6 +397,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
+            reg_sphere_available=reg_sphere_available,
             morphometry_files=morph_file_types,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
@@ -400,6 +412,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ('rh_wm_surf', 'inputnode.rh_wm_surf'),
                 ('lh_subject_sphere', 'inputnode.lh_subject_sphere'),
                 ('rh_subject_sphere', 'inputnode.rh_subject_sphere'),
+                ('lh_reg_sphere', 'inputnode.lh_reg_sphere'),
+                ('rh_reg_sphere', 'inputnode.rh_reg_sphere'),
                 ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
             ]),
         ])  # fmt:skip
@@ -409,7 +423,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, postprocess_surfaces_wf, [(morph_file, f'inputnode.{morph_file}')]),
             ])  # fmt:skip
 
-        if config.workflow.process_surfaces or standard_space_mesh:
+        if config.workflow.process_surfaces:
             # Use standard-space structurals
             workflow.connect([
                 (postprocess_anat_wf, postprocess_surfaces_wf, [
@@ -468,9 +482,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     n_runs = len(preproc_files)
     # group files across runs and directions, to facilitate concatenation
     preproc_files = group_across_runs(preproc_files)
+    check_group_trs(preproc_files, config.workflow.combine_runs)
     run_counter = 0
     for ent_set, task_files in enumerate(preproc_files):
-        # Assuming TR is constant across runs for a given combination of entities.
         TR = _get_tr(nb.load(task_files[0]))
 
         # We only "concatenate" if scans are named with a run or direction entity.
@@ -503,6 +517,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             }
 
         n_processed_task_runs = 0
+        concat_bold_gb = 0
+        concat_volume_gb = 0
+        concat_post_scrubbing_duration = 0
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(
                 layout=config.execution.layout,
@@ -531,6 +548,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 band_stop_max=config.workflow.band_stop_max,
                 head_radius=head_radius,
                 fd_thresh=config.workflow.fd_thresh,
+                censor_between=config.workflow.censor_between,
             )
 
             if (config.workflow.min_time >= 0) and (
@@ -544,15 +562,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 )
                 continue
 
-            # Reduce exact_times to only include values greater than the post-scrubbing duration.
-            exact_scans = []
-            if any(is_number(length) for length in config.workflow.correlation_lengths):
-                exact_scans = calculate_exact_scans(
-                    exact_times=config.workflow.correlation_lengths,
-                    scan_length=post_scrubbing_duration,
-                    t_r=run_data['bold_metadata']['RepetitionTime'],
-                    bold_file=bold_file,
-                )
+            concat_post_scrubbing_duration += post_scrubbing_duration
+
+            # Compute memory estimates from the BOLD file header
+            mem_gbx = _create_mem_gb(bold_file)
+
+            # Accumulate memory estimates for the concatenation workflow.
+            # The concatenated file will be the sum of all runs.
+            concat_bold_gb += mem_gbx['bold']
+            concat_volume_gb = max(concat_volume_gb, mem_gbx['volume'])
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
@@ -561,7 +579,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t1w_available=t1w_available,
                 t2w_available=t2w_available,
                 n_runs=n_runs,
-                exact_scans=exact_scans,
+                has_multiple_runs=multiscans,
+                mem_gb=mem_gbx,
                 name=f'postprocess_{run_counter}_wf',
             )
             run_counter += 1
@@ -605,10 +624,25 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                         (postprocess_bold_wf, node, [(f'outputnode.{io_name}', f'in{j_run + 1}')]),
                     ])  # fmt:skip
 
+        concat_exact_scans = []
+        if any(is_number(length) for length in config.workflow.correlation_lengths):
+            concat_exact_scans = calculate_exact_scans(
+                exact_times=config.workflow.correlation_lengths,
+                scan_length=concat_post_scrubbing_duration,
+                t_r=TR,
+                bold_file=task_files[0],
+            )
+
         if config.workflow.combine_runs and (n_processed_task_runs > 0) and multiscans:
+            concat_mem_gb = {
+                'bold': concat_bold_gb,
+                'volume': concat_volume_gb,
+            }
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,
+                exact_scans=concat_exact_scans,
+                mem_gb=concat_mem_gb,
                 name=f'concatenate_entity_set_{ent_set}_wf',
             )
 
@@ -619,6 +653,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     (anat_mod, 'inputnode.anat_native'),
                 ]),
             ])  # fmt:skip
+            if config.execution.atlases:
+                workflow.connect([
+                    (load_atlases_wf, concatenate_data_wf, [
+                        ('outputnode.atlas_labels_files', 'inputnode.atlas_labels_files'),
+                    ]),
+                ])  # fmt:skip
 
             for io_name, node in merge_dict.items():
                 workflow.connect([(node, concatenate_data_wf, [('out', f'inputnode.{io_name}')])])
@@ -645,7 +685,16 @@ def clean_datasinks(workflow):
             workflow.get_node(node).interface.out_path_base = ''
             workflow.get_node(node).interface.inputs.base_directory = config.execution.output_dir
 
+            if config.execution.output_layout == 'multiverse':
+                workflow.get_node(node).interface.inputs.hash = config.execution.parameters_hash
+
         if node_name.startswith('ds_report_'):
             workflow.get_node(node).interface.inputs.datatype = 'figures'
+
+        if node_name.startswith('add_hash_'):
+            if config.execution.output_layout == 'multiverse':
+                workflow.get_node(
+                    node
+                ).interface.inputs.parameters_hash = config.execution.parameters_hash
 
     return workflow

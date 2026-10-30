@@ -10,12 +10,13 @@ from num2words import num2words
 from templateflow.api import get as get_template
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
+    ExpandTemporalMask,
     GenerateConfounds,
     ProcessMotion,
-    RandomCensor,
     RemoveDummyVolumes,
 )
 from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
@@ -29,14 +30,43 @@ from xcp_d.utils.boilerplate import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
-from xcp_d.utils.utils import fwhm2sigma, is_number
+from xcp_d.utils.utils import fwhm2sigma
+
+
+def _load_confounds_config():
+    """Load the confounds configuration from the execution config.
+
+    Returns
+    -------
+    confounds_config : :obj:`dict` or None
+        Parsed confounds configuration, or None if not provided.
+    """
+    if config.execution.confounds_config is None:
+        return None
+
+    return yaml.safe_load(config.execution.confounds_config.read_text())
+
+
+def _count_voxelwise_confounds():
+    """Count the voxel-wise confounds in the confounds configuration.
+
+    Returns
+    -------
+    n_voxelwise_confounds : :obj:`int`
+        Number of confounds that are images rather than columns of a table.
+    """
+    confounds_config = _load_confounds_config()
+    if confounds_config is None:
+        return 0
+
+    return sum('columns' not in params for params in confounds_config['confounds'].values())
 
 
 @fill_doc
 def init_prepare_confounds_wf(
     TR,
-    exact_scans,
     head_radius,
+    mem_gb,
     name='prepare_confounds_wf',
 ):
     """Prepare confounds.
@@ -51,22 +81,23 @@ def init_prepare_confounds_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_prepare_confounds_wf
+            from xcp_d.workflows.bold.postprocessing import init_prepare_confounds_wf
 
             with mock_config():
                 wf = init_prepare_confounds_wf(
                     TR=0.8,
-                    exact_scans=[],
                     head_radius=70,
+                    mem_gb={"bold": 1.0},
                     name="prepare_confounds_wf",
                 )
 
     Parameters
     ----------
     %(TR)s
-    %(exact_scans)s
     %(head_radius)s
         This will already be estimated before this workflow.
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "prepare_confounds_wf".
 
@@ -105,6 +136,7 @@ def init_prepare_confounds_wf(
     band_stop_max = config.workflow.band_stop_max
     motion_filter_order = config.workflow.motion_filter_order
     fd_thresh = config.workflow.fd_thresh
+    censor_between = config.workflow.censor_between
 
     dummy_scans_str = ''
     if dummy_scans == 'auto':
@@ -131,20 +163,18 @@ def init_prepare_confounds_wf(
         TR=TR,
     )
 
-    if (fd_thresh > 0) or exact_scans:
+    if fd_thresh > 0:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
             head_radius=head_radius,
             fd_thresh=fd_thresh,
-            exact_scans=exact_scans,
+            censor_between=censor_between,
+            exact_scans=[],
         )
     else:
         censoring_description = ''
 
-    if config.execution.confounds_config is None:
-        confounds_config = None
-    else:
-        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
+    confounds_config = _load_confounds_config()
 
     confounds_description = describe_regression(
         confounds_config=confounds_config,
@@ -216,9 +246,7 @@ def init_prepare_confounds_wf(
         (process_motion, outputnode, [('motion_metadata', 'motion_metadata')]),
     ])  # fmt:skip
 
-    if config.execution.confounds_config is not None:
-        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
-
+    if confounds_config is not None:
         generate_confounds = pe.Node(
             GenerateConfounds(
                 confounds_config=confounds_config,
@@ -262,7 +290,7 @@ def init_prepare_confounds_wf(
         remove_dummy_scans = pe.Node(
             RemoveDummyVolumes(),
             name='remove_dummy_scans',
-            mem_gb=4,
+            mem_gb=2 * mem_gb['bold'],
         )
 
         workflow.connect([
@@ -329,27 +357,24 @@ def init_prepare_confounds_wf(
             ]),
         ])  # fmt:skip
 
-    if any(is_number(length) for length in config.workflow.correlation_lengths):
-        random_censor = pe.Node(
-            RandomCensor(exact_scans=exact_scans, random_seed=config.seeds.master),
-            name='random_censor',
-        )
+    # Flag short runs of retained volumes. This runs after dummy-scan removal so that the
+    # beginning and end of the run refer to the data that are actually analyzed.
+    expand_temporal_mask = pe.Node(
+        ExpandTemporalMask(censor_between=censor_between),
+        name='expand_temporal_mask',
+        mem_gb=1,
+    )
 
-        workflow.connect([
-            (process_motion, random_censor, [
-                ('temporal_mask_metadata', 'temporal_mask_metadata'),
-            ]),
-            (dummy_scan_buffer, random_censor, [('temporal_mask', 'temporal_mask')]),
-            (random_censor, outputnode, [
-                ('temporal_mask', 'temporal_mask'),
-                ('temporal_mask_metadata', 'temporal_mask_metadata'),
-            ]),
-        ])  # fmt:skip
-    else:
-        workflow.connect([
-            (process_motion, outputnode, [('temporal_mask_metadata', 'temporal_mask_metadata')]),
-            (dummy_scan_buffer, outputnode, [('temporal_mask', 'temporal_mask')]),
-        ])  # fmt:skip
+    workflow.connect([
+        (dummy_scan_buffer, expand_temporal_mask, [('temporal_mask', 'temporal_mask')]),
+        (process_motion, expand_temporal_mask, [
+            ('temporal_mask_metadata', 'temporal_mask_metadata'),
+        ]),
+        (expand_temporal_mask, outputnode, [
+            ('temporal_mask', 'temporal_mask'),
+            ('temporal_mask_metadata', 'temporal_mask_metadata'),
+        ]),
+    ])  # fmt:skip
 
     if config.execution.confounds_config is not None:
         plot_design_matrix = pe.Node(
@@ -368,7 +393,7 @@ def init_prepare_confounds_wf(
 
         ds_report_design_matrix = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=['space', 'res', 'den', 'desc'],
+                dismiss_entities=dismiss_hash(['space', 'res', 'den', 'desc']),
                 suffix='design',
                 extension='.svg',
             ),
@@ -401,6 +426,7 @@ def init_prepare_confounds_wf(
 
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
             desc='censoring',
             suffix='motion',
             extension='.svg',
@@ -418,7 +444,7 @@ def init_prepare_confounds_wf(
 
 
 @fill_doc
-def init_despike_wf(TR, name='despike_wf'):
+def init_despike_wf(TR, mem_gb, name='despike_wf'):
     """Despike BOLD data with AFNI's 3dDespike.
 
     Despiking truncates large spikes in the BOLD times series.
@@ -435,17 +461,20 @@ def init_despike_wf(TR, name='despike_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_despike_wf
+            from xcp_d.workflows.bold.postprocessing import init_despike_wf
 
             with mock_config():
                 wf = init_despike_wf(
                     TR=0.8,
+                    mem_gb={"bold": 1.0},
                     name="despike_wf",
                 )
 
     Parameters
     ----------
     %(TR)s
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "despike_wf".
 
@@ -469,7 +498,7 @@ def init_despike_wf(TR, name='despike_wf'):
     despike3d = pe.Node(
         DespikePatch(outputtype='NIFTI_GZ', args='-nomask -NEW'),
         name='despike3d',
-        mem_gb=4,
+        mem_gb=2 * mem_gb['bold'],
         n_procs=omp_nthreads,
     )
 
@@ -483,7 +512,7 @@ and converted back to CIFTI format.
         convert_to_nifti = pe.Node(
             CiftiConvert(target='to', num_threads=config.nipype.omp_nthreads),
             name='convert_to_nifti',
-            mem_gb=4,
+            mem_gb=2 * mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -495,7 +524,7 @@ and converted back to CIFTI format.
         convert_to_cifti = pe.Node(
             CiftiConvert(target='from', TR=TR, num_threads=config.nipype.omp_nthreads),
             name='convert_to_cifti',
-            mem_gb=4,
+            mem_gb=2 * mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -527,11 +556,12 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_denoise_bold_wf
+            from xcp_d.workflows.bold.postprocessing import init_denoise_bold_wf
 
             with mock_config():
                 wf = init_denoise_bold_wf(
                     TR=0.8,
+                    mem_gb={"bold": 1.0, "denoise": 3.0},
                     name="denoise_bold_wf",
                 )
 
@@ -540,6 +570,8 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
     %(TR)s
     mem_gb : :obj:`dict`
         Memory size in GB to use for each of the nodes.
+        The ``'denoise'`` entry is the estimated peak memory of the denoising node,
+        from :func:`~xcp_d.utils.utils._estimate_denoise_mem_gb`.
     %(name)s
         Default is "denoise_bold_wf".
 
@@ -684,7 +716,7 @@ approach.
             num_threads=config.nipype.omp_nthreads,
         ),
         name='regress_and_filter_bold',
-        mem_gb=mem_gb['timeseries'],
+        mem_gb=mem_gb['denoise'],
         n_procs=config.nipype.omp_nthreads,
     )
     config.loggers.workflow.debug('Created node for regression and filtering of BOLD data.')
@@ -711,9 +743,9 @@ approach.
 
     # Create a node for censoring the interpolated data using framewise displacement
     censor_interpolated_data = pe.Node(
-        Censor(column='framewise_displacement'),
+        Censor(column='denoising'),
         name='censor_interpolated_data',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=2 * mem_gb['bold'],
     )
     config.loggers.workflow.debug('Created censor node for high-motion volumes.')
 
@@ -779,10 +811,10 @@ def init_resd_smoothing_wf(mem_gb, name='resd_smoothing_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
+            from xcp_d.workflows.bold.postprocessing import init_resd_smoothing_wf
 
             with mock_config():
-                wf = init_resd_smoothing_wf()
+                wf = init_resd_smoothing_wf(mem_gb={"bold": 1.0})
 
     Parameters
     ----------
@@ -811,7 +843,7 @@ def init_resd_smoothing_wf(mem_gb, name='resd_smoothing_wf'):
     if file_format == 'cifti':
         workflow.__desc__ = f""" \
 The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian kernel
-(FWHM={str(smoothing)} mm).
+(FWHM={smoothing!s} mm).
 """
 
         # Call connectome workbench to smooth for each hemisphere
@@ -828,7 +860,8 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                         hemi='R',
                         density='32k',
                         desc=None,
-                        suffix='sphere',
+                        suffix='midthickness',
+                        raise_empty=True,
                     )
                 ),
                 left_surf=str(
@@ -838,13 +871,14 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                         hemi='L',
                         density='32k',
                         desc=None,
-                        suffix='sphere',
+                        suffix='midthickness',
+                        raise_empty=True,
                     )
                 ),
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='cifti_smoothing',
-            mem_gb=mem_gb['timeseries'],
+            mem_gb=2 * mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
 
@@ -852,7 +886,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
         fix_cifti_intent = pe.Node(
             FixCiftiIntent(),
             name='fix_cifti_intent',
-            mem_gb=1,
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (smooth_data, fix_cifti_intent, [('out_file', 'in_file')]),
@@ -861,13 +895,13 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
 
     else:
         workflow.__desc__ = f""" \
-The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str(smoothing)} mm).
+The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={smoothing!s} mm).
 """
         # Use nilearn to smooth the image
         smooth_data = pe.Node(
             Smooth(fwhm=smoothing),  # FWHM = kernel size
             name='nifti_smoothing',
-            mem_gb=mem_gb['timeseries'],
+            mem_gb=2 * mem_gb['bold'],
         )
         workflow.connect([(smooth_data, outputnode, [('out_file', 'smoothed_bold')])])
 

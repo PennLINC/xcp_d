@@ -21,6 +21,7 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -69,11 +70,11 @@ class NiftiParcellate(SimpleInterface):
         # The 'index' column tells us what that parcel's value in the atlas image is.
         # One requirement for later is that the index values are sorted in ascending order.
         node_labels_df = node_labels_df.sort_values(by='index').reset_index(drop=True)
-        node_labels = node_labels_df['label'].tolist()
+        node_labels = node_labels_df['name'].tolist()
         # Create a dictionary mapping df['index'] to df.index
         full_parcel_mapper = {v: k for k, v in enumerate(node_labels_df['index'].tolist())}
         masker_lut = node_labels_df.copy()
-        masker_lut['name'] = masker_lut['label']
+        masker_lut = masker_lut[['index', 'name']]
         atlas_values = np.unique(atlas_img.get_fdata())
         atlas_values = atlas_values[atlas_values != 0]
         atlas_values = atlas_values.astype(int)
@@ -95,6 +96,7 @@ class NiftiParcellate(SimpleInterface):
             standardize=False,
             strategy='sum',
             resampling_target=None,  # they should be in the same space/resolution already
+            keep_masked_labels=True,
         )
         sum_masker_unmasked = NiftiLabelsMasker(
             labels_img=atlas_img,
@@ -104,6 +106,7 @@ class NiftiParcellate(SimpleInterface):
             standardize=False,
             strategy='sum',
             resampling_target=None,  # they should be in the same space/resolution already
+            keep_masked_labels=True,
         )
         n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
         n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
@@ -152,6 +155,7 @@ class NiftiParcellate(SimpleInterface):
             smoothing_fwhm=None,
             standardize=False,
             resampling_target=None,  # they should be in the same space/resolution already
+            keep_masked_labels=True,
         )
 
         # Use nilearn to parcellate the file
@@ -160,10 +164,16 @@ class NiftiParcellate(SimpleInterface):
             # Add singleton first dimension representing time.
             timeseries_arr = timeseries_arr[None, :]
 
-        assert timeseries_arr.shape[1] == n_found_nodes
+        if timeseries_arr.shape[1] != n_found_nodes:
+            raise ValueError(
+                f'timeseries_arr.shape[1] ({timeseries_arr.shape[1]}) != '
+                f'n_found_nodes ({n_found_nodes})'
+            )
         # Map from atlas value to column index for parcels found in the atlas image
         # Keys are cols/rows in the matrix, values are atlas values
         masker_parcel_mapper = masker.region_ids_
+        # Remove 'background' label
+        masker_parcel_mapper = {k: v for k, v in masker_parcel_mapper.items() if k != 'background'}
         del masker
         gc.collect()
 
@@ -321,7 +331,7 @@ class TSVConnect(SimpleInterface):
 
         correlations_dict = correlate_timeseries(
             self.inputs.timeseries,
-            temporal_mask=censoring_df['framewise_displacement'].astype(bool),
+            temporal_mask=get_col(censoring_df, 'denoising').astype(bool),
         )
 
         measures = ['r', 'z', 'var_r', 'var_z']
@@ -347,7 +357,7 @@ class TSVConnect(SimpleInterface):
         exact_columns = [c for c in censoring_df.columns if c.startswith('exact_')]
         for exact_column in exact_columns:
             temporal_mask = (
-                censoring_df['framewise_displacement'] + censoring_df[exact_column]
+                get_col(censoring_df, 'denoising') + censoring_df[exact_column]
             ).astype(bool)
             correlations_dict = correlate_timeseries(
                 self.inputs.timeseries,
@@ -410,8 +420,11 @@ class ConnectPlot(SimpleInterface):
 
     def plot_matrix(self, corr_mat, network_labels, ax):
         """Plot matrix in subplot Axes."""
-        assert corr_mat.shape[0] == len(network_labels)
-        assert corr_mat.shape[1] == len(network_labels)
+        if corr_mat.shape[0] != len(network_labels) or corr_mat.shape[1] != len(network_labels):
+            n_labels = len(network_labels)
+            raise ValueError(
+                f'corr_mat shape {corr_mat.shape} does not match len(network_labels)={n_labels}'
+            )
 
         # Determine order of nodes while retaining original order of networks
         unique_labels = []
@@ -596,7 +609,10 @@ class CiftiToTSV(SimpleInterface):
         in_file = self.inputs.in_file
         atlas_labels = self.inputs.atlas_labels
 
-        assert in_file.endswith(('.ptseries.nii', '.pscalar.nii', '.pconn.nii')), in_file
+        if not in_file.endswith(('.ptseries.nii', '.pscalar.nii', '.pconn.nii')):
+            raise ValueError(
+                f'Expected .ptseries.nii, .pscalar.nii, or .pconn.nii file, got: {in_file}'
+            )
 
         img = nb.load(in_file)
         node_labels_df = pd.read_table(atlas_labels, index_col='index')
@@ -612,14 +628,14 @@ class CiftiToTSV(SimpleInterface):
 
         if 'cifti_label' in node_labels_df.columns:
             parcel_label_mapper = dict(
-                zip(node_labels_df['cifti_label'], node_labels_df['label'], strict=False)
+                zip(node_labels_df['cifti_label'], node_labels_df['name'], strict=False)
             )
         elif 'label_7network' in node_labels_df.columns:
             node_labels_df['cifti_label'] = node_labels_df['label_7network'].fillna(
-                node_labels_df['label']
+                node_labels_df['name']
             )
             parcel_label_mapper = dict(
-                zip(node_labels_df['cifti_label'], node_labels_df['label'], strict=False)
+                zip(node_labels_df['cifti_label'], node_labels_df['name'], strict=False)
             )
         else:
             LOGGER.warning(
@@ -627,7 +643,7 @@ class CiftiToTSV(SimpleInterface):
                 'Assuming labels in TSV exactly match node names in CIFTI atlas.'
             )
             parcel_label_mapper = dict(
-                zip(node_labels_df['label'], node_labels_df['label'], strict=False)
+                zip(node_labels_df['name'], node_labels_df['name'], strict=False)
             )
 
         if in_file.endswith('.pconn.nii'):
@@ -640,7 +656,8 @@ class CiftiToTSV(SimpleInterface):
         else:
             # Second axis is the parcels
             ax1 = img.header.get_axis(1)
-            assert isinstance(ax1, nb.cifti2.ParcelsAxis), type(ax1)
+            if not isinstance(ax1, nb.cifti2.ParcelsAxis):
+                raise TypeError(f'Expected ParcelsAxis, got {type(ax1)}')
             df = pd.DataFrame(columns=ax1.name, data=img.get_fdata())
             check_axes = [1]
 
@@ -652,21 +669,16 @@ class CiftiToTSV(SimpleInterface):
             # missing index values.
             # If any dictionary keys are not in the index, raise an error with a list of the
             # missing dictionary keys.
-            missing_index_values = []
-            missing_dict_values = []
-            for index_value in df.index:
-                if index_value not in parcel_label_mapper:
-                    missing_index_values.append(index_value)
-
-                for dict_value in parcel_label_mapper.keys():
-                    if dict_value not in df.index:
-                        missing_dict_values.append(dict_value)
-
+            missing_index_values = [
+                index_value for index_value in df.index if index_value not in parcel_label_mapper
+            ]
+            missing_dict_values = [
+                dict_value for dict_value in parcel_label_mapper if dict_value not in df.index
+            ]
             if missing_index_values:
                 raise ValueError(
                     f'Missing CIFTI labels in atlas labels DataFrame: {missing_index_values}'
                 )
-
             if missing_dict_values:
                 raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
 
@@ -675,21 +687,18 @@ class CiftiToTSV(SimpleInterface):
 
         if 1 in check_axes:
             # Repeat with columns
-            missing_columns = []
-            missing_dict_values = []
-            for column_value in df.columns:
-                if column_value not in parcel_label_mapper:
-                    missing_columns.append(column_value)
-
-                for dict_value in parcel_label_mapper.keys():
-                    if dict_value not in df.columns:
-                        missing_dict_values.append(dict_value)
-
+            missing_columns = [
+                column_value
+                for column_value in df.columns
+                if column_value not in parcel_label_mapper
+            ]
+            missing_dict_values = [
+                dict_value for dict_value in parcel_label_mapper if dict_value not in df.columns
+            ]
             if missing_columns:
                 raise ValueError(
                     f'Missing CIFTI labels in atlas labels DataFrame: {missing_columns}'
                 )
-
             if missing_dict_values:
                 raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
 
@@ -877,14 +886,14 @@ class TSVToPconn(SimpleInterface):
         # Map from CIFTI node name to TSV node name.
         if 'cifti_label' in node_labels_df.columns:
             parcel_label_mapper = dict(
-                zip(node_labels_df['cifti_label'], node_labels_df['label'], strict=False)
+                zip(node_labels_df['cifti_label'], node_labels_df['name'], strict=False)
             )
         elif 'label_7network' in node_labels_df.columns:
             node_labels_df['cifti_label'] = node_labels_df['label_7network'].fillna(
-                node_labels_df['label']
+                node_labels_df['name']
             )
             parcel_label_mapper = dict(
-                zip(node_labels_df['cifti_label'], node_labels_df['label'], strict=False)
+                zip(node_labels_df['cifti_label'], node_labels_df['name'], strict=False)
             )
         else:
             LOGGER.warning(
@@ -892,7 +901,7 @@ class TSVToPconn(SimpleInterface):
                 'Assuming labels in TSV exactly match node names in CIFTI atlas.'
             )
             parcel_label_mapper = dict(
-                zip(node_labels_df['label'], node_labels_df['label'], strict=False)
+                zip(node_labels_df['name'], node_labels_df['name'], strict=False)
             )
 
         # Check that all node labels in the TSV are present in the CIFTI, and vice versa.

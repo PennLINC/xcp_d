@@ -151,6 +151,7 @@ def flag_bad_run(
     band_stop_max,
     head_radius,
     fd_thresh,
+    censor_between,
 ):
     """Determine if a run has too many high-motion volumes to continue processing.
 
@@ -166,7 +167,8 @@ def flag_bad_run(
     %(band_stop_max)s
     %(head_radius)s
     %(fd_thresh)s
-    brain_mask
+    censor_between : :obj:`int`
+        Maximum length of a contiguous run of non-outlier volumes to censor.
 
     Returns
     -------
@@ -208,7 +210,53 @@ def flag_bad_run(
         head_radius=head_radius,
         filtered=bool(motion_filter_type),
     )
-    return np.sum(fd_arr <= fd_thresh) * TR
+    outlier_mask = (fd_arr > fd_thresh).astype(int)
+    between_mask = censor_between_outliers(outlier_mask, censor_between)
+    denoising_mask = ((outlier_mask + between_mask) > 0).astype(int)
+    return np.sum(denoising_mask == 0) * TR
+
+
+def censor_between_outliers(outlier_mask, censor_between):
+    """Flag contiguous runs of non-outlier volumes that are too short to retain.
+
+    Parameters
+    ----------
+    outlier_mask : :obj:`numpy.ndarray`
+        One-dimensional array of zeros and ones, where ones mark outlier volumes.
+    censor_between : :obj:`int`
+        Maximum length of a contiguous run of non-outlier volumes to censor.
+        Must be greater than or equal to zero. A value of zero flags nothing.
+
+    Returns
+    -------
+    :obj:`numpy.ndarray`
+        One-dimensional integer array with the same length as ``outlier_mask``,
+        with ones at volumes newly flagged for censoring.
+        The result is disjoint from ``outlier_mask``.
+
+    Notes
+    -----
+    The beginning and end of the time series are treated as outliers,
+    so short runs of non-outlier volumes at the start or end of the time series are flagged
+    as well.
+    """
+    outlier_mask = np.asarray(outlier_mask).astype(int)
+    between_mask = np.zeros(outlier_mask.shape, dtype=int)
+    if censor_between < 1 or outlier_mask.size == 0:
+        return between_mask
+
+    # Pad with outliers so that runs at the edges of the time series are bounded on both sides.
+    padded = np.concatenate(([1], outlier_mask, [1]))
+    # A run of non-outliers starts where the padded mask steps 1 -> 0 and ends where it steps
+    # 0 -> 1. Both index into the unpadded mask.
+    diffs = np.diff(padded)
+    run_starts = np.flatnonzero(diffs == -1)
+    run_ends = np.flatnonzero(diffs == 1)
+    for run_start, run_end in zip(run_starts, run_ends, strict=True):
+        if (run_end - run_start) <= censor_between:
+            between_mask[run_start:run_end] = 1
+
+    return between_mask
 
 
 def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):

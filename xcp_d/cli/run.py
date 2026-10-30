@@ -161,12 +161,13 @@ def main():
         write_derivative_description(
             config.execution.fmri_dir,
             config.execution.output_dir,
+            parameters_hash=config.execution.parameters_hash,
             atlases=config.execution.atlases,
             dataset_links=config.execution.dataset_links,
         )
 
         if config.execution.atlases:
-            write_atlas_dataset_description(config.execution.output_dir / 'atlases')
+            write_atlas_dataset_description(config.execution.output_dir / 'sourcedata' / 'atlases')
 
         # Generate reports phase
         failed_reports = generate_reports(

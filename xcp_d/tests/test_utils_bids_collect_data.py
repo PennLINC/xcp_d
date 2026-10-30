@@ -306,7 +306,7 @@ def test_collect_data_nibabies_t1w_to_t2w(tmp_path_factory, caplog):
     assert 'Both T1w and T2w found. Checking for T1w-space T2w.' in caplog.text
     assert 'No T1w-space T2w found. Checking for T2w-space T1w.' in caplog.text
     assert 'No T2w-space T1w found. Attempting T2w-primary processing.' in caplog.text
-    assert 'T2w-to-template and T1w-to-T2w transforms found.' in caplog.text
+    assert 'Processing T2w only.' not in caplog.text
 
 
 def test_collect_data_nibabies_t1wspace_t2w(tmp_path_factory, caplog):

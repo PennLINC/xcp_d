@@ -9,6 +9,74 @@ from scipy import signal
 from xcp_d.utils import confounds
 
 
+def test_modify_motion_filter_raises_for_invalid_lp_params():
+    """_modify_motion_filter raises ValueError for invalid low-pass params."""
+    TR = 0.8
+
+    with pytest.raises(ValueError, match='band_stop_min must be set for low-pass'):
+        confounds._modify_motion_filter(
+            motion_filter_type='lp',
+            band_stop_min=None,
+            band_stop_max=None,
+            TR=TR,
+        )
+    with pytest.raises(ValueError, match='band_stop_min must be positive'):
+        confounds._modify_motion_filter(
+            motion_filter_type='lp',
+            band_stop_min=0,
+            band_stop_max=None,
+            TR=TR,
+        )
+    with pytest.raises(ValueError, match='band_stop_min must be positive'):
+        confounds._modify_motion_filter(
+            motion_filter_type='lp',
+            band_stop_min=-1,
+            band_stop_max=None,
+            TR=TR,
+        )
+
+
+def test_modify_motion_filter_raises_for_invalid_notch_params():
+    """_modify_motion_filter raises ValueError for invalid notch params."""
+    TR = 0.8
+
+    with pytest.raises(ValueError, match='band_stop_max must be set for notch'):
+        confounds._modify_motion_filter(
+            motion_filter_type='notch',
+            band_stop_min=12,
+            band_stop_max=None,
+            TR=TR,
+        )
+    with pytest.raises(ValueError, match='band_stop_min must be set for notch'):
+        confounds._modify_motion_filter(
+            motion_filter_type='notch',
+            band_stop_min=None,
+            band_stop_max=20,
+            TR=TR,
+        )
+    with pytest.raises(ValueError, match='band_stop_max must be positive'):
+        confounds._modify_motion_filter(
+            motion_filter_type='notch',
+            band_stop_min=12,
+            band_stop_max=0,
+            TR=TR,
+        )
+    with pytest.raises(ValueError, match='band_stop_min must be positive'):
+        confounds._modify_motion_filter(
+            motion_filter_type='notch',
+            band_stop_min=0,
+            band_stop_max=20,
+            TR=TR,
+        )
+    with pytest.raises(ValueError, match='must be < band_stop_max'):
+        confounds._modify_motion_filter(
+            motion_filter_type='notch',
+            band_stop_min=25,
+            band_stop_max=20,
+            TR=TR,
+        )
+
+
 def test_modify_motion_filter():
     """Run a simple test of the motion filter modification function."""
     band_stop_min = 6
@@ -113,7 +181,7 @@ def test_motion_filtering_lp():
     assert np.allclose(np.squeeze(lowpass_data_test), lowpass_data_true)
 
     # Using a filter type other than notch or lp should raise an exception.
-    with pytest.raises(ValueError, match="Motion filter type 'fail' not supported."):
+    with pytest.raises(ValueError, match=r"Motion filter type 'fail' not supported\."):
         confounds.filter_motion(
             raw_data,
             TR=TR,

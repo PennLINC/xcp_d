@@ -5,17 +5,22 @@ https://github.com/scikit-learn/scikit-learn/blob/master/doc/sphinxext/github_li
 
 import inspect
 import os
+import shutil
 import subprocess
 import sys
 from functools import partial
 from operator import attrgetter
 
-REVISION_CMD = 'git rev-parse --short HEAD'
-
 
 def _get_git_revision():
+    git_cmd = shutil.which('git')
+    if git_cmd is None:
+        return None
     try:
-        revision = subprocess.check_output(REVISION_CMD.split()).strip()
+        revision = subprocess.check_output(
+            [git_cmd, 'rev-parse', '--short', 'HEAD'],
+            text=False,
+        ).strip()
     except (subprocess.CalledProcessError, OSError):
         print('Failed to execute git to get revision')
         return None

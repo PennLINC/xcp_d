@@ -46,6 +46,10 @@ def test_modify_pngs_scene_template(tmp_path_factory):
         )
 
     assert os.path.isfile(scene_file)
+    with open(scene_file) as fo:
+        scene_text = fo.read()
+    assert 'T2_IMG_PATH' not in scene_text
+    assert 'T2_IMG_NAME' not in scene_text
 
 
 def test_get_png_image_names():

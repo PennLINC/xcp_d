@@ -25,6 +25,7 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.restingstate import compute_2d_reho, mesh_adjacency
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -47,16 +48,21 @@ class SurfaceReHo(SimpleInterface):
     Examples
     --------
     .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
+
+        >>> from tempfile import TemporaryDirectory
+        >>> tmpdir = TemporaryDirectory()
+        >>> os.chdir(tmpdir.name)
+
     .. doctest::
-    >>> surfacereho_wf = SurfaceReHo()
-    >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
-    >>> surfacereho_wf.inputs.surf_hemi = 'R'
-    >>> surfacereho_wf.run()
+
+        >>> surfacereho_wf = SurfaceReHo()
+        >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
+        >>> surfacereho_wf.inputs.surf_hemi = 'R'
+        >>> surfacereho_wf.run()
+
     .. testcleanup::
-    >>> tmpdir.cleanup()
+
+        >>> tmpdir.cleanup()
     """
 
     input_spec = _SurfaceReHoInputSpec
@@ -108,12 +114,6 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         desc='Temporal mask.',
     )
-    n_threads = traits.Int(
-        1,
-        usedefault=True,
-        desc='number of threads to use',
-        nohash=True,
-    )
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
@@ -141,48 +141,29 @@ class ComputeALFF(SimpleInterface):
     output_spec = _ComputeALFFOutputSpec
 
     def _run_interface(self, runtime):
-        import gc
-        from multiprocessing import Pool
-
-        import numpy as np
-
-        from xcp_d.utils.restingstate import compute_alff_chunk
+        from xcp_d.utils.restingstate import compute_alff
 
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
-        n_voxels, n_volumes = data_matrix.shape
-
-        # Split the data_matrix into n_threads chunks of voxels
-        voxel_indices = np.array_split(np.arange(n_voxels), self.inputs.n_threads)
-        split_arrays = np.array_split(data_matrix, self.inputs.n_threads, axis=0)
-
-        del data_matrix
-        gc.collect()
+        n_volumes = data_matrix.shape[1]
 
         sample_mask = None
         temporal_mask = self.inputs.temporal_mask
         if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
-            sample_mask = ~censoring_df['framewise_displacement'].values.astype(bool)
-            assert sample_mask.size == n_volumes, f'{sample_mask.size} != {n_volumes}'
+            sample_mask = ~get_col(censoring_df, 'denoising').values.astype(bool)
+            if sample_mask.size != n_volumes:
+                raise ValueError(f'{sample_mask.size} != {n_volumes}')
 
-        alff_mat = np.zeros(n_voxels)
-        with Pool(processes=self.inputs.n_threads) as pool:
-            args = [
-                (
-                    split_arrays[i_thread],
-                    self.inputs.low_pass,
-                    self.inputs.high_pass,
-                    self.inputs.TR,
-                    sample_mask,
-                )
-                for i_thread in range(self.inputs.n_threads)
-            ]
-            results = pool.map(compute_alff_chunk, args)
-
-        for i_thread, result in enumerate(results):
-            alff_mat[voxel_indices[i_thread]] = result
+        alff_mat = compute_alff(
+            data_matrix=data_matrix,
+            low_pass=self.inputs.low_pass,
+            high_pass=self.inputs.high_pass,
+            TR=self.inputs.TR,
+            sample_mask=sample_mask,
+        )
+        del data_matrix
 
         # Add extra dimension to the matrix
         alff_mat = alff_mat[:, None]

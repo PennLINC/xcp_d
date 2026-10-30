@@ -18,10 +18,5 @@ Library API
 ***********
 
 .. toctree::
-   :glob:
 
-   api/xcp_d.cli
-   api/xcp_d.workflows
-   api/xcp_d.interfaces
-   api/xcp_d.utils
-   api/xcp_d.ingression
+   api/xcp_d
