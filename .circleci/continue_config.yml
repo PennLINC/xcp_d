@@ -480,7 +480,7 @@ jobs:
               -w /tmp/src/xcp_d \
               --entrypoint pytest \
               pennlinc/xcp_d:test \
-              --strict-markers --strict-config \
+              --strict-markers --strict-config --durations=0 \
               --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
               --data_dir=/data --output_dir=/out --working_dir=/work \
               xcp_d
