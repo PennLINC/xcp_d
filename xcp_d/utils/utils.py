@@ -1138,6 +1138,9 @@ def correlate_timeseries_xdf(
 
     # Extract lag-0 correlations
     rho = np.eye(n_features) + xc[:, :, n_samples - 1]
+    # Features without data (e.g., parcels with low coverage) get NaNs on the diagonal too
+    empty_features = np.isnan(norms[:, 0])
+    rho[empty_features, empty_features] = np.nan
 
     # Regularize!
     if method.lower() == 'tukey':

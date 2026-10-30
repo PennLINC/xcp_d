@@ -1209,3 +1209,21 @@ def test_correlate_timeseries_censored_and_uncensored(tmp_path):
         np.testing.assert_allclose(uncensored[key].to_numpy(), censored[key].to_numpy())
 
     np.testing.assert_allclose(uncensored['r'].to_numpy(), expected_r, atol=1e-10)
+
+
+def test_correlate_timeseries_xdf_empty_feature():
+    """Check that a feature without data gets NaNs, including on the diagonal."""
+    arr, temporal_mask = _make_xdf_data()
+    arr[:, temporal_mask.astype(bool)] = np.nan
+    expected = utils.correlate_timeseries_xdf(arr[:2].copy(), temporal_mask)
+
+    arr = np.vstack([arr[:2], np.full((1, arr.shape[1]), np.nan)])
+    out = utils.correlate_timeseries_xdf(arr, temporal_mask)
+
+    for key in ['r', 'z', 'var_r', 'var_z']:
+        assert np.all(np.isnan(out[key][2, :2])), key
+        assert np.all(np.isnan(out[key][:2, 2])), key
+        np.testing.assert_allclose(out[key][:2, :2], expected[key])
+
+    assert np.isnan(out['r'][2, 2])
+    assert np.all(np.diag(out['r'])[:2] == 1)

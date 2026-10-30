@@ -87,13 +87,9 @@ def test_nifti_parcellate(tmp_path_factory):
     )
 
 
-def test_correlate_timeseries_uses_denoising_column(tmp_path_factory):
-    """correlate_timeseries drops every volume flagged by the denoising column."""
-    import os
-
-    import pandas as pd
-
-    from xcp_d.interfaces.connectivity import correlate_timeseries
+def test_tsvconnect_uses_denoising_column(tmp_path_factory):
+    """TSVConnect drops every volume flagged by the denoising column."""
+    from xcp_d.interfaces.connectivity import TSVConnect
 
     tmpdir = tmp_path_factory.mktemp('test_correlate_timeseries_denoising')
     n_volumes = 40
@@ -118,7 +114,8 @@ def test_correlate_timeseries_uses_denoising_column(tmp_path_factory):
     temporal_mask = os.path.join(tmpdir, 'tmask.tsv')
     censoring_df.to_csv(temporal_mask, sep='\t', index=False)
 
-    correlations_df, _ = correlate_timeseries(timeseries, temporal_mask=temporal_mask)
+    results = TSVConnect(timeseries=timeseries, temporal_mask=temporal_mask).run(cwd=tmpdir)
+    correlations_df = pd.read_table(results.outputs.r, index_col='Node')
 
     # Correlating on `denoising` drops 4 volumes; correlating on `framewise_displacement`
     # would drop only 2, giving a different value.
