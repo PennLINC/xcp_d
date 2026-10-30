@@ -1,0 +1,23 @@
+# Derivatives skeleton to test confounds collection with mixed part states
+"01":
+  - func:
+    # Run without part
+    - task: rest
+      desc: preproc
+      suffix: bold
+      extension: .nii.gz
+    - task: rest
+      desc: confounds
+      suffix: timeseries
+      extension: .tsv
+    # Run with part-mag
+    - task: rest
+      part: mag
+      desc: preproc
+      suffix: bold
+      extension: .nii.gz
+    - task: rest
+      part: mag
+      desc: confounds
+      suffix: timeseries
+      extension: .tsv

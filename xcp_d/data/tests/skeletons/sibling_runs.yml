@@ -1,0 +1,438 @@
+# Derivatives skeleton with sibling runs that differ by one entity that one run lacks
+# (acq with and without run, ce, rec, dir, run), plus per-echo outputs for one run.
+# See https://github.com/PennLINC/xcp_d/issues/1647.
+'01':
+  - session: '1'
+    func:
+      - task: rest
+        run: '01'
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: rest
+        run: '01'
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: rest
+        run: '01'
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: rest
+        run: '01'
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: rest
+        run: '01'
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: rest
+        acq: 4ME
+        run: '01'
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: rest
+        acq: 4ME
+        run: '01'
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: rest
+        acq: 4ME
+        run: '01'
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: rest
+        acq: 4ME
+        run: '01'
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: rest
+        acq: 4ME
+        run: '01'
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: rest
+        acq: 4ME
+        run: '01'
+        echo: '1'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+          EchoTime: 0.01
+      - task: rest
+        acq: 4ME
+        run: '01'
+        echo: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+          EchoTime: 0.02
+      - task: sst
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: sst
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: sst
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: sst
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: sst
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: sst
+        acq: 4ME
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: sst
+        acq: 4ME
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: sst
+        acq: 4ME
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: sst
+        acq: 4ME
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: sst
+        acq: 4ME
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: mid
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: mid
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: mid
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: mid
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: mid
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: mid
+        ce: gad
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: mid
+        ce: gad
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: mid
+        ce: gad
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: mid
+        ce: gad
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: mid
+        ce: gad
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: gng
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: gng
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: gng
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: gng
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: gng
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: gng
+        rec: norm
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: gng
+        rec: norm
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: gng
+        rec: norm
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: gng
+        rec: norm
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: gng
+        rec: norm
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: nback
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: nback
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: nback
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: nback
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: nback
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: nback
+        dir: PA
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: nback
+        dir: PA
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: nback
+        dir: PA
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: nback
+        dir: PA
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: nback
+        dir: PA
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: faces
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: faces
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: faces
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: faces
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: faces
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}
+      - task: faces
+        run: '01'
+        space: fsLR
+        den: 91k
+        suffix: bold
+        extension: .dtseries.nii
+        metadata:
+          RepetitionTime: 0.8
+      - task: faces
+        run: '01'
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: preproc
+        suffix: bold
+        extension: .nii.gz
+        metadata:
+          RepetitionTime: 0.8
+      - task: faces
+        run: '01'
+        space: MNI152NLin6Asym
+        res: '2'
+        suffix: boldref
+        extension: .nii.gz
+      - task: faces
+        run: '01'
+        space: MNI152NLin6Asym
+        res: '2'
+        desc: brain
+        suffix: mask
+        extension: .nii.gz
+      - task: faces
+        run: '01'
+        desc: confounds
+        suffix: timeseries
+        extension: .tsv
+        metadata: {}

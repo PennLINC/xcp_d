@@ -564,9 +564,11 @@ def init_execsummary_functional_plots_wf(
         suffix='bold',
         return_type='file',
     )
+    # Match the desc entity right after the prefix, so that a run without an entity (e.g., acq)
+    # does not match the figure of a sibling run that has it.
     bold_t1w_registration_files = fnmatch.filter(
         bold_t1w_registration_files,
-        f'*/{bb_register_prefix}*',
+        f'*/{bb_register_prefix}_desc-*',
     )
     if not bold_t1w_registration_files:
         LOGGER.warning('No coregistration figure found in preprocessing derivatives.')

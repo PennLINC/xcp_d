@@ -908,6 +908,30 @@ def _check_tr_header_vs_sidecar(bold_file, sidecar_tr):
         )
 
 
+# Entities that distinguish runs within a task.
+# get_nearest(strict=True) only compares entities that both files have,
+# so a run without one of these entities would match the files of a sibling run that has it.
+_RUN_ENTITIES = ('acquisition', 'ceagent', 'reconstruction', 'direction', 'run', 'echo')
+
+
+def _get_run_filters(bids_file):
+    """Get query filters that restrict a search to files from the same run as a BIDS file.
+
+    Parameters
+    ----------
+    bids_file : :obj:`bids.layout.models.BIDSFile`
+        The file whose run should be matched.
+
+    Returns
+    -------
+    run_filters : :obj:`dict`
+        A dictionary of run-identifying entities and their values in ``bids_file``.
+        Entities that ``bids_file`` lacks are set to ``Query.NONE``.
+    """
+    entities = bids_file.get_entities()
+    return {entity: entities.get(entity, Query.NONE) for entity in _RUN_ENTITIES}
+
+
 @fill_doc
 def collect_run_data(layout, bold_file, file_format, target_space):
     """Collect data associated with a given BOLD file.
@@ -928,6 +952,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
         A dictionary of file types (e.g., "confounds") and associated filenames.
     """
     bids_file = layout.get_file(bold_file)
+    run_filters = _get_run_filters(bids_file)
     run_data, metadata = {}, {}
 
     run_data['motion_file'] = layout.get_nearest(
@@ -937,11 +962,16 @@ def collect_run_data(layout, bold_file, file_format, target_space):
         desc='confounds',
         suffix='timeseries',
         extension='.tsv',
+        **run_filters,
     )
     if not run_data['motion_file']:
         raise FileNotFoundError(f'No confounds file detected for {bids_file.path}')
 
-    run_data['motion_json'] = layout.get_nearest(run_data['motion_file'], extension='.json')
+    run_data['motion_json'] = layout.get_nearest(
+        run_data['motion_file'],
+        extension='.json',
+        **run_filters,
+    )
 
     metadata['bold_metadata'] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
@@ -957,6 +987,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
             ignore_strict_entities=['desc', 'suffix'],
             suffix='boldref',
             extension=['.nii', '.nii.gz'],
+            **run_filters,
         )
         run_data['boldmask'] = layout.get_nearest(
             bids_file.path,
@@ -965,6 +996,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
             desc='brain',
             suffix='mask',
             extension=['.nii', '.nii.gz'],
+            **run_filters,
         )
     else:
         # Split cohort out of the space for MNIInfant templates.
@@ -989,6 +1021,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
             suffix='boldref',
             extension=['.nii', '.nii.gz'],
             invalid_filters='allow',
+            **run_filters,
         )
         run_data['boldmask'] = layout.get_nearest(
             bids_file.path,
@@ -1008,6 +1041,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
             suffix='mask',
             extension=['.nii', '.nii.gz'],
             invalid_filters='allow',
+            **run_filters,
         )
         run_data['nifti_file'] = layout.get_nearest(
             bids_file.path,
@@ -1027,6 +1061,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
             suffix='bold',
             extension=['.nii', '.nii.gz'],
             invalid_filters='allow',
+            **run_filters,
         )
 
     LOGGER.log(
@@ -1121,7 +1156,9 @@ def collect_confounds(
 
         layout = layout_dict[confound_def['dataset']]
         bold_file_entities = bold_file.get_entities()
-        query = {**bold_file_entities, **confound_def['query']}
+        # Use the run filters as defaults, so that a run without an entity (e.g., acq)
+        # does not pick up the confounds of a sibling run that has it.
+        query = {**_get_run_filters(bold_file), **bold_file_entities, **confound_def['query']}
         confound_file = layout.get(**query)
         if len(confound_file) > 1:
             # Find all entities present in any of the found confound files that are not in the
