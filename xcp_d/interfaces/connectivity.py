@@ -851,7 +851,12 @@ class _TSVToPconnOutputSpec(TraitedSpec):
 
 
 class TSVToPconn(SimpleInterface):
-    """Convert a TSV file to a pconn CIFTI file."""
+    """Convert TSV correlation matrices to pconn CIFTI files.
+
+    The parcels axis of ``source_cifti`` is used for both axes of the output files.
+    Node names in the TSV files are mapped to the CIFTI parcel names with the atlas labels file,
+    and the rows and columns are reordered to match the CIFTI parcel order.
+    """
 
     input_spec = _TSVToPconnInputSpec
     output_spec = _TSVToPconnOutputSpec

@@ -951,6 +951,28 @@ def correlate_timeseries(timeseries, temporal_mask):
         Temporal mask to apply to the time series.
         Outliers are set to 1, non-outliers are set to 0.
         T = number of samples/data points/volumes
+
+    Returns
+    -------
+    correlations_dict : :obj:`dict`
+        The output of :func:`correlate_timeseries_xdf`.
+        The "r", "z", "var_r", and "var_z" entries are :obj:`pandas.DataFrame` objects,
+        with the node names from the TSV file's columns as both the index and the columns.
+
+    Raises
+    ------
+    ValueError
+        If ``temporal_mask`` is not 1D, or if the number of rows in the time series matches
+        neither the length of ``temporal_mask`` nor its number of non-outlier volumes.
+
+    Notes
+    -----
+    If the time series has one row per volume, the outlier volumes are set to NaN.
+    If it has one row per non-outlier volume (i.e., it was already censored),
+    it is placed back into a full-length array, with NaNs at the outlier volumes.
+    Either way, the full-length array and the temporal mask are passed to
+    :func:`correlate_timeseries_xdf`, so the outlier volumes are excluded from the correlations
+    while the time between the remaining volumes is preserved.
     """
     import pandas as pd
 
@@ -1054,6 +1076,10 @@ def correlate_timeseries_xdf(
     N(0, 1 / (T - 1)) and truncates the cross-correlations at the same lag,
     and the variance is computed with the lag-sum form of the xDF formula,
     weighting each lag by the number of retained pairs at that lag.
+
+    References
+    ----------
+    .. footbibliography::
     """
     from itertools import combinations
 
@@ -1207,23 +1233,41 @@ def correlate_timeseries_xdf(
 
 
 def tukeytaperme(ac, T, M):
-    """Perform single Tukey tapering for given length of window, M, and initial value, intv.
+    """Regularize lagged correlations with a Tukey taper.
 
     Parameters
     ----------
-    ac
-    T
-    M
+    ac : :obj:`numpy.ndarray` of shape (L,), (V, L), or (V, V, L)
+        Lagged auto- or cross-correlations, starting at lag 1, with lags along the last axis.
+        V = number of features/regions/voxels
+        L = number of lags
+    T : :obj:`int`
+        The number of lags (L). Used to check the shape of ``ac``.
+    M : :obj:`int` or :obj:`float`
+        The width of the taper window, in lags. Rounded to the nearest integer.
 
     Returns
     -------
-    tt_ts
+    tt_ts : :obj:`numpy.ndarray`
+        The tapered correlations, with the same shape as ``ac``.
+        Lag k (for k < M) is multiplied by ``(1 + cos(pi * k / M)) / 2``,
+        and lags of M and above are set to zero.
+
+    Raises
+    ------
+    ValueError
+        If no dimension of ``ac`` has length ``T``.
 
     Notes
     -----
-    intv should only be used on crosscorrelation matrices.
+    :footcite:t:`afyouni2019effective` use ``M = sqrt(T)`` as the default window width,
+    following Chatfield (2016).
 
     SA, Ox, 2018
+
+    References
+    ----------
+    .. footbibliography::
     """
     if T not in ac.shape:
         raise ValueError('There is something wrong, mate!')
@@ -1264,20 +1308,25 @@ def tukeytaperme(ac, T, M):
 
 
 def curbtaperme(ac, M):
-    """Curb the autocorrelations, according to Anderson 1984.
+    """Truncate lagged correlations beyond a given lag, according to Anderson (1984).
 
     Parameters
     ----------
-    ac
-    M
+    ac : :obj:`numpy.ndarray` of shape (L,), (V, L), or (V, V, L)
+        Lagged auto- or cross-correlations, starting at lag 1, with lags along the last axis.
+        V = number of features/regions/voxels
+        L = number of lags
+    M : :obj:`int` or :obj:`float`
+        The number of lags to keep. Rounded to the nearest integer.
 
     Returns
     -------
-    ct_ts
+    ct_ts : :obj:`numpy.ndarray`
+        The truncated correlations, with the same shape as ``ac``.
+        The first M lags are unchanged, and all later lags are set to zero.
 
     Notes
     -----
-    multi-dimensional, and therefore is fine!
     SA, Ox, 2018
     """
     ac = ac.copy()
@@ -1301,23 +1350,38 @@ def curbtaperme(ac, M):
 
 
 def shrinkme(ac, T):
-    """Shrink the *early* bunches of autocorr coefficients beyond the CI.
+    """Truncate each autocorrelation function at the first lag inside the white-noise CI.
+
+    This is the adaptive truncation method from :footcite:t:`afyouni2019effective`.
 
     Parameters
     ----------
-    ac
-    T
+    ac : :obj:`numpy.ndarray` of shape (V, T)
+        Autocorrelations, starting at lag 1, with one row per time series.
+        If the second dimension does not have length ``T``, ``ac`` is transposed.
+        V = number of features/regions/voxels
+    T : :obj:`int`
+        The number of lags. Also sets the 95% confidence interval for white noise,
+        ``+/- 1.96 / sqrt(T)``.
 
     Returns
     -------
-    masked_ac
-    BreakPoint
+    masked_ac : :obj:`numpy.ndarray` of shape (V, T)
+        The autocorrelations, with the first lag whose absolute value falls inside the
+        confidence interval, and every later lag, set to zero.
+        Rows with no such lag are set entirely to zero.
+    BreakPoint : :obj:`numpy.ndarray` of shape (V,)
+        The number of lags kept for each time series
+        (zero for rows with no lag inside the confidence interval).
+        Use this to truncate the corresponding cross-correlations.
 
     Notes
     -----
-    Yo! this should be transformed to the matrix form, those fors at the top are bleak!
-
     SA, Ox, 2018
+
+    References
+    ----------
+    .. footbibliography::
     """
     ac = ac.copy()
 
