@@ -366,25 +366,50 @@ def denoise_with_nilearn(
     """A wrapper to call _denoise_with_nilearn using multiprocessing"""
     if num_threads < 1:
         raise Exception('num_threads must be a positive integer')
-    elif num_threads == 1:
-        return _denoise_with_nilearn(
-            preprocessed_bold.copy(),
-            confounds,
-            voxelwise_confounds,
-            sample_mask,
-            low_pass,
-            high_pass,
-            filter_order,
-            TR,
-        )
 
-    # Split the bold data into chunks to br processed in parallel
+    # An empty list of voxelwise confounds is the same as no voxelwise confounds
+    if voxelwise_confounds is not None and len(voxelwise_confounds) == 0:
+        voxelwise_confounds = None
+
+    if voxelwise_confounds is not None:
+        for i_confound, voxelwise_arr in enumerate(voxelwise_confounds):
+            if voxelwise_arr.shape != preprocessed_bold.shape:
+                raise ValueError(
+                    f'Voxelwise confound {i_confound} has shape {voxelwise_arr.shape}, '
+                    f'but BOLD data has shape {preprocessed_bold.shape} (T x S).'
+                )
+
+    # Each process gets one BLAS thread, so the BLAS libraries (e.g., OpenBLAS) don't start
+    # one thread per CPU in every process and oversubscribe the num_threads CPUs.
+    if num_threads == 1:
+        from threadpoolctl import threadpool_limits
+
+        with threadpool_limits(limits=1, user_api='blas'):
+            return _denoise_with_nilearn(
+                preprocessed_bold.copy(),
+                confounds,
+                voxelwise_confounds,
+                sample_mask,
+                low_pass,
+                high_pass,
+                filter_order,
+                TR,
+            )
+
+    # Split the bold data into chunks of voxels to be processed in parallel
     preprocessed_bold_chunks = np.array_split(preprocessed_bold, num_threads, axis=1)
-    # This np.array_split works on lists too - we just don't use an axis arg
     if voxelwise_confounds is None:
         voxelwise_confounds_chunks = [None] * num_threads
     else:
-        voxelwise_confounds_chunks = np.array_split(voxelwise_confounds, num_threads)
+        # Split each voxelwise confound along the voxel axis, the same way as the BOLD data,
+        # then regroup so that each chunk gets a list with one array per voxelwise confound.
+        split_voxelwise_confounds = [
+            np.array_split(voxelwise_arr, num_threads, axis=1)
+            for voxelwise_arr in voxelwise_confounds
+        ]
+        voxelwise_confounds_chunks = [
+            list(chunk) for chunk in zip(*split_voxelwise_confounds, strict=True)
+        ]
 
     arg_chunks = [
         (
@@ -404,10 +429,21 @@ def denoise_with_nilearn(
         )
     ]
 
-    with multiprocessing.Pool(processes=num_threads) as pool:
+    with multiprocessing.Pool(
+        processes=num_threads,
+        initializer=_limit_blas_threads,
+        initargs=(1,),
+    ) as pool:
         results = pool.starmap(_denoise_with_nilearn, arg_chunks)
 
     return np.column_stack(results)
+
+
+def _limit_blas_threads(n_threads):
+    """Limit the number of BLAS threads in the current (worker) process."""
+    from threadpoolctl import threadpool_limits
+
+    threadpool_limits(limits=n_threads, user_api='blas')
 
 
 @fill_doc
@@ -487,7 +523,6 @@ def _denoise_with_nilearn(
     from nilearn.signal import butterworth, standardize_signal
 
     n_volumes = preprocessed_bold.shape[0]
-    n_voxels = preprocessed_bold.shape[1]
 
     # Coerce 0 filter values to None
     low_pass = low_pass if low_pass != 0 else None
@@ -529,10 +564,14 @@ def _denoise_with_nilearn(
             confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
 
         if have_voxelwise_confounds:
-            voxelwise_confounds = [
-                standardize_signal(arr, detrend=True, standardize=False)
-                for arr in voxelwise_confounds
-            ]
+            # Replace one array at a time, so only one extra (T, S) array is held at once
+            for i_confound, arr in enumerate(voxelwise_confounds):
+                voxelwise_confounds[i_confound] = standardize_signal(
+                    arr,
+                    detrend=True,
+                    standardize=False,
+                )
+                del arr
 
     if low_pass or high_pass:
         # Now apply the bandpass filter to the interpolated data and confounds
@@ -555,11 +594,9 @@ def _denoise_with_nilearn(
                 ]
 
     if detrend_and_denoise:
-        # Censor the data and confounds
-        censored_bold = preprocessed_bold[sample_mask, :]
-
         if have_confounds and not voxelwise_confounds:
             # Estimate betas using only the censored data
+            censored_bold = preprocessed_bold[sample_mask, :]
             censored_confounds = confounds_arr[sample_mask, :]
             betas = np.linalg.lstsq(censored_confounds, censored_bold, rcond=None)[0]
 
@@ -568,77 +605,134 @@ def _denoise_with_nilearn(
             # denoised, censored data.
             preprocessed_bold = preprocessed_bold - np.dot(confounds_arr, betas)
         else:
-            # The goal is to regress out both global confounds and voxelwise confounds.
-            # To avoid fitting a separate, combined design matrix for every
-            # voxel (global + voxelwise), we use a two-stage regression equivalent to
-            # 'combined-design matrix' regression. This implementation is based on the
-            # Frisch-Waugh-Lovell theorem, which uses the following approach:
-            #
-            #   1. Regress global confounds from the BOLD signal.
-            #   2. Regress global confounds from each voxelwise confound
-            #      array, obtaining voxelwise regressors orthogonal to the
-            #      global confounds.
-            #   3. Regress these residualized voxelwise regressors from the
-            #      globally denoised BOLD signal, fitting each voxel
-            #      separately.
-            # So you only need to fit the global confounds once, not repeatedly in per voxel
-            # gives a significant speedup
-            # ------------------------------------------------------------
+            preprocessed_bold = _regress_voxelwise_confounds(
+                preprocessed_bold=preprocessed_bold,
+                confounds_arr=confounds_arr if have_confounds else None,
+                voxelwise_confounds=voxelwise_confounds,
+                sample_mask=sample_mask,
+            )
 
-            # STEP 1: Regress global confounds from the BOLD signal.
-            # Estimate betas using only the censored data
-            if have_confounds:
-                censored_global_confounds = confounds_arr[sample_mask, :]
-                betas_global = np.linalg.lstsq(
-                    censored_global_confounds, censored_bold, rcond=None
-                )[0]
+    return preprocessed_bold
 
-                # Denoise the interpolated data.
-                # The low-motion volumes of the denoised, interpolated data will be the same as the
-                # denoised, censored data.
-                residuals_after_global = preprocessed_bold - np.dot(confounds_arr, betas_global)
 
-                # denoised censored bold, calculate this for later.
-                censored_residuals_after_global = censored_bold - np.dot(
-                    censored_global_confounds, betas_global
-                )
+def _regress_voxelwise_confounds(
+    *,
+    preprocessed_bold,
+    confounds_arr,
+    voxelwise_confounds,
+    sample_mask,
+):
+    """Regress global and voxelwise confounds out of each voxel, in place.
 
-                # STEP 2: Regress global confounds from each voxelwise confound (vc).
-                vc_resid_censored_list = []
-                vc_resid_full_list = []
+    The result is the same as fitting, for each voxel, one design matrix with the global
+    confounds and that voxel's voxelwise confounds, but the global confounds are only fit once.
+    By the Frisch-Waugh-Lovell theorem, the voxelwise betas from that combined model equal the
+    betas from regressing the BOLD data's residuals after the global confounds on the voxelwise
+    confounds' residuals after the global confounds:
 
-                for vc in voxelwise_confounds:
-                    # regress voxelwise confounds on global confounds
-                    betas = np.linalg.lstsq(
-                        censored_global_confounds, vc[sample_mask, :], rcond=None
-                    )[0]
+    1.  Regress the global confounds out of the BOLD data.
+    2.  Regress the global confounds out of each voxelwise confound.
+    3.  For each voxel, regress the residualized voxelwise confounds out of the residualized
+        BOLD data.
 
-                    vc_resid_censored_list.append(
-                        vc[sample_mask, :] - np.dot(censored_global_confounds, betas)
-                    )
+    Betas are estimated from the low-motion volumes and applied to all volumes,
+    so the interpolated volumes are denoised too.
 
-                    vc_resid_full_list.append(vc - np.dot(confounds_arr, betas))
+    Parameters
+    ----------
+    preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
+        Detrended and filtered BOLD data. Overwritten with the denoised data.
+    confounds_arr : :obj:`numpy.ndarray` of shape (T, C1) or None
+        Detrended and filtered global confounds.
+    voxelwise_confounds : :obj:`list` of :obj:`numpy.ndarray` of shape (T, S)
+        Detrended and filtered voxelwise confounds. Overwritten with their residuals after the
+        global confounds.
+    sample_mask : :obj:`numpy.ndarray` of shape (T,)
+        Low-motion volumes are True and high-motion volumes are False.
+
+    Returns
+    -------
+    preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The denoised data.
+
+    Notes
+    -----
+    The arrays are residualized in place, in chunks of voxels, so that no new full-size arrays
+    are allocated.
+    """
+    n_volumes, n_voxels = preprocessed_bold.shape
+    n_censored_volumes = int(sample_mask.sum())
+    n_voxelwise_confounds = len(voxelwise_confounds)
+    n_columns = n_voxelwise_confounds
+    if confounds_arr is not None:
+        n_columns += confounds_arr.shape[1]
+        censored_confounds = confounds_arr[sample_mask, :]
+        # Use the same singular-value cutoff as np.linalg.lstsq(rcond=None).
+        # The pseudoinverse's default cutoff (1e-15) is lower, so a rank-deficient set of
+        # confounds (e.g., a duplicated column) would get huge, noise-fitting betas.
+        confounds_pinv = np.linalg.pinv(
+            censored_confounds,
+            rcond=np.finfo(np.float64).eps * max(censored_confounds.shape),
+        )
+
+    # Work on chunks of voxels, so the temporary arrays are about 64 MB at most
+    chunk_size = max(1, (2**23) // n_volumes)
+
+    # Each voxelwise confound's norm before residualization is used to tell when a residualized
+    # voxelwise confound is numerically zero (i.e., it lies in the span of the global confounds).
+    reference_norms = np.zeros(n_voxels)
+    for start in range(0, n_voxels, chunk_size):
+        voxels = slice(start, start + chunk_size)
+        for voxelwise_arr in voxelwise_confounds:
+            reference_norms[voxels] = np.maximum(
+                reference_norms[voxels],
+                np.linalg.norm(voxelwise_arr[sample_mask, voxels], axis=0),
+            )
+
+        if confounds_arr is not None:
+            # Steps 1 and 2: regress the global confounds out of the BOLD data and out of each
+            # voxelwise confound, in place.
+            for arr in [preprocessed_bold, *voxelwise_confounds]:
+                betas = confounds_pinv @ arr[sample_mask, voxels]
+                arr[:, voxels] -= confounds_arr @ betas
+
+    if confounds_arr is not None:
+        reference_norms = np.maximum(reference_norms, np.linalg.norm(censored_confounds, ord=2))
+
+    # The combined-design lstsq treats singular values below eps * max(M, N) times the largest
+    # singular value of the combined design as zero, so the same cutoff is used here.
+    eps = np.finfo(np.float64).eps
+    cutoffs = eps * max(n_censored_volumes, n_columns) * reference_norms
+
+    # Step 3: for each voxel, regress the residualized voxelwise confounds out of the
+    # residualized BOLD data.
+    # The fit is done in float64, like the combined design (the global confounds are float64).
+    for i_voxel in range(n_voxels):
+        design_matrix = np.column_stack(
+            [voxelwise_arr[:, i_voxel] for voxelwise_arr in voxelwise_confounds]
+        ).astype(np.float64)
+        censored_design_matrix = design_matrix[sample_mask, :]
+        censored_bold = preprocessed_bold[sample_mask, i_voxel].astype(np.float64)
+        betas, _, _, singular_values = np.linalg.lstsq(
+            censored_design_matrix,
+            censored_bold,
+            rcond=None,
+        )
+        if singular_values[-1] < cutoffs[i_voxel]:
+            # Drop the directions that are numerically zero, as the combined-design lstsq would
+            if singular_values[0] < cutoffs[i_voxel]:
+                betas = np.zeros(n_voxelwise_confounds)
             else:
-                # if no global confounds, then residuals are just the original data
-                residuals_after_global = preprocessed_bold
-                censored_residuals_after_global = censored_bold
-                vc_resid_censored_list = [vc[sample_mask, :] for vc in voxelwise_confounds]
-                vc_resid_full_list = voxelwise_confounds
-
-            # STEP 3: Regress these residualized voxelwise regressors from the
-            # globally denoised BOLD signal.
-            for i_voxel in range(n_voxels):
-                vc_x_censored = np.column_stack([x[:, i_voxel] for x in vc_resid_censored_list])
-                vc_x_full = np.column_stack([x[:, i_voxel] for x in vc_resid_full_list])
-
-                voxel_betas = np.linalg.lstsq(
-                    vc_x_censored, censored_residuals_after_global[:, i_voxel], rcond=None
+                betas = np.linalg.lstsq(
+                    censored_design_matrix,
+                    censored_bold,
+                    rcond=cutoffs[i_voxel] / singular_values[0],
                 )[0]
 
-                # Subtract global and voxelwise fitted contributions
-                preprocessed_bold[:, i_voxel] = residuals_after_global[:, i_voxel] - np.dot(
-                    vc_x_full, voxel_betas
-                )
+        # Denoise the interpolated data.
+        # The low-motion volumes of the denoised, interpolated data will be the same as the
+        # denoised, censored data.
+        preprocessed_bold[:, i_voxel] -= design_matrix @ betas
 
     return preprocessed_bold
 
@@ -663,22 +757,34 @@ def _interpolate(*, arr, sample_mask, TR):
     -------
     interpolated_arr : :obj:`numpy.ndarray` of shape (T, S)
         The interpolated data.
+        This is ``arr``, modified in place.
 
     Notes
     -----
     This function won't work if sample_mask is all zeros, but that should never happen.
+
+    The spline is fit in float64, with several (T, S) intermediate arrays,
+    so the data are interpolated in chunks of voxels to keep that overhead small.
+    Each voxel's spline only depends on that voxel's time series,
+    so chunking doesn't change the result.
     """
     from nilearn import signal
 
     outlier_idx = list(np.where(~sample_mask)[0])
-    n_volumes = arr.shape[0]
+    n_volumes, n_voxels = arr.shape
 
-    interpolated_arr = signal._interpolate_volumes(
-        arr,
-        sample_mask=sample_mask,
-        t_r=TR,
-        extrapolate=True,
-    )
+    # About 8 MiB of float64 values per chunk
+    chunk_size = max(1, (2**20) // n_volumes)
+    for start in range(0, n_voxels, chunk_size):
+        # _interpolate_volumes replaces the high-motion volumes of the view in place
+        signal._interpolate_volumes(
+            arr[:, start : start + chunk_size],
+            sample_mask=sample_mask,
+            t_r=TR,
+            extrapolate=True,
+        )
+
+    interpolated_arr = arr
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
     # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
@@ -750,6 +856,78 @@ def _create_mem_gb(bold_fname):
     }
 
     return mem_gbz
+
+
+def _estimate_denoise_mem_gb(
+    *,
+    bold_file,
+    mask_file=None,
+    n_voxelwise_confounds=0,
+    n_procs=1,
+):
+    """Estimate the peak memory of denoising one BOLD run with DenoiseNifti or DenoiseCifti.
+
+    Parameters
+    ----------
+    bold_file : :obj:`str`
+        The BOLD file to denoise. Only the header is read.
+    mask_file : :obj:`str` or None
+        The brain mask, for NIfTI data. It is read to count the in-mask voxels.
+    n_voxelwise_confounds : :obj:`int`
+        The number of voxel-wise confound images.
+    n_procs : :obj:`int`
+        The number of processes the denoising node uses.
+
+    Returns
+    -------
+    mem_gb : :obj:`float`
+        Estimated peak memory, in GB.
+
+    Notes
+    -----
+    The peak is the largest of three phases, in units of one in-mask data array
+    (volumes x voxels, float32 for NIfTI and float64 for CIFTI):
+
+    -   Loading: each image is read as a full-grid float32 array (NIfTI only, about 2.3 times
+        its size while decompressing), plus the in-mask arrays of the BOLD data and confounds.
+    -   Denoising: 3.2 + 2 arrays per voxel-wise confound (at least one) in one process,
+        plus 2.5 arrays to cast float32 data to float64 when there are no voxel-wise confounds.
+        With several processes, 4 + 3 arrays per voxel-wise confound (6 without any),
+        plus 0.3 GiB per process.
+    -   Writing: the full-grid output (float64 when there are no voxel-wise confounds,
+        which costs about 2.3 times the float32 grid), the in-mask arrays, and 0.25 GiB.
+
+    The coefficients were measured on MNI152NLin6Asym 2 mm NIfTI and fsLR 91k CIFTI data,
+    with 0 to 3 voxel-wise confounds and 1 to 8 processes. A fixed 0.25 GiB covers the process.
+    """
+    gib = 1024**3
+    bold_img = nb.load(bold_file)
+    if bold_img.ndim == 2:  # CIFTI, read as float64
+        n_volumes, n_elements = bold_img.shape
+        itemsize = 8
+        grid_bytes = 0
+    else:  # NIfTI, masked as float32
+        n_volumes = bold_img.shape[3]
+        mask = np.asanyarray(nb.load(mask_file).dataobj)
+        n_elements = int(np.count_nonzero(mask))
+        itemsize = 4
+        grid_bytes = np.prod(bold_img.shape) * 4
+
+    data_bytes = n_volumes * n_elements * itemsize
+    n_arrays = 1 + n_voxelwise_confounds
+    upcast = (n_voxelwise_confounds == 0) and (itemsize < 8)
+
+    load_bytes = 2.3 * grid_bytes + n_arrays * data_bytes
+    if n_procs > 1:
+        n_working = 6 if n_voxelwise_confounds == 0 else 4 + 3 * n_voxelwise_confounds
+        denoise_bytes = n_working * data_bytes + 0.3 * gib * n_procs
+    else:
+        n_working = 3.2 + 2 * max(n_voxelwise_confounds, 1) + (2.5 if upcast else 0)
+        denoise_bytes = n_working * data_bytes
+
+    write_bytes = grid_bytes * (2.3 if upcast else 1) + n_arrays * data_bytes + 0.25 * gib
+
+    return (0.25 * gib + max(load_bytes, denoise_bytes, write_bytes)) / gib
 
 
 def is_number(s):
