@@ -101,6 +101,33 @@ def test_collect_confounds_mixed_acq_runs(tmp_path_factory):
             assert 'acq-3echo' not in conf_base
 
 
+def test_collect_confounds_mixed_part_runs(tmp_path_factory):
+    """Two runs: one without part, one with part-mag; confounds should match entities.
+
+    part is not one of the run-identifying entities, so the first query finds both confounds
+    files and the entities the BOLD file lacks are set to Query.NONE in a second query.
+    """
+    layout = _build_layout_from_skeleton(tmp_path_factory, 'confounds_part_mixed.yml')
+    confounds_spec = _load_confounds_spec('36P')
+
+    bold_files = sorted(_get_bold_preproc_files(layout))
+    assert len(bold_files) == 2
+
+    for bf in bold_files:
+        confounds = xbids.collect_confounds(
+            bold_file=bf,
+            preproc_dataset=layout,
+            derivatives_datasets=None,
+            confound_spec=confounds_spec,
+        )
+        conf_base = os.path.basename(confounds['preproc_confounds']['file'])
+        bold_base = os.path.basename(bf)
+        if 'part-mag' in bold_base:
+            assert 'part-mag' in conf_base
+        else:
+            assert 'part-mag' not in conf_base
+
+
 def test_collect_confounds_sibling_runs(tmp_path_factory):
     """Each run gets its own confounds, not those of a sibling run with an extra entity.
 
