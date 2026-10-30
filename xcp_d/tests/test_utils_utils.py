@@ -522,6 +522,66 @@ def test_interpolate_chunks_match_one_spline(dtype):
     assert np.allclose(interpolated, expected, rtol=1e-6 if dtype == np.float32 else 1e-12)
 
 
+@pytest.mark.parametrize('n_voxelwise_confounds', [0, 1])
+def test_denoise_with_nilearn_float32(n_voxelwise_confounds):
+    """Test that float32 data are denoised in float64 and returned as float32.
+
+    The result must be exactly the result for the same values in float64, rounded to float32.
+    There are enough voxels for several chunks, with a partial chunk at the end.
+    """
+    n_volumes = 100
+    n_voxels = 2 * ((2**20) // n_volumes) + 7
+    rng = np.random.default_rng(0)
+    voxelwise_confounds = [
+        rng.standard_normal((n_volumes, n_voxels)).astype(np.float32)
+        for _ in range(n_voxelwise_confounds)
+    ]
+    data_arr = (
+        1000 + 10 * rng.standard_normal((n_volumes, n_voxels)) + 10 * sum(voxelwise_confounds)
+    ).astype(np.float32)
+    original_arr = data_arr.copy()
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[[0, 40, 41, 42, 99]] = False
+    params = {
+        'confounds': pd.DataFrame(rng.standard_normal((n_volumes, 3))),
+        'sample_mask': sample_mask,
+        'low_pass': 0.08,
+        'high_pass': 0.01,
+        'filter_order': 2,
+        'TR': 2,
+        'num_threads': 1,
+    }
+
+    denoised_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        voxelwise_confounds=voxelwise_confounds or None,
+        **params,
+    )
+    assert denoised_arr.dtype == np.float32
+    assert np.array_equal(data_arr, original_arr)
+
+    expected_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr.astype(np.float64),
+        voxelwise_confounds=[arr.astype(np.float64) for arr in voxelwise_confounds] or None,
+        **params,
+    )
+    assert np.array_equal(denoised_arr, expected_arr)
+
+
+def test_create_mem_gb_float32(tmp_path):
+    """Test that _create_mem_gb sizes the data as float32, whatever the data type on disk."""
+    import nibabel as nb
+
+    shape = (10, 20, 30, 40)
+    bold_file = str(tmp_path / 'bold.nii.gz')
+    nb.Nifti1Image(np.zeros(shape, dtype=np.int16), np.eye(4)).to_filename(bold_file)
+    assert nb.load(bold_file).get_data_dtype() == np.int16
+
+    mem_gb = utils._create_mem_gb(bold_file)
+    assert mem_gb['bold'] == np.prod(shape) * 4 / (1024**3)
+    assert mem_gb['volume'] == mem_gb['bold'] / shape[3]
+
+
 def test_estimate_denoise_mem_gb(tmp_path):
     """Check the denoising memory estimate against its phases for a small NIfTI run."""
     import nibabel as nb
@@ -544,9 +604,9 @@ def test_estimate_denoise_mem_gb(tmp_path):
     data_gib = 20**3 * n_volumes * 4 / gib
     grid_gib = 100**3 * n_volumes * 4 / gib
 
-    # With only global confounds in one process, writing the float64 output is the peak
+    # With only global confounds in one process, loading the BOLD image is the peak
     estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file, mask_file=mask_file)
-    assert np.isclose(estimate, 0.25 + 2.3 * grid_gib + data_gib + 0.25)
+    assert np.isclose(estimate, 0.25 + 2.3 * grid_gib + data_gib)
 
     # Three voxel-wise confounds in one process: loading the four images is the peak
     estimate = utils._estimate_denoise_mem_gb(
@@ -563,11 +623,11 @@ def test_estimate_denoise_mem_gb(tmp_path):
         n_voxelwise_confounds=3,
         n_procs=8,
     )
-    assert np.isclose(estimate, 0.25 + 13 * data_gib + 0.3 * 8)
+    assert np.isclose(estimate, 0.25 + 7 * data_gib + 0.4 * 8)
 
 
 def test_estimate_denoise_mem_gb_cifti(tmp_path):
-    """Check the denoising memory estimate for a small CIFTI run, which is read as float64."""
+    """Check the denoising memory estimate for a small CIFTI run, which is read as float32."""
     import nibabel as nb
 
     n_volumes = 50
@@ -581,7 +641,7 @@ def test_estimate_denoise_mem_gb_cifti(tmp_path):
     bold_arr = np.zeros((n_volumes, len(brain_models)), dtype=np.float32)
     nb.Cifti2Image(bold_arr, header=(series, brain_models)).to_filename(bold_file)
 
-    data_gib = n_volumes * len(brain_models) * 8 / (1024**3)
+    data_gib = n_volumes * len(brain_models) * 4 / (1024**3)
 
     # The data are tiny, so the fixed cost of writing is the peak in one process
     estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file)
@@ -589,7 +649,7 @@ def test_estimate_denoise_mem_gb_cifti(tmp_path):
 
     # With four processes and only global confounds, denoising is the peak
     estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file, n_procs=4)
-    assert np.isclose(estimate, 0.25 + 6 * data_gib + 0.3 * 4)
+    assert np.isclose(estimate, 0.25 + 4 * data_gib + 0.4 * 4)
 
 
 @pytest.mark.parametrize('have_confounds', [True, False])

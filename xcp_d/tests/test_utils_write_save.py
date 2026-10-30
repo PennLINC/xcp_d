@@ -139,3 +139,62 @@ def test_write_ndata_raises_for_invalid_inputs(ds001419_data, tmp_path):
             filename=os.path.join(tmp_path, 'out.nii.gz'),
             mask='/nonexistent/mask.nii.gz',
         )
+
+
+def test_read_and_write_ndata_float32(tmp_path):
+    """Check that read_ndata reads float32 data and write_ndata writes float32 files.
+
+    The inputs are float64 CIFTI and int16 NIfTI files.
+    """
+    import nibabel as nb
+
+    n_volumes = 5
+    rng = np.random.default_rng(0)
+
+    brain_models = nb.cifti2.BrainModelAxis.from_mask(
+        np.ones((3, 3, 3), dtype=bool),
+        affine=np.eye(4),
+        name='thalamus_left',
+    )
+    series = nb.cifti2.SeriesAxis(start=0, step=2, size=n_volumes)
+    cifti_arr = rng.standard_normal((n_volumes, len(brain_models)))
+    cifti_file = str(tmp_path / 'float64.dtseries.nii')
+    nb.Cifti2Image(cifti_arr, header=(series, brain_models)).to_filename(cifti_file)
+    assert nb.load(cifti_file).get_data_dtype() == np.float64
+
+    cifti_data = write_save.read_ndata(cifti_file)
+    assert cifti_data.dtype == np.float32
+    assert np.array_equal(cifti_data, cifti_arr.T.astype(np.float32))
+
+    for out_name in ('out.dtseries.nii', 'out.dscalar.nii'):
+        out_file = str(tmp_path / out_name)
+        write_save.write_ndata(cifti_arr.T, template=cifti_file, filename=out_file, TR=2)
+        assert nb.load(out_file).get_data_dtype() == np.float32
+        assert np.array_equal(write_save.read_ndata(out_file), cifti_data)
+
+    # A shorter series, for which the time axis is created by write_ndata
+    out_file = str(tmp_path / 'short.dtseries.nii')
+    write_save.write_ndata(cifti_arr[:3].T, template=cifti_file, filename=out_file, TR=2)
+    assert nb.load(out_file).get_data_dtype() == np.float32
+
+    nifti_arr = rng.integers(0, 1000, size=(3, 3, 3, n_volumes)).astype(np.int16)
+    nifti_file = str(tmp_path / 'int16.nii.gz')
+    nb.Nifti1Image(nifti_arr, affine=np.eye(4)).to_filename(nifti_file)
+    assert nb.load(nifti_file).get_data_dtype() == np.int16
+    mask_file = str(tmp_path / 'mask.nii.gz')
+    nb.Nifti1Image(np.ones((3, 3, 3), dtype=np.uint8), affine=np.eye(4)).to_filename(mask_file)
+
+    nifti_data = write_save.read_ndata(nifti_file, maskfile=mask_file)
+    assert nifti_data.dtype == np.float32
+    assert np.array_equal(nifti_data, nifti_arr.reshape(-1, n_volumes).astype(np.float32))
+
+    out_file = str(tmp_path / 'out.nii.gz')
+    write_save.write_ndata(
+        nifti_data.astype(np.float64),
+        template=nifti_file,
+        filename=out_file,
+        mask=mask_file,
+        TR=2,
+    )
+    assert nb.load(out_file).get_data_dtype() == np.float32
+    assert np.array_equal(write_save.read_ndata(out_file, maskfile=mask_file), nifti_data)

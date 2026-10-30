@@ -583,7 +583,7 @@ def plot_fmri_es(
 
     atlaslabels = None
     if seg_data is not None:
-        atlaslabels = nb.load(seg_data).get_fdata()
+        atlaslabels = nb.load(seg_data).get_fdata(dtype=np.float32)
 
     rm_temp_file = False
     temp_preprocessed_file = preprocessed_bold
@@ -874,7 +874,7 @@ def plot_carpet(
             raise ValueError(f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}')
 
         # Get required information
-        data = img.get_fdata().T
+        data = img.get_fdata(dtype=np.float32).T
         matrix = img.header.matrix
         struct_map = {
             'LEFT_CORTEX': 1,

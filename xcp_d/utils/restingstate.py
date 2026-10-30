@@ -41,7 +41,9 @@ def compute_2d_reho(datat, adjacency_matrix):
 
         neighborhood_data = datat[neighborhood_idx, :]
 
-        rankeddata = np.zeros_like(neighborhood_data)
+        # The ranks are summed and squared in float64, even if the data are float32,
+        # because kc is a small difference between large sums of squares.
+        rankeddata = np.zeros(neighborhood_data.shape, dtype=np.float64)
         # pull out index of voxel, timepoint
         n_neighbors, n_volumes = neighborhood_data.shape[0], neighborhood_data.shape[1]
 
@@ -146,6 +148,7 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
     Voxels are processed in blocks rather than one at a time,
     but the result is identical to the per-voxel calculation in :func:`_compute_alff_voxel`,
     which is used directly for voxels with non-finite values.
+    Each block is processed in float64, so float32 data are never copied to float64 in full.
     Every reduction over time is performed on C-contiguous rows,
     the data-dependent matrix products from :func:`scipy.signal.lombscargle` are separate
     per-voxel :func:`numpy.dot` calls,
@@ -192,9 +195,15 @@ def _compute_alff_blocks(*, data_matrix, low_pass, high_pass, TR, sample_mask):
 
     alff = np.zeros(n_voxels)
     for start in range(0, n_voxels, block_size):
-        # A C-contiguous copy, so that reductions along time match the per-voxel calculation,
+        # A C-contiguous float64 copy, so that reductions along time match the per-voxel
+        # calculation, so that float32 data are processed in float64,
         # and so that the caller's array is not modified.
-        block = np.array(data_matrix[start : start + block_size], order='C', copy=True)
+        block = np.array(
+            data_matrix[start : start + block_size],
+            dtype=np.float64,
+            order='C',
+            copy=True,
+        )
 
         # Voxels with data that are all the same value (esp. zeros) keep an ALFF of 0.
         sd_scale = np.nanstd(block, axis=1)
@@ -254,9 +263,7 @@ def _compute_alff_blocks(*, data_matrix, low_pass, high_pass, TR, sample_mask):
             # from the value closest to the low pass cutoff, to the value closest
             # to the high pass pass cutoff
             band = np.ascontiguousarray(power_spectrum_sqrt[:, ff_alff[0] : ff_alff[1]])
-            # Store as float64 before rescaling, as the per-voxel calculation does,
-            # so that float32 data are rescaled in float64.
-            block_alff = (len(ff_alff) * np.nanmean(band, axis=1)).astype(np.float64)
+            block_alff = len(ff_alff) * np.nanmean(band, axis=1)
             # Rescale ALFF based on original BOLD scale
             block_alff *= sd_scale[fast_idx]
             alff[start + fast_idx] = block_alff

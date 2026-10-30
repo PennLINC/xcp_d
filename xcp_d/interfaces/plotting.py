@@ -500,7 +500,7 @@ class AnatomicalPlot(SimpleInterface):
             self.inputs.in_file, suffix='_file.svg', newpath=runtime.cwd, use_ext=False
         )
         img = nb.load(self.inputs.in_file)
-        arr = img.get_fdata()
+        arr = img.get_fdata(dtype=np.float32)
 
         fig = plt.figure(constrained_layout=False, figsize=(25, 10))
         plot_anat(
@@ -878,7 +878,7 @@ class PlotCiftiParcellation(SimpleInterface):
             # Define vmin and vmax based on all of the files
             vmin, vmax = np.inf, -np.inf
             for cortical_file in cortical_files:
-                img_data = nb.load(cortical_file).get_fdata()
+                img_data = nb.load(cortical_file).get_fdata(dtype=np.float32)
                 vmin = np.min([np.nanmin(img_data), vmin])
                 vmax = np.max([np.nanmax(img_data), vmax])
             vmin = 0
@@ -897,7 +897,7 @@ class PlotCiftiParcellation(SimpleInterface):
             ]
 
             img = nb.load(cortical_files[i_file])
-            img_data = img.get_fdata()
+            img_data = img.get_fdata(dtype=np.float32)
             img_axes = [img.header.get_axis(i) for i in range(img.ndim)]
             lh_surf_data = surf_data_from_cifti(
                 img_data,
@@ -1059,7 +1059,7 @@ class PlotDenseCifti(SimpleInterface):
             lh = self.inputs.lh_underlay
 
         cifti = nb.load(self.inputs.in_file)
-        cifti_data = cifti.get_fdata()
+        cifti_data = cifti.get_fdata(dtype=np.float32)
         cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
 
         # Create Figure and GridSpec.

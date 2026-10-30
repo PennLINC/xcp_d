@@ -151,8 +151,8 @@ def _make_alff_data(n_voxels, n_volumes, sample_mask, rng):
 def test_compute_alff_matches_reference(n_volumes, censoring, dtype):
     """Check that compute_alff matches the original per-voxel implementation bit for bit.
 
-    CIFTI data are read as float64 and NIfTI data as float32,
-    and both are transposed (Fortran-ordered) by read_ndata.
+    Data are read as float32 and transposed (Fortran-ordered) by read_ndata,
+    and compute_alff processes them in float64.
     """
     rng = np.random.default_rng(n_volumes)
     sample_mask = None
@@ -171,7 +171,7 @@ def test_compute_alff_matches_reference(n_volumes, censoring, dtype):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', RuntimeWarning)
             expected = _reference_compute_alff(
-                data_matrix=data.copy(order='A'),
+                data_matrix=data.astype(np.float64),
                 low_pass=low_pass,
                 high_pass=high_pass,
                 TR=TR,
@@ -202,7 +202,7 @@ def test_compute_alff_matches_reference_across_blocks():
     data[[2096, 2097, 2150]] = 0
 
     expected = _reference_compute_alff(
-        data_matrix=data.copy(),
+        data_matrix=data.astype(np.float64),
         low_pass=0.08,
         high_pass=0.01,
         TR=0.8,
@@ -261,3 +261,20 @@ def test_lombscargle_normalized_matches_scipy():
     for i_row in range(data.shape[0]):
         expected = signal.lombscargle(time_arr, data[i_row], angular_frequencies, normalize=True)
         assert pgram[i_row].tobytes() == expected.tobytes()
+
+
+def test_compute_2d_reho_float32():
+    """Check that ReHo is the same for float32 data as for the same data in float64."""
+    rng = np.random.default_rng(0)
+    n_vertices, n_volumes = 30, 300
+    data = (rng.standard_normal((n_vertices, n_volumes)) * 50 + 10000).astype(np.float32)
+    adjacency_matrix = rng.random((n_vertices, n_vertices)) < 0.2
+    adjacency_matrix = np.logical_or(adjacency_matrix, adjacency_matrix.T)
+    np.fill_diagonal(adjacency_matrix, False)
+
+    reho = restingstate.compute_2d_reho(datat=data, adjacency_matrix=adjacency_matrix)
+    expected = restingstate.compute_2d_reho(
+        datat=data.astype(np.float64),
+        adjacency_matrix=adjacency_matrix,
+    )
+    assert reho.tobytes() == expected.tobytes()

@@ -139,10 +139,9 @@ series to retain the original scaling.
         name='outputnode',
     )
 
-    # Measured peak memory is about 4.5x the BOLD size for NIfTI data (the denoised series is
-    # stored as float64 and loaded in full before masking) and 3x for CIFTI data (loaded as
-    # float64). Both include ~10% headroom.
-    alff_mem_gb = (5 if file_format == 'nifti' else 3.3) * mem_gb['bold']
+    # Measured peak memory is about 2.5x the BOLD size for NIfTI data (the denoised series is
+    # loaded in full before masking) and 1.4x for CIFTI data. Both include ~10% headroom.
+    alff_mem_gb = (2.8 if file_format == 'nifti' else 1.5) * mem_gb['bold']
 
     # compute alff
     alff_compt = pe.Node(

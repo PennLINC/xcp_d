@@ -28,6 +28,16 @@ The  *XCP-D* outputs are written out in BIDS format and consist of three main pa
    If you discover a problem with the BIDS compliance of *XCP-D*'s derivatives,
    please open an issue in the *XCP-D* repository.
 
+.. admonition:: A note on data types
+
+   *XCP-D* reads imaging data as single-precision (float32) floating-point numbers,
+   whatever their data type on disk,
+   and writes its imaging derivatives, parcellated time series,
+   and correlation matrices as float32.
+   Calculations that are sensitive to rounding error (e.g., denoising, ALFF, and ReHo)
+   are performed in double precision (float64), on small chunks of the data at a time,
+   and their results are stored as float32.
+
 
 ***************
 Summary Reports

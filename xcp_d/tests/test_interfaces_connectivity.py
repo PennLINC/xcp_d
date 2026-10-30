@@ -119,6 +119,7 @@ def test_correlate_timeseries_uses_denoising_column(tmp_path_factory):
     censoring_df.to_csv(temporal_mask, sep='\t', index=False)
 
     correlations_df, _ = correlate_timeseries(timeseries, temporal_mask=temporal_mask)
+    assert (correlations_df.dtypes == np.float32).all()
 
     # Correlating on `denoising` drops 4 volumes; correlating on `framewise_displacement`
     # would drop only 2, giving a different value.

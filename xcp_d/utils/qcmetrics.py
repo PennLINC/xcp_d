@@ -42,10 +42,10 @@ def compute_registration_qc(
     qc_metadata : dict
         Metadata describing the QC measures.
     """
-    bold_mask_anatspace_arr = nb.load(bold_mask_anatspace).get_fdata()
-    anat_mask_anatspace_arr = nb.load(anat_mask_anatspace).get_fdata()
-    bold_mask_stdspace_arr = nb.load(bold_mask_stdspace).get_fdata()
-    template_mask_arr = nb.load(template_mask).get_fdata()
+    bold_mask_anatspace_arr = nb.load(bold_mask_anatspace).get_fdata(dtype=np.float32)
+    anat_mask_anatspace_arr = nb.load(anat_mask_anatspace).get_fdata(dtype=np.float32)
+    bold_mask_stdspace_arr = nb.load(bold_mask_stdspace).get_fdata(dtype=np.float32)
+    template_mask_arr = nb.load(template_mask).get_fdata(dtype=np.float32)
 
     reg_qc = {
         'coreg_dice': [dice(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
