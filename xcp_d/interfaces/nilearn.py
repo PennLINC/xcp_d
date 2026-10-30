@@ -377,7 +377,8 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
 
         voxelwise_confounds = None
         if self.inputs.confounds_images:
-            voxelwise_confounds = [read_ndata(f) for f in self.inputs.confounds_images]
+            # Transpose from SxT (xcpd order) to TxS (nilearn order), like the BOLD data
+            voxelwise_confounds = [read_ndata(f).T for f in self.inputs.confounds_images]
 
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,

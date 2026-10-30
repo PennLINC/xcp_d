@@ -308,6 +308,299 @@ def test_denoise_with_nilearn_voxelwise():
     assert out_arr.shape == (n_volumes, n_voxels)
 
 
+@pytest.mark.parametrize('n_voxelwise_confounds', [1, 3])
+@pytest.mark.parametrize('have_confounds', [True, False])
+def test_denoise_with_nilearn_voxelwise_parallel(n_voxelwise_confounds, have_confounds):
+    """Test that denoising with voxel-wise regressors gives the same result in parallel.
+
+    Each chunk of voxels must be denoised with the voxel-wise regressors for those voxels.
+    """
+    high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
+    n_voxels, n_volumes, n_confounds = 100, 120, 5
+    rng = np.random.default_rng(0)
+    voxelwise_confounds = [
+        rng.standard_normal((n_volumes, n_voxels)) for _ in range(n_voxelwise_confounds)
+    ]
+    # Give every voxel a strong voxel-wise confound signal, so skipping or misassigning
+    # the voxel-wise regressors changes the result.
+    data_arr = rng.standard_normal((n_volumes, n_voxels)) + 10 * sum(voxelwise_confounds)
+    confounds_df = None
+    if have_confounds:
+        confounds_df = pd.DataFrame(
+            rng.standard_normal((n_volumes, n_confounds)),
+            columns=[f'confound_{i}' for i in range(n_confounds)],
+        )
+
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[40:50] = False
+
+    params = {
+        'confounds': confounds_df,
+        'voxelwise_confounds': voxelwise_confounds,
+        'sample_mask': sample_mask,
+        'low_pass': low_pass,
+        'high_pass': high_pass,
+        'filter_order': filter_order,
+        'TR': TR,
+    }
+    serial_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, num_threads=1, **params)
+    parallel_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        num_threads=3,
+        **params,
+    )
+    assert np.allclose(parallel_arr, serial_arr)
+
+    # The voxel-wise regressors should be removed from every voxel.
+    for voxelwise_arr in voxelwise_confounds:
+        corrs = [
+            np.corrcoef(voxelwise_arr[sample_mask, i], parallel_arr[sample_mask, i])[0, 1]
+            for i in range(n_voxels)
+        ]
+        assert np.max(np.abs(corrs)) < 0.5
+
+
+@pytest.mark.parametrize('n_confounds', [6, 36])
+@pytest.mark.parametrize('bandpass_filter', [True, False])
+def test_denoise_with_nilearn_parallel(n_confounds, bandpass_filter):
+    """Test that denoising with standard (global) confounds gives the same result in parallel."""
+    TR = 2
+    n_voxels, n_volumes = 100, 120
+    rng = np.random.default_rng(0)
+    confounds_df = pd.DataFrame(
+        rng.standard_normal((n_volumes, n_confounds)),
+        columns=[f'confound_{i}' for i in range(n_confounds)],
+    )
+    data_arr = rng.standard_normal((n_volumes, n_voxels)) + 100
+    data_arr += confounds_df.to_numpy() @ rng.standard_normal((n_confounds, n_voxels))
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[[0, 1, 40, 41, 42, 118, 119]] = False
+
+    params = {
+        'confounds': confounds_df,
+        'voxelwise_confounds': None,
+        'sample_mask': sample_mask,
+        'low_pass': 0.08 if bandpass_filter else None,
+        'high_pass': 0.01 if bandpass_filter else None,
+        'filter_order': 2,
+        'TR': TR,
+    }
+    serial_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, num_threads=1, **params)
+    parallel_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        num_threads=3,
+        **params,
+    )
+    assert np.allclose(parallel_arr, serial_arr)
+
+
+def test_denoise_with_nilearn_voxelwise_shape_mismatch():
+    """Test that voxel-wise regressors with the wrong shape are rejected."""
+    n_voxels, n_volumes = 50, 60
+    rng = np.random.default_rng(0)
+    data_arr = rng.standard_normal((n_volumes, n_voxels))
+    voxelwise_confounds = [rng.standard_normal((n_voxels, n_volumes))]  # S x T, not T x S
+
+    with pytest.raises(ValueError, match='Voxelwise confound 0 has shape'):
+        utils.denoise_with_nilearn(
+            preprocessed_bold=data_arr,
+            confounds=None,
+            voxelwise_confounds=voxelwise_confounds,
+            sample_mask=np.ones(n_volumes, dtype=bool),
+            low_pass=None,
+            high_pass=None,
+            filter_order=None,
+            TR=2,
+            num_threads=1,
+        )
+
+
+@pytest.mark.parametrize('num_threads', [1, 3])
+def test_denoise_with_nilearn_voxelwise_empty_list(num_threads):
+    """Test that an empty list of voxel-wise regressors is treated like no voxel-wise regressors."""
+    n_voxels, n_volumes, n_confounds = 30, 60, 3
+    rng = np.random.default_rng(0)
+    data_arr = rng.standard_normal((n_volumes, n_voxels))
+    confounds_df = pd.DataFrame(rng.standard_normal((n_volumes, n_confounds)))
+    params = {
+        'confounds': confounds_df,
+        'sample_mask': np.ones(n_volumes, dtype=bool),
+        'low_pass': None,
+        'high_pass': None,
+        'filter_order': None,
+        'TR': 2,
+        'num_threads': num_threads,
+    }
+    empty_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        voxelwise_confounds=[],
+        **params,
+    )
+    none_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        voxelwise_confounds=None,
+        **params,
+    )
+    assert np.allclose(empty_arr, none_arr)
+
+
+@pytest.mark.parametrize('num_threads', [1, 3])
+def test_denoise_with_nilearn_voxelwise_matches_joint_regression(num_threads):
+    """Test voxel-wise denoising against an independent least-squares reference.
+
+    Each voxel's design combines the global confounds and that voxel's voxel-wise regressors.
+    The global and voxel-wise regressors are correlated and both contribute to the data,
+    so leaving either out of the design, or giving a voxel another voxel's regressors,
+    changes the result.
+    """
+    n_voxels, n_volumes, n_confounds, n_voxelwise_confounds = 40, 150, 4, 2
+    rng = np.random.default_rng(1)
+    global_arr = rng.standard_normal((n_volumes, n_confounds))
+    voxelwise_confounds = [
+        global_arr @ rng.standard_normal((n_confounds, n_voxels))
+        + rng.standard_normal((n_volumes, n_voxels))
+        for _ in range(n_voxelwise_confounds)
+    ]
+    data_arr = (
+        100
+        + global_arr @ rng.standard_normal((n_confounds, n_voxels))
+        + sum(rng.uniform(1, 3, n_voxels) * arr for arr in voxelwise_confounds)
+        + rng.standard_normal((n_volumes, n_voxels))
+    )
+
+    # No censoring or filtering, so the only preprocessing is linear detrending.
+    denoised_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        confounds=pd.DataFrame(global_arr),
+        voxelwise_confounds=voxelwise_confounds,
+        sample_mask=np.ones(n_volumes, dtype=bool),
+        low_pass=None,
+        high_pass=None,
+        filter_order=None,
+        TR=2,
+        num_threads=num_threads,
+    )
+
+    detrended_data = signal.detrend(data_arr, axis=0)
+    detrended_global = signal.detrend(global_arr, axis=0)
+    detrended_voxelwise = [signal.detrend(arr, axis=0) for arr in voxelwise_confounds]
+    expected_arr = np.empty_like(detrended_data)
+    for i_voxel in range(n_voxels):
+        design = np.column_stack(
+            [detrended_global] + [arr[:, i_voxel] for arr in detrended_voxelwise],
+        )
+        betas = np.linalg.lstsq(design, detrended_data[:, i_voxel], rcond=None)[0]
+        expected_arr[:, i_voxel] = detrended_data[:, i_voxel] - design @ betas
+
+    assert np.allclose(denoised_arr, expected_arr)
+
+
+def test_limit_blas_threads():
+    """Test that the denoising workers' initializer limits BLAS to one thread."""
+    import multiprocessing
+
+    from threadpoolctl import threadpool_info
+
+    with multiprocessing.Pool(
+        processes=2,
+        initializer=utils._limit_blas_threads,
+        initargs=(1,),
+    ) as pool:
+        worker_info = pool.apply(threadpool_info)
+
+    blas_threads = [info['num_threads'] for info in worker_info if info['user_api'] == 'blas']
+    assert blas_threads
+    assert all(n_threads == 1 for n_threads in blas_threads)
+
+
+def test_limit_blas_threads_in_process():
+    """Test the BLAS-limiting initializer in the current process.
+
+    Coverage is not collected in pool workers, so this also runs the initializer here.
+    The surrounding context restores the test process's BLAS limit afterwards.
+    """
+    from threadpoolctl import threadpool_limits
+
+    with threadpool_limits(limits=2, user_api='blas'):
+        utils._limit_blas_threads(1)
+        threads_during = _blas_threads()
+
+    assert threads_during
+    assert all(n_threads == 1 for n_threads in threads_during)
+
+
+def _blas_threads():
+    from threadpoolctl import threadpool_info
+
+    return [info['num_threads'] for info in threadpool_info() if info['user_api'] == 'blas']
+
+
+def _denoise_params(n_volumes=40, n_voxels=12):
+    rng = np.random.default_rng(0)
+    return {
+        'preprocessed_bold': rng.standard_normal((n_volumes, n_voxels)),
+        'confounds': pd.DataFrame(rng.standard_normal((n_volumes, 2))),
+        'voxelwise_confounds': None,
+        'sample_mask': np.ones(n_volumes, dtype=bool),
+        'low_pass': None,
+        'high_pass': None,
+        'filter_order': None,
+        'TR': 2,
+    }
+
+
+def test_denoise_with_nilearn_serial_limits_blas_threads(monkeypatch):
+    """Test that serial denoising runs with one BLAS thread and then restores the limit."""
+    from threadpoolctl import threadpool_limits
+
+    threads_during = []
+
+    def _record_threads(preprocessed_bold, *args):
+        threads_during.extend(_blas_threads())
+        return preprocessed_bold
+
+    monkeypatch.setattr(utils, '_denoise_with_nilearn', _record_threads)
+    with threadpool_limits(limits=2, user_api='blas'):
+        threads_before = _blas_threads()
+        utils.denoise_with_nilearn(num_threads=1, **_denoise_params())
+        threads_after = _blas_threads()
+
+    assert threads_during
+    assert all(n_threads == 1 for n_threads in threads_during)
+    assert threads_after == threads_before
+
+
+def test_denoise_with_nilearn_parallel_limits_blas_threads(monkeypatch):
+    """Test that the denoising pool limits each worker to one BLAS thread.
+
+    The pool is replaced with an in-process stand-in that records how it was created,
+    and test_limit_blas_threads checks that the initializer itself works.
+    """
+    pool_kwargs = {}
+
+    class _InProcessPool:
+        def __init__(self, **kwargs):
+            pool_kwargs.update(kwargs)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc_info):
+            return False
+
+        def starmap(self, func, iterable):
+            return [func(*args) for args in iterable]
+
+    monkeypatch.setattr(utils.multiprocessing, 'Pool', _InProcessPool)
+    params = _denoise_params()
+    parallel_arr = utils.denoise_with_nilearn(num_threads=3, **params)
+
+    assert pool_kwargs['processes'] == 3
+    assert pool_kwargs['initializer'] is utils._limit_blas_threads
+    assert pool_kwargs['initargs'] == (1,)
+    assert np.allclose(parallel_arr, utils.denoise_with_nilearn(num_threads=1, **params))
+
+
 def _check_trend(data, trend, sample_mask, atol=0.01):
     """Ensure that the trend was removed by the denoising process."""
     trend_corr = np.corrcoef(trend[sample_mask], data[sample_mask, :].T)[0, 1:]
