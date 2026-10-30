@@ -566,6 +566,86 @@ def test_estimate_denoise_mem_gb(tmp_path):
     assert np.isclose(estimate, 0.25 + 13 * data_gib + 0.3 * 8)
 
 
+def test_estimate_denoise_mem_gb_cifti(tmp_path):
+    """Check the denoising memory estimate for a small CIFTI run, which is read as float64."""
+    import nibabel as nb
+
+    n_volumes = 50
+    brain_models = nb.cifti2.BrainModelAxis.from_mask(
+        np.ones((4, 4, 4), dtype=bool),
+        affine=np.eye(4),
+        name='thalamus_left',
+    )
+    series = nb.cifti2.SeriesAxis(start=0, step=2, size=n_volumes)
+    bold_file = str(tmp_path / 'bold.dtseries.nii')
+    bold_arr = np.zeros((n_volumes, len(brain_models)), dtype=np.float32)
+    nb.Cifti2Image(bold_arr, header=(series, brain_models)).to_filename(bold_file)
+
+    data_gib = n_volumes * len(brain_models) * 8 / (1024**3)
+
+    # The data are tiny, so the fixed cost of writing is the peak in one process
+    estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file)
+    assert np.isclose(estimate, 0.25 + data_gib + 0.25)
+
+    # With four processes and only global confounds, denoising is the peak
+    estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file, n_procs=4)
+    assert np.isclose(estimate, 0.25 + 6 * data_gib + 0.3 * 4)
+
+
+@pytest.mark.parametrize('have_confounds', [True, False])
+def test_regress_voxelwise_confounds_rank_deficient(have_confounds):
+    """Test the two-stage regression against the combined design with degenerate confounds.
+
+    Voxel-wise confounds that are numerically zero after the global confounds are regressed out
+    must be dropped, as lstsq on the combined design would, rather than fit to rounding noise.
+    """
+    n_volumes, n_voxels, n_confounds = 120, 6, 3
+    rng = np.random.default_rng(2)
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[[10, 11, 12, 60, 61]] = False
+
+    confounds_arr = rng.standard_normal((n_volumes, n_confounds)) if have_confounds else None
+    voxelwise_confounds = [rng.standard_normal((n_volumes, n_voxels)) for _ in range(2)]
+    if have_confounds:
+        # Voxel 0: both voxel-wise confounds lie in the span of the global confounds
+        voxelwise_confounds[0][:, 0] = 2.5 * confounds_arr[:, 0]
+        voxelwise_confounds[1][:, 0] = confounds_arr @ np.array([1.0, -0.5, 2.0])
+        # Voxel 1: only the first one does
+        voxelwise_confounds[0][:, 1] = confounds_arr @ np.array([0.3, 1.0, 1.5])
+    else:
+        # Voxel 0: both voxel-wise confounds are zero
+        voxelwise_confounds[0][:, 0] = 0
+        voxelwise_confounds[1][:, 0] = 0
+        # Voxel 1: the second one duplicates the first one
+        voxelwise_confounds[1][:, 1] = voxelwise_confounds[0][:, 1]
+
+    bold_arr = rng.standard_normal((n_volumes, n_voxels)) + sum(voxelwise_confounds)
+    if have_confounds:
+        bold_arr += confounds_arr @ rng.standard_normal((n_confounds, n_voxels))
+
+    expected_arr = np.empty_like(bold_arr)
+    for i_voxel in range(n_voxels):
+        columns = [arr[:, i_voxel] for arr in voxelwise_confounds]
+        if have_confounds:
+            columns = [confounds_arr, *columns]
+
+        design = np.column_stack(columns)
+        betas = np.linalg.lstsq(
+            design[sample_mask, :],
+            bold_arr[sample_mask, i_voxel],
+            rcond=None,
+        )[0]
+        expected_arr[:, i_voxel] = bold_arr[:, i_voxel] - design @ betas
+
+    denoised_arr = utils._regress_voxelwise_confounds(
+        preprocessed_bold=bold_arr.copy(),
+        confounds_arr=confounds_arr,
+        voxelwise_confounds=[arr.copy() for arr in voxelwise_confounds],
+        sample_mask=sample_mask,
+    )
+    assert np.allclose(denoised_arr, expected_arr, rtol=1e-10, atol=1e-10)
+
+
 def test_limit_blas_threads():
     """Test that the denoising workers' initializer limits BLAS to one thread."""
     import multiprocessing
