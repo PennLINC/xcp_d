@@ -911,18 +911,14 @@ class TSVToPconn(SimpleInterface):
         # missing index values.
         # If any dictionary keys are not in the index, raise an error with a list of the
         # missing dictionary keys.
-        missing_cifti_nodes = []
-        missing_tsv_nodes = []
-        for cifti_name in ax.name:
-            cifti_name = str(cifti_name)
-            # If the CIFTI node name is not in the TSV, add it to the list of missing CIFTI nodes.
-            if cifti_name not in parcel_label_mapper.keys():
-                missing_cifti_nodes.append(cifti_name)
-
-        for expected_cifti_name in parcel_label_mapper.keys():
-            # If the TSV node name is not in the CIFTI, add it to the list of missing TSV nodes.
-            if expected_cifti_name not in ax.name:
-                missing_tsv_nodes.append(expected_cifti_name)
+        missing_cifti_nodes = [
+            str(cifti_name) for cifti_name in ax.name if str(cifti_name) not in parcel_label_mapper
+        ]
+        missing_tsv_nodes = [
+            expected_cifti_name
+            for expected_cifti_name in parcel_label_mapper
+            if expected_cifti_name not in ax.name
+        ]
 
         if missing_cifti_nodes:
             raise ValueError(

@@ -1180,7 +1180,7 @@ def correlate_timeseries_xdf(
 
         FGE = (n_features * (n_features - 1)) / 2
         LOGGER.info(
-            f'{n_var_outliers} ({str(round((n_var_outliers / FGE) * 100, 3))}%) '
+            f'{n_var_outliers} ({round((n_var_outliers / FGE) * 100, 3)}%) '
             'edges had variance smaller than the textbook variance!'
         )
     else:
@@ -1281,7 +1281,7 @@ def curbtaperme(ac, M):
     SA, Ox, 2018
     """
     ac = ac.copy()
-    M = int(round(M))
+    M = int(np.round(M))
     msk = np.zeros(np.shape(ac))
     if ac.ndim == 2:
         LOGGER.debug('The input is 2D.')
