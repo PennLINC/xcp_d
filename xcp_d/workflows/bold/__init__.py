@@ -12,12 +12,12 @@ from xcp_d.workflows.bold import (
 )
 
 __all__ = [
-    "cifti",
-    "concatenation",
-    "connectivity",
-    "metrics",
-    "nifti",
-    "outputs",
-    "plotting",
-    "postprocessing",
+    'cifti',
+    'concatenation',
+    'connectivity',
+    'metrics',
+    'nifti',
+    'outputs',
+    'plotting',
+    'postprocessing',
 ]

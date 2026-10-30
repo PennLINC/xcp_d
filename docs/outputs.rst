@@ -21,7 +21,6 @@ The  *XCP-D* outputs are written out in BIDS format and consist of three main pa
    `BEP012: Functional preprocessing derivatives <https://github.com/bids-standard/bids-specification/pull/519>`_,
    `BEP017: Relationship & connectivity matrix data schema <https://docs.google.com/document/d/1ugBdUF6dhElXdj3u9vw0iWjE6f_Bibsro3ah7sRV0GA/edit?usp=sharing>`_,
    and
-   `BEP038: Atlas Specification <https://docs.google.com/document/d/1RxW4cARr3-EiBEcXjLpSIVidvnUSHE7yJCUY91i5TfM/edit?usp=sharing>`_.
 
    In cases where a derivative type is not covered by an existing BEP,
    we have simply attempted to follow the general principles of BIDS.
@@ -38,6 +37,9 @@ There are two summary reports - a Nipreps-style participant summary and an execu
 session.
 The executive summary is based on the DCAN lab's
 `ExecutiveSummary tool <https://github.com/DCAN-Labs/ExecutiveSummary>`_.
+
+The report output level can be set to ``root`` (shown below), ``subject``, or ``session`` using the
+``--report-output-level`` parameter.
 
 .. code-block::
 
@@ -61,7 +63,7 @@ CIFTI subcortical parcellation :footcite:p:`glasser2013minimal`.
 The cortical atlases are the Glasser :footcite:p:`Glasser_2016`, the
 Gordon :footcite:p:`Gordon_2014`,
 the MIDB precision brain atlas derived from ABCD data and thresholded at 75% probability
-:footcite:p:`hermosillo2022precision`,
+:footcite:p:`hermosillo2024precision`,
 and the Myers-Labonte infant atlas thresholded at 50% probability :footcite:`myers2023functional`.
 The combined cortical/subcortical atlases are 10 different resolutions of the
 4S (Schaefer Supplemented with Subcortical Structures) atlas.
@@ -74,7 +76,7 @@ the HCP thalamic atlas :footcite:p:`najdenovska2018vivo`,
 and the amygdala and hippocampus parcels from the HCP CIFTI subcortical parcellation
 :footcite:p:`glasser2013minimal`.
 The 4S atlas is used in the same manner across three PennLINC BIDS Apps:
-XCP-D, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
+*XCP-D*, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
 For more information about the 4S atlas, please see https://github.com/PennLINC/AtlasPack.
 
 .. tip::
@@ -83,24 +85,31 @@ For more information about the 4S atlas, please see https://github.com/PennLINC/
    parameter.
 
    Alternatively, if you want to skip the parcellation step completely,
-   you can use the ``--skip-parcellation`` parameter.
+   you can use the unified ``--skip parcellation`` parameter.
 
-Atlases are written out to the ``atlases`` subfolder, following BEP038.
+   .. admonition:: Deprecated option
+
+      The legacy ``--skip-parcellation`` flag is deprecated and will be removed
+      in a future release. It is still accepted for backward compatibility, but
+      users should migrate to ``--skip parcellation``.
+
+   You can also skip other postprocessing steps using the ``--skip`` parameter.
+   See :ref:`usage_cli` for more information about the ``--skip`` parameter.
+
+Atlases are written out to the ``atlases`` subfolder, following BIDS formatting.
 
 .. code-block::
 
    xcp_d/
-      atlases/
-         dataset_description.json
-         atlas-<label>/
-            atlas-<label>_dseg.json
-            atlas-<label>_dseg.tsv
-
-            # NIfTI
-            atlas-<label>_space-<label>_dseg.nii.gz
-
-            # CIFTI
-            atlas-<label>_space-<label>_dseg.dlabel.nii
+      sourcedata/
+         atlases/
+            dataset_description.json
+            atlas-<label>_description.json
+            tpl-<label>/
+               tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.json
+               tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.tsv
+               tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.nii.gz
+               tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.dlabel.nii
 
 
 ******************
@@ -128,32 +137,35 @@ The resulting mesh files will reflect the subject's morphology with the same geo
 as fsLR-32k surfaces, which may be useful for visualizing fsLR-space derivatives on a subject's
 brain.
 
+The mesh files are also warped so that they can be overlaid on top of the MNI152NLin6Asym template,
+as in XCP-D's brainsprite.
+
 .. code-block::
 
    xcp_d/
       sub-<label>/[ses-<label>/]
          anat/
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_desc-hcp_midthickness.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_desc-hcp_inflated.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_desc-hcp_vinflated.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_pial.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_white.surf.gii
 
 
 Surface morphometric files
 ==========================
 
 *XCP-D* will also pass along several morphometric files from the preprocessing derivatives,
-as long as the files are already in fsLR space at 32k density.
+as long as the files are already in fsLR space at 91k density.
 
 .. code-block::
 
    xcp_d/
       sub-<label>/[ses-<label>/]
          anat/
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_sulc.shape.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_curv.shape.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_thickness.shape.gii
+            <source_entities>_space-fsLR_den-91k_sulc.dscalar.nii
+            <source_entities>_space-fsLR_den-91k_curv.dscalar.nii
+            <source_entities>_space-fsLR_den-91k_thickness.dscalar.nii
 
 
 *XCP-D* will additionally parcellate each of these files, when they are present, using each of the
@@ -164,9 +176,9 @@ atlases it uses to parcellate the functional outputs.
    xcp_d/
       sub-<label>/[ses-<label>/]
          anat/
-            <source_entities>_space-fsLR_seg-<label>_den-32k_stat-mean_desc-curv_morph.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-32k_stat-mean_desc-sulc_morph.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-32k_stat-mean_desc-thickness_morph.tsv
+            <source_entities>_space-fsLR_atlas-<label>_stat-mean_desc-curv_morph.tsv
+            <source_entities>_space-fsLR_atlas-<label>_stat-mean_desc-sulc_morph.tsv
+            <source_entities>_space-fsLR_atlas-<label>_stat-mean_desc-thickness_morph.tsv
 
 
 ******************
@@ -246,6 +258,7 @@ This includes the atlases used to extract the timeseries.
 .. important::
    Correlation matrices with the ``desc-<INT>volumes`` entity are produced if the
    ``--create-matrices`` parameter is used with integer values.
+   These matrices are derived from the concatenated timeseries and require ``--combine-runs``.
 
 .. code-block::
 
@@ -253,19 +266,20 @@ This includes the atlases used to extract the timeseries.
       sub-<label>/[ses-<label>/]
          func/
             # NIfTI
-            <source_entities>_space-<label>_seg-<label>_stat-coverage_bold.tsv
-            <source_entities>_space-<label>_seg-<label>_stat-mean_timeseries.tsv
-            <source_entities>_space-<label>_seg-<label>_stat-pearsoncorrelation_relmat.tsv
-            <source_entities>_space-<label>_seg-<label>_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
+            <source_entities>_space-<label>_atlas-<label>_stat-coverage_bold.tsv
+            <source_entities>_space-<label>_atlas-<label>_stat-mean_timeseries.tsv
+            <source_entities>_space-<label>_atlas-<label>_stat-pearsoncorrelation_relmat.tsv
+            <source_entities>_space-<label>_atlas-<label>_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
 
             # CIFTI
-            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-coverage_bold.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-coverage_boldmap.pscalar.nii
-            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-mean_timeseries.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-mean_timeseries.ptseries.nii
-            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-pearsoncorrelation_relmat.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
-            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-coverage_bold.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-coverage_boldmap.pscalar.nii
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-mean_timeseries.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-mean_timeseries.ptseries.nii
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_relmat.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_boldmap.pconn.nii
 
 
 Resting-state metric derivatives (ReHo and ALFF)
@@ -294,15 +308,15 @@ data.
             <source_entities>_space-<label>_stat-reho_boldmap.nii.gz
             <source_entities>_space-<label>_stat-alff_boldmap.nii.gz
             <source_entities>_space-<label>_stat-alff_desc-smooth_boldmap.nii.gz
-            <source_entities>_space-<label>_seg-<label>_stat-alff_bold.tsv
-            <source_entities>_space-<label>_seg-<label>_stat-reho_bold.tsv
+            <source_entities>_space-<label>_atlas-<label>_stat-alff_bold.tsv
+            <source_entities>_space-<label>_atlas-<label>_stat-reho_bold.tsv
 
             # CIFTI
             <source_entities>_space-fsLR_den-91k_stat-reho_boldmap.dscalar.nii
             <source_entities>_space-fsLR_den-91k_stat-alff_boldmap.dscalar.nii
             <source_entities>_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.dscalar.nii
-            <source_entities>_space-fsLR_seg-<label>_stat-alff_bold.tsv
-            <source_entities>_space-fsLR_seg-<label>_stat-reho_bold.tsv
+            <source_entities>_space-fsLR_atlas-<label>_stat-alff_bold.tsv
+            <source_entities>_space-fsLR_atlas-<label>_stat-reho_bold.tsv
 
 
 Other outputs include quality control, framewise displacement, and confounds files
@@ -326,10 +340,17 @@ If motion filtering was applied, this file will seven extra columns: the seven d
 with ``_filtered`` appended to each column.
 This file includes the high-motion volumes that are removed in most other derivatives.
 
-``outliers.tsv`` is a tab-delimited file with one column: "framewise_displacement".
-The "framewise_displacement" column contains zeros for low-motion volumes, and ones for
-high-motion outliers.
-This file includes the high-motion volumes that are removed in most other derivatives.
+``outliers.tsv`` is a tab-delimited file with three columns:
+"framewise_displacement", "censor_between", and "denoising".
+
+-  "framewise_displacement" contains zeros for low-motion volumes and ones for high-motion
+   outliers, as determined by ``--fd-thresh``.
+-  "censor_between" contains ones for volumes that are not high-motion outliers themselves,
+   but which belong to a contiguous segment of non-outlier volumes no longer than
+   ``--censor-between``. It is all zeros when ``--censor-between`` is 0, which is the default.
+-  "denoising" is the union of the other two columns, and is the column used to censor the data.
+
+This file includes the censored volumes that are removed in most other derivatives.
 
 ``design.tsv`` is a tab-delimited file with one column for each nuisance regressor,
 including one-hot encoded regressors indicating each of the high-motion outlier volumes.

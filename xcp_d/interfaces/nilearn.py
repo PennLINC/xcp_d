@@ -14,7 +14,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.nilearn import NilearnBaseInterface
 
-from xcp_d.utils.utils import denoise_with_nilearn
+from xcp_d.utils.utils import denoise_with_nilearn, get_col
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
@@ -22,25 +22,25 @@ class _IndexImageInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        desc="A 4D image to index.",
+        desc='A 4D image to index.',
     )
     index = traits.Int(
         0,
         usedefault=True,
-        desc="Volume index to select from in_file.",
+        desc='Volume index to select from in_file.',
     )
     out_file = File(
-        "img_3d.nii.gz",
+        'img_3d.nii.gz',
         usedefault=True,
         exists=False,
-        desc="The name of the indexed file.",
+        desc='The name of the indexed file.',
     )
 
 
 class _IndexImageOutputSpec(TraitedSpec):
     out_file = File(
         exists=True,
-        desc="Concatenated output file.",
+        desc='Concatenated output file.',
     )
 
 
@@ -54,8 +54,8 @@ class IndexImage(NilearnBaseInterface, SimpleInterface):
         from nilearn.image import index_img
 
         img_3d = index_img(self.inputs.in_file, self.inputs.index)
-        self._results["out_file"] = os.path.join(runtime.cwd, self.inputs.out_file)
-        img_3d.to_filename(self._results["out_file"])
+        self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
+        img_3d.to_filename(self._results['out_file'])
 
         return runtime
 
@@ -64,20 +64,20 @@ class _MergeInputSpec(BaseInterfaceInputSpec):
     in_files = InputMultiPath(
         File(exists=True),
         mandatory=True,
-        desc="A list of images to concatenate.",
+        desc='A list of images to concatenate.',
     )
     out_file = File(
-        "concat_4d.nii.gz",
+        'concat_4d.nii.gz',
         usedefault=True,
         exists=False,
-        desc="The name of the concatenated file to write out. concat_4d.nii.gz by default.",
+        desc='The name of the concatenated file to write out. concat_4d.nii.gz by default.',
     )
 
 
 class _MergeOutputSpec(TraitedSpec):
     out_file = File(
         exists=True,
-        desc="Concatenated output file.",
+        desc='Concatenated output file.',
     )
 
 
@@ -91,8 +91,8 @@ class Merge(NilearnBaseInterface, SimpleInterface):
         from nilearn.image import concat_imgs
 
         img_4d = concat_imgs(self.inputs.in_files)
-        self._results["out_file"] = os.path.join(runtime.cwd, self.inputs.out_file)
-        img_4d.to_filename(self._results["out_file"])
+        self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
+        img_4d.to_filename(self._results['out_file'])
 
         return runtime
 
@@ -101,7 +101,7 @@ class _SmoothInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        desc="An image to smooth.",
+        desc='An image to smooth.',
     )
     fwhm = traits.Either(
         traits.Float(),
@@ -111,22 +111,22 @@ class _SmoothInputSpec(BaseInterfaceInputSpec):
             maxlen=3,
         ),
         desc=(
-            "Full width at half maximum. "
-            "Smoothing strength, as a full-width at half maximum, in millimeters."
+            'Full width at half maximum. '
+            'Smoothing strength, as a full-width at half maximum, in millimeters.'
         ),
     )
     out_file = File(
-        "smooth_img.nii.gz",
+        'smooth_img.nii.gz',
         usedefault=True,
         exists=False,
-        desc="The name of the smoothed file to write out. smooth_img.nii.gz by default.",
+        desc='The name of the smoothed file to write out. smooth_img.nii.gz by default.',
     )
 
 
 class _SmoothOutputSpec(TraitedSpec):
     out_file = File(
         exists=True,
-        desc="Smoothed output file.",
+        desc='Smoothed output file.',
     )
 
 
@@ -140,8 +140,8 @@ class Smooth(NilearnBaseInterface, SimpleInterface):
         from nilearn.image import smooth_img
 
         img_smoothed = smooth_img(self.inputs.in_file, fwhm=self.inputs.fwhm)
-        self._results["out_file"] = os.path.join(runtime.cwd, self.inputs.out_file)
-        img_smoothed.to_filename(self._results["out_file"])
+        self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
+        img_smoothed.to_filename(self._results['out_file'])
 
         return runtime
 
@@ -150,24 +150,24 @@ class _BinaryMathInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        desc="An image to do math on.",
+        desc='An image to do math on.',
     )
     expression = traits.String(
         mandatory=True,
         desc="A mathematical expression to apply to the image. Must have 'img' in it.",
     )
     out_file = File(
-        "out_img.nii.gz",
+        'out_img.nii.gz',
         usedefault=True,
         exists=False,
-        desc="The name of the mathified file to write out. out_img.nii.gz by default.",
+        desc='The name of the mathified file to write out. out_img.nii.gz by default.',
     )
 
 
 class _BinaryMathOutputSpec(TraitedSpec):
     out_file = File(
         exists=True,
-        desc="Mathified output file.",
+        desc='Mathified output file.',
     )
 
 
@@ -181,8 +181,59 @@ class BinaryMath(NilearnBaseInterface, SimpleInterface):
         from nilearn.image import math_img
 
         img_mathed = math_img(self.inputs.expression, img=self.inputs.in_file)
-        self._results["out_file"] = os.path.join(runtime.cwd, self.inputs.out_file)
-        img_mathed.to_filename(self._results["out_file"])
+        self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
+        img_mathed.to_filename(self._results['out_file'])
+
+        return runtime
+
+
+class _ApplyMaskInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc='An image to do math on.',
+    )
+    mask = File(
+        exists=True,
+        mandatory=True,
+        desc='A mask image.',
+    )
+    out_file = File(
+        'out_img.nii.gz',
+        usedefault=True,
+        exists=False,
+        desc='The name of the mathified file to write out. out_img.nii.gz by default.',
+    )
+
+
+class _ApplyMaskOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc='Masked output file.',
+    )
+
+
+class ApplyMask(NilearnBaseInterface, SimpleInterface):
+    """Apply a mask to an image."""
+
+    input_spec = _ApplyMaskInputSpec
+    output_spec = _ApplyMaskOutputSpec
+
+    def _run_interface(self, runtime):
+        from nilearn import image, masking
+
+        resampled_mask = image.resample_to_img(
+            source_img=self.inputs.mask,
+            target_img=self.inputs.in_file,
+            interpolation='nearest',
+            copy_header=True,
+        )
+        img_masked = masking.unmask(
+            masking.apply_mask(self.inputs.in_file, resampled_mask),
+            resampled_mask,
+        )
+        self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
+        img_masked.to_filename(self._results['out_file'])
 
         return runtime
 
@@ -191,25 +242,25 @@ class _ResampleToImageInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
-        desc="An image to average over time.",
+        desc='An image to average over time.',
     )
     target_file = File(
         exists=True,
         mandatory=True,
-        desc="",
+        desc='',
     )
     out_file = File(
-        "out_img.nii.gz",
+        'out_img.nii.gz',
         usedefault=True,
         exists=False,
-        desc="The name of the resampled file to write out. out_img.nii.gz by default.",
+        desc='The name of the resampled file to write out. out_img.nii.gz by default.',
     )
 
 
 class _ResampleToImageOutputSpec(TraitedSpec):
     out_file = File(
         exists=True,
-        desc="Resampled output file.",
+        desc='Resampled output file.',
     )
 
 
@@ -228,10 +279,11 @@ class ResampleToImage(NilearnBaseInterface, SimpleInterface):
         resampled_img = resample_to_img(
             source_img=self.inputs.in_file,
             target_img=self.inputs.target_file,
-            interpolation="continuous",
+            interpolation='continuous',
+            copy_header=True,
         )
-        self._results["out_file"] = os.path.join(runtime.cwd, self.inputs.out_file)
-        resampled_img.to_filename(self._results["out_file"])
+        self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
+        resampled_img.to_filename(self._results['out_file'])
 
 
 class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
@@ -241,29 +293,30 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
         exists=True,
         mandatory=True,
         desc=(
-            "Preprocessed BOLD data, after dummy volume removal, "
-            "but without any additional censoring."
+            'Preprocessed BOLD data, after dummy volume removal, '
+            'but without any additional censoring.'
         ),
     )
     confounds_tsv = traits.Either(
         File(exists=True),
         None,
-        desc="A tab-delimited file containing the confounds to remove from the BOLD data.",
+        desc='A tab-delimited file containing the confounds to remove from the BOLD data.',
     )
     confounds_images = traits.List(
         File(exists=True),
-        desc="A list of 4D images containing voxelwise confounds.",
+        desc='A list of 4D images containing voxelwise confounds.',
     )
     temporal_mask = File(
         exists=True,
         mandatory=True,
-        desc="The tab-delimited high-motion outliers file.",
+        desc='The tab-delimited high-motion outliers file.',
     )
-    TR = traits.Float(mandatory=True, desc="Repetition time")
-    bandpass_filter = traits.Bool(mandatory=True, desc="To apply bandpass or not")
-    low_pass = traits.Float(mandatory=True, default_value=0.10, desc="Lowpass filter in Hz")
-    high_pass = traits.Float(mandatory=True, default_value=0.01, desc="Highpass filter in Hz")
-    filter_order = traits.Int(mandatory=True, default_value=2, desc="Filter order")
+    TR = traits.Float(mandatory=True, desc='Repetition time')
+    bandpass_filter = traits.Bool(mandatory=True, desc='To apply bandpass or not')
+    low_pass = traits.Float(mandatory=True, desc='Lowpass filter in Hz')
+    high_pass = traits.Float(mandatory=True, desc='Highpass filter in Hz')
+    filter_order = traits.Int(mandatory=True, desc='Filter order')
+    num_threads = traits.Int(1, usedefault=True, desc='denoise on this many cpus')
 
 
 class _DenoiseImageOutputSpec(TraitedSpec):
@@ -272,8 +325,8 @@ class _DenoiseImageOutputSpec(TraitedSpec):
     denoised_interpolated_bold = File(
         exists=True,
         desc=(
-            "The result of denoising the censored preprocessed BOLD data, "
-            "followed by cubic spline interpolation and band-pass filtering."
+            'The result of denoising the censored preprocessed BOLD data, '
+            'followed by cubic spline interpolation and band-pass filtering.'
         ),
     )
 
@@ -303,28 +356,29 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         censoring_df = pd.read_table(self.inputs.temporal_mask)
         if censoring_df.shape[0] != n_volumes:
             raise ValueError(
-                f"Temporal mask file has {censoring_df.shape[0]} rows, "
-                f"but BOLD data has {n_volumes} volumes."
+                f'Temporal mask file has {censoring_df.shape[0]} rows, '
+                f'but BOLD data has {n_volumes} volumes.'
             )
 
         # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
-        sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
+        sample_mask = ~get_col(censoring_df, 'denoising').to_numpy().astype(bool)
 
         confounds_df = None
         if self.inputs.confounds_tsv:
             confounds_df = pd.read_table(self.inputs.confounds_tsv)
             if confounds_df.shape[0] != n_volumes:
                 raise ValueError(
-                    f"Confounds file has {confounds_df.shape[0]} rows, "
-                    f"but BOLD data has {n_volumes} volumes."
+                    f'Confounds file has {confounds_df.shape[0]} rows, '
+                    f'but BOLD data has {n_volumes} volumes.'
                 )
 
             # Drop all-NaN columns representing voxel-wise confounds
-            confounds_df = confounds_df.dropna(axis=1, how="all")
+            confounds_df = confounds_df.dropna(axis=1, how='all')
 
         voxelwise_confounds = None
         if self.inputs.confounds_images:
-            voxelwise_confounds = [read_ndata(f) for f in self.inputs.confounds_images]
+            # Transpose from SxT (xcpd order) to TxS (nilearn order), like the BOLD data
+            voxelwise_confounds = [read_ndata(f).T for f in self.inputs.confounds_images]
 
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
@@ -335,18 +389,19 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             high_pass=high_pass,
             filter_order=self.inputs.filter_order,
             TR=self.inputs.TR,
+            num_threads=self.inputs.num_threads,
         )
 
         # Transpose from TxS (nilearn order) to SxT (xcpd order)
         denoised_interpolated_bold = denoised_interpolated_bold.T
-        self._results["denoised_interpolated_bold"] = os.path.join(
+        self._results['denoised_interpolated_bold'] = os.path.join(
             runtime.cwd,
-            "filtered_denoised.dtseries.nii",
+            'filtered_denoised.dtseries.nii',
         )
         write_ndata(
             denoised_interpolated_bold,
             template=self.inputs.preprocessed_bold,
-            filename=self._results["denoised_interpolated_bold"],
+            filename=self._results['denoised_interpolated_bold'],
             TR=self.inputs.TR,
         )
 
@@ -357,7 +412,7 @@ class _DenoiseNiftiInputSpec(_DenoiseImageInputSpec):
     mask = File(
         exists=True,
         mandatory=True,
-        desc="A binary brain mask.",
+        desc='A binary brain mask.',
     )
 
 
@@ -387,24 +442,24 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         censoring_df = pd.read_table(self.inputs.temporal_mask)
         if censoring_df.shape[0] != n_volumes:
             raise ValueError(
-                f"Temporal mask file has {censoring_df.shape[0]} rows, "
-                f"but BOLD data has {n_volumes} volumes."
+                f'Temporal mask file has {censoring_df.shape[0]} rows, '
+                f'but BOLD data has {n_volumes} volumes.'
             )
 
         # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
-        sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
+        sample_mask = ~get_col(censoring_df, 'denoising').to_numpy().astype(bool)
 
         confounds_df = None
         if self.inputs.confounds_tsv:
             confounds_df = pd.read_table(self.inputs.confounds_tsv)
             if confounds_df.shape[0] != n_volumes:
                 raise ValueError(
-                    f"Confounds file has {confounds_df.shape[0]} rows, "
-                    f"but BOLD data has {n_volumes} volumes."
+                    f'Confounds file has {confounds_df.shape[0]} rows, '
+                    f'but BOLD data has {n_volumes} volumes.'
                 )
 
             # Drop all-NaN columns representing voxel-wise confounds
-            confounds_df = confounds_df.dropna(axis=1, how="all")
+            confounds_df = confounds_df.dropna(axis=1, how='all')
 
         voxelwise_confounds = None
         if self.inputs.confounds_images:
@@ -421,11 +476,12 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             high_pass=high_pass,
             filter_order=self.inputs.filter_order,
             TR=self.inputs.TR,
+            num_threads=self.inputs.num_threads,
         )
 
-        self._results["denoised_interpolated_bold"] = os.path.join(
+        self._results['denoised_interpolated_bold'] = os.path.join(
             runtime.cwd,
-            "filtered_denoised.nii.gz",
+            'filtered_denoised.nii.gz',
         )
         filtered_denoised_img = masking.unmask(
             X=denoised_interpolated_bold,
@@ -436,6 +492,13 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         pixdim = list(filtered_denoised_img.header.get_zooms())
         pixdim[3] = self.inputs.TR
         filtered_denoised_img.header.set_zooms(pixdim)
-        filtered_denoised_img.to_filename(self._results["denoised_interpolated_bold"])
+
+        # Write the header DerivativesDataSink would give a BOLD series without a space input
+        # (scanner transform codes, mm and sec units). Otherwise the sink "fixes" the header by
+        # decompressing and recompressing the whole series.
+        filtered_denoised_img.set_qform(filtered_denoised_img.affine, 1)
+        filtered_denoised_img.set_sform(filtered_denoised_img.affine, 1)
+        filtered_denoised_img.header.set_xyzt_units('mm', 'sec')
+        filtered_denoised_img.to_filename(self._results['denoised_interpolated_bold'])
 
         return runtime

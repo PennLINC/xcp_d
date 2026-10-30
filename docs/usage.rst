@@ -1,12 +1,12 @@
 .. include:: links.rst
 
-#############
-Running XCP-D
-#############
+###############
+Running *XCP-D*
+###############
 
 .. warning::
 
-   XCP-D may not run correctly on **M1 chips**.
+   *XCP-D* may not run correctly on **M1 chips**.
 
 
 .. _usage_inputs:
@@ -25,20 +25,23 @@ Additionally, each of these should be in directories that can be parsed by the B
 (even if it is not BIDS valid - we do not require BIDS valid directories).
 The directories must also include a valid `dataset_description.json`.
 
-The exact command to run in *xcp_d* depends on the :doc:`installation` method and data that needs to be
-processed.
+The exact command to run in *XCP-D* depends on the :doc:`installation` method and data that needs to be processed.
 We start first with the *bare-metal* :ref:`installation_manually_prepared_environment`
 installation, as the command line is simpler.
-XCP-D can be executed on the command line, processesing fMRIPrep outputs, using the following
+*XCP-D* can be executed on the command line, processesing fMRIPrep outputs, using the following
 command-line structure, for example:
 
 .. code-block:: bash
 
-   xcp_d <fmriprep_dir> <output_dir> --file-format cifti --despike --head_radius 40 -w /wkdir --smoothing 6
+   xcp_d /path/to/fmriprep_dir \
+      /path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
-followed by the XCP-D command-line options as if you were running it on a *bare-metal*
+followed by the *XCP-D* command-line options as if you were running it on a *bare-metal*
 installation.
 
 
@@ -115,35 +118,70 @@ Command-Line Arguments
 
          *  -  Filename
             -  Description
-         *  -  ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii``
+         *  -  ``<source_entities>_hemi-<L|R>_space-fsLR_den-32k_pial.surf.gii``
             -  The gray matter / pial matter border.
-         *  -  ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii``
+         *  -  ``<source_entities>_hemi-<L|R>_space-fsLR_den-32k_white.surf.gii``
             -  The smoothed gray matter / white matter border for the cortex.
-         *  -  ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii``
+         *  -  ``<source_entities>_hemi-<L|R>_space-fsLR_den-32k_midthickness.surf.gii``
             -  The midpoints between wm and pial surfaces.
                This is derived from the FreeSurfer graymid
                (``mris_expand`` with distance=0.5 applied to the WM surfs).
-         *  -  ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_inflated.surf.gii``
+         *  -  ``<source_entities>_hemi-<L|R>_space-fsLR_den-32k_inflated.surf.gii``
             -  An inflation of the midthickness surface (useful for visualization).
                This file is only created if the input type is "hcp" or "dcan".
-         *  -  ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii``
+         *  -  ``<source_entities>_hemi-<L|R>_space-fsLR_den-32k_desc-hcp_midthickness.surf.gii``
             -  The midpoints between wm and pial surfaces.
                This is created by averaging the coordinates from the wm and pial surfaces.
-         *  -  ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii``
+         *  -  ``<source_entities>_hemi-<L|R>_space-fsLR_den-32k_desc-hcp_inflated.surf.gii``
             -  An inflation of the midthickness surface (useful for visualization).
                This is derived from the HCP midthickness file.
                This file is only created if the input type is "fmriprep" or "nibabies".
-         *  -  ``<source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii``
+         *  -  ``<source_entities>_hemi-<L|R>_space-fsLR_den-32k_desc-hcp_vinflated.surf.gii``
             -  A very-inflated midthicknesss surface (also for visualization).
                This is derived from the HCP midthickness file.
                This file is only created if the input type is "fmriprep" or "nibabies".
+
+   --skip : @after
+      The ``--skip`` parameter allows you to selectively skip certain postprocessing steps,
+      which can significantly reduce processing time when you don't need all outputs.
+
+      Available options:
+
+      -  ``alff``: Skip ALFF (Amplitude of Low-Frequency Fluctuation) calculation.
+         Note that ALFF is only calculated when bandpass filtering is enabled (``--bandpass-filter``).
+      -  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
+      -  ``parcellation``: Skip parcellation and time series extraction.
+         This is equivalent to using ``--atlases`` with an empty list.
+         **This will automatically skip connectivity as well, since connectivity requires parcellated data.**
+      -  ``connectivity``: Skip functional connectivity matrix calculations.
+         Parcellation will still be performed to extract time series,
+         but correlation matrices will not be computed.
+
+      You can specify multiple options to skip several steps at once.
+
+      .. code-block:: bash
+
+         # Skip ALFF and ReHo calculations
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip alff reho
+
+         # Skip only connectivity (parcellation still runs to extract time series)
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip connectivity
+
+         # Skip parcellation (this automatically skips connectivity too)
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip parcellation
+
+      .. tip::
+
+         Use ``--skip`` to optimize processing time when you only need specific outputs.
+         For example, if you need parcellated time series but not connectivity matrices,
+         use ``--skip connectivity``. If you don't need either, use ``--skip parcellation``.
 
 
 **************
 Minimal Inputs
 **************
 
-The minimal inputs required to run XCP-D are:
+The minimal inputs required to run *XCP-D* are:
 
 -  A native-space preprocessed T1w or T2w image.
 -  A preprocessed BOLD image in MNI152NLin6Asym, MNI152NLin2009cAsym,
@@ -164,7 +202,7 @@ Below are an example lists of inputs.
    Please note that the filenames may differ based on the pipeline,
    or even version of the pipeline, used for preprocessing.
 
-   The specific files required by XCP-D may also vary slightly depending on the settings you use.
+   The specific files required by *XCP-D* may also vary slightly depending on the settings you use.
 
 For NIfTI processing:
 
@@ -241,11 +279,11 @@ Surface files:
 Filtering Inputs with BIDS Filter Files
 ***************************************
 
-XCP-D allows users to choose which preprocessed files will be post-processed with the
+*XCP-D* allows users to choose which preprocessed files will be post-processed with the
 ``--bids-filter-file`` parameter.
 This argument must point to a JSON file, containing filters that will be fed into PyBIDS.
 
-The keys in this JSON file are unique to XCP-D.
+The keys in this JSON file are unique to *XCP-D*.
 They are our internal terms for different inputs that will be selected from the preprocessed
 dataset.
 The full list of keys can be found in the file ``xcp_d/data/io_spec.yaml``.
@@ -287,7 +325,7 @@ This field is not reflected in the ``io_spec.yaml`` file.
 Example bids-filter-file
 ========================
 
-In this example file, we only run XCP-D on resting-state preprocessed BOLD runs from session
+In this example file, we only run *XCP-D* on resting-state preprocessed BOLD runs from session
 "01".
 
 .. code-block:: json
@@ -300,16 +338,52 @@ In this example file, we only run XCP-D on resting-state preprocessed BOLD runs 
    }
 
 
-****************************
-Running XCP-D via containers
-****************************
+******************************
+Running *XCP-D* via containers
+******************************
+
+.. _run_apptainer:
+
+Apptainer
+=========
+
+If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommend using
+Apptainer.
+See :ref:`installation_container_technologies` for installation instructions.
+
+Once a user specifies the container options and the image to be run,
+the command line options are the same as the *bare-metal* installation.
+
+.. code-block:: bash
+
+   apptainer run --cleanenv xcp_d-<version>.simg \ # container args
+      /path/to/fmriprep_dir \ #xcpd args
+      /path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
+
+
+By default, Apptainer will mount (make accessible) your current working directory inside the container.
+If you need to access files from other locations on your system, you'll need to explicitly bind those
+directories using the ``-B`` flag. For example:
+
+.. code-block:: bash
+
+   apptainer run -B /home/user/data \ # Mount data directory
+      --cleanenv xcp_d-<version>.simg \
+      /home/user/data/fmriprep \
+      /home/user/data/xcpd_output \
+      participant \
+      --mode <mode>
+
 
 .. _run_docker:
 
 Docker
 ======
 
-If you are running XCP-D locally, we recommend Docker.
+If you are running *XCP-D* locally, we recommend Docker.
 See :ref:`installation_container_technologies` for installation instructions.
 
 In order to run Docker smoothly, it is best to prevent permissions issues associated with the root
@@ -321,57 +395,16 @@ A Docker container can be created using the following command:
 
 .. code-block:: bash
 
-   docker run --rm -it \
-      -v /dset/derivatives/fmriprep:/fmriprep:ro \
-      -v /tmp/wkdir:/work:rw \
-      -v /dset/derivatives/xcp_d:/out:rw \
-      pennlinc/xcp_d:latest \
-      /fmriprep /out participant \
-      --file-format cifti --despike --head_radius 40 -w /work --smoothing 6
-
-.. _run_apptainer:
-
-Apptainer
-=========
-
-If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommend using
-Apptainer.
-See :ref:`installation_container_technologies` for installation instructions.
-
-If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run
-*xcp_d*.
-
-.. code-block:: bash
-
-    apptainer run --cleanenv xcp_d.sif \
-        /dset/derivatives/fmriprep  \
-        /dset/derivatives/xcp_d \
-        --participant-label label
-
-
-Relevant aspects of the ``$HOME`` directory within the container
-================================================================
-
-By default, Apptainer will bind the user's ``$HOME`` directory on the host
-into the ``/home/$USER`` directory (or equivalent) in the container.
-Most of the time, it will also redefine the ``$HOME`` environment variable and
-update it to point to the corresponding mount point in ``/home/$USER``.
-However, these defaults can be overwritten in your system.
-It is recommended that you check your settings with your system's administrator.
-If your Apptainer installation allows it, you can work around the ``$HOME``
-specification, combining the bind mounts argument (``-B``) with the home overwrite
-argument (``--home``) as follows:
-
-.. code-block:: bash
-
-    apptainer run -B $HOME:/home/xcp \
-        --home /home/xcp \
-        --cleanenv xcp_d.simg \
-        <xcp_d arguments>
-
-Therefore, once a user specifies the container options and the image to be run,
-the command line options are the same as the *bare-metal* installation.
-
+   docker run --rm -it \ # docker args
+      -v /home/user/data/fmriprep \
+      -v /home/user/data/wkdir \
+      -v /home/user/data/xcpd_output \
+      pennlinc/xcp_d:<version> \
+      /home/user/data/fmriprep \ #xcpd args
+      /home/user/data/xcpd_output \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
 
 ****************
 Custom Confounds
@@ -412,7 +445,7 @@ see `tedana's documentation <https://tedana.readthedocs.io/en/latest/denoising.h
 `this NeuroStars topic <https://neurostars.org/t/aggressive-vs-nonaggressive-denoising/5612>`_,
 and/or `Pruim et al. (2015) <https://doi.org/10.1016/j.neuroimage.2015.02.064>`_.
 
-So how do we implement this in XCP-D?
+So how do we implement this in *XCP-D*?
 In order to define regressors that should be treated as signal,
 and thus orthogonalize the noise regressors with respect to known signals instead of regressing
 them without modification,
@@ -528,54 +561,49 @@ Something like this should work:
          - condition2
 
 
-Command Line XCP-D with Custom Confounds
-========================================
+Command Line *XCP-D* with Custom Confounds
+==========================================
 
-Last, run XCP-D with your custom configuration file and the path to the custom derivatives dataset.
+Last, run *XCP-D* with your custom configuration file and the path to the custom derivatives dataset.
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /my/project/directory:/mnt xcpd_latest.sif \
-      /mnt/input/fmriprep \
-      /mnt/output/directory \
-      participant \
-      --participant_label X \
-      --datasets custom=/mnt/custom_confounds \
-      --nuisance-regressors /mnt/custom_config.yaml
+   apptainer run -B /home/user/data \
+      --cleanenv xcpd_<version>.simg \
+      /home/user/data/path/to/fmriprep_dir \
+      /home/user/data/path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
+      --datasets custom=/home/user/data/path/to/custom_confounds \
+      --nuisance-regressors /home/user/data/path/to/custom_config.yaml
 
 
 ****************
 External Atlases
 ****************
 
-While XCP-D comes with many built-in parcellations,
+While *XCP-D* comes with many built-in parcellations,
 we understand that many users will want to use different ones.
 
-As long as the parcellation is organized in a BIDS-Atlas dataset and is in
+As long as the parcellation is organized according to BIDS v1.11.0 and is in
 fsLR-32k space (for CIFTI processing) or
 MNIInfant, MNI152NLin6Asym, or MNI152NLin2009cAsym space (for NIfTI processing),
-you can use it with XCP-D.
-
-.. warning::
-   BIDS Extension Proposal 38 (Atlas Specification) has not been integrated in BIDS yet,
-   so the organization and naming for atlas datasets may change in the future.
-
-   We have attempted to follow the proposed structure in XCP-D,
-   but we cannot guarantee that this will not change.
+you can use it with *XCP-D*.
 
 .. tip::
-   The main elements from the BIDS-Atlas dataset that XCP-D uses are:
+   The main elements from the BIDS-Atlas dataset that *XCP-D* uses are:
 
-   1. There must be a dataset_description.json file with DatasetType set to "atlas".
+   1. There must be a dataset_description.json file with DatasetType set to "derivative".
    2. The atlas metadata files must have the same entities as the atlas image files,
-      as PyBIDS does not support the inheritance principle when querying BIDS-Atlas datasets (yet).
-   3. There must be a TSV file for the atlas, with "index" and "label" columns.
+      as PyBIDS does not support the inheritance principle when querying atlas datasets (yet).
+   3. There must be a TSV file for the atlas, with "index" and "name" columns.
 
 To do this, use the ``--datasets`` and ``--atlases`` parameters.
 The ``--datasets`` parameter should point to the directory containing the BIDS-Atlas dataset,
 and the ``--atlases`` parameter should include the names of the atlases in the dataset to use.
 
-For example, consider a scenario where you have two BIDS-Atlas datasets, one containing all of the
+For example, consider a scenario where you have two BIDS atlas datasets, one containing all of the
 Schaefer 2018 resolutions and one containing the AAL atlas.
 These datasets are in ``/data/atlases/schaefer`` and ``/data/atlases/aal``, respectively.
 The file structure for these two datasets might look like this:
@@ -585,82 +613,86 @@ The file structure for these two datasets might look like this:
    /data/atlases/
       schaefer/
          dataset_description.json
-         atlas-Schaefer100/
-            atlas-Schaefer100_dseg.tsv
-            atlas-Schaefer100_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-Schaefer100_space-fsLR_den-32k_dseg.json
-         atlas-Schaefer200/
-            atlas-Schaefer200_dseg.tsv
-            atlas-Schaefer200_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-Schaefer200_space-fsLR_den-32k_dseg.json
+         atlas-Schaefer100_description.json
+         atlas-Schaefer200_description.json
          ...
-         atlas-Schaefer1000/
-            atlas-Schaefer1000_dseg.tsv
-            atlas-Schaefer1000_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-Schaefer1000_space-fsLR_den-32k_dseg.json
+         atlas-Schaefer1000_description.json
+         tpl-fsLR/
+            tpl-fsLR_atlas-Schaefer100_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-Schaefer100_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer100_den-32k_dseg.tsv
+            tpl-fsLR_atlas-Schaefer200_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-Schaefer200_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer200_den-32k_dseg.tsv
+            ...
+            tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.tsv
       aal/
          dataset_description.json
-         atlas-AAL/
-            atlas-AAL_dseg.tsv
-            atlas-AAL_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-AAL_space-fsLR_den-32k_dseg.json
+         atlas-AAL_description.json
+         tpl-fsLR/
+            tpl-fsLR_atlas-AAL_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-AAL_den-32k_dseg.json
+            tpl-fsLR_atlas-AAL_den-32k_dseg.tsv
 
 You may want to only apply the Schaefer100 atlas from the ``schaefer`` dataset and the AAL atlas
-from the ``aal`` dataset, along with one of XCP-D's built-in atlases (``4S156Parcels``).
-Here's what the XCP-D call might look like:
+from the ``aal`` dataset, along with one of *XCP-D*'s built-in atlases (``4S156Parcels``).
+Here's what the *XCP-D* call might look like:
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /data:/data xcpd_latest.sif \
-      /data/dataset/derivatives/fmriprep \
-      /data/dataset/derivatives/xcp_d \
-      participant \
-      --mode linc \
+   apptainer run -B /home/user/data \
+      --cleanenv xcpd_<version>.simg \
+      /home/user/data/path/to/fmriprep_dir \
+      /home/user/data/path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
       --datasets schaefer=/data/atlases/schaefer aal==/data/atlases/aal \
       --atlases Schaefer100 AAL 4S156Parcels
 
-XCP-D will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
-``schaefer``, ``aal``, and XCP-D's built-in atlas datasets.
+*XCP-D* will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
+``schaefer``, ``aal``, and *XCP-D*'s built-in atlas datasets.
 If the atlases are found, then they will be used for parcellation.
 
 .. important::
 
-   Atlas names must be unique across BIDS-Atlas datasets.
-   If two atlases have the same name, XCP-D will raise an error.
+   Atlas names must be unique across BIDS atlas datasets.
+   If two atlases have the same name, *XCP-D* will raise an error.
 
 
 *********************
 Advanced Applications
 *********************
 
-XCP-D can be used in conjunction with other tools, such as ``tedana`` and ``phys2denoise``.
+*XCP-D* can be used in conjunction with other tools, such as ``tedana`` and ``phys2denoise``.
 We have attempted to document these applications with working code in
 `PennLINC/xcp_d-examples <https://github.com/PennLINC/xcp_d-examples>`_.
 If there is an application you think would be useful to document, please open an issue in that
 repository.
 
 
-************************************
-Preprocessing Requirements for XCP-D
-************************************
+**************************************
+Preprocessing Requirements for *XCP-D*
+**************************************
 
-XCP-D is designed to ingest data from a variety of different preprocessing pipelines.
-However, each supported pipeline must be explicitly supported within XCP-D in order for the
+*XCP-D* is designed to ingest data from a variety of different preprocessing pipelines.
+However, each supported pipeline must be explicitly supported within *XCP-D* in order for the
 workflow to select the correct files.
 
-Additionally, XCP-D may require files that are only created with specific settings in the
+Additionally, *XCP-D* may require files that are only created with specific settings in the
 preprocessing pipelines.
 
 
 fMRIPrep/Nibabies
 =================
 
-In order to work on fMRIPrep or Nibabies derivatives, XCP-D needs derivatives in one of a few
+In order to work on fMRIPrep or Nibabies derivatives, *XCP-D* needs derivatives in one of a few
 template spaces,
 including "MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant", and "fsLR".
 We may add support for additional templates in the future, but currently you must have at least one
 of these among your output spaces.
-XCP-D does not have any specific requirements for resolution of volumetric derivatives,
+*XCP-D* does not have any specific requirements for resolution of volumetric derivatives,
 but we do require fsLR-space CIFTIs be outputted in 91k density.
 
 
@@ -682,7 +714,7 @@ Support and communication
 All bugs, concerns and enhancement requests for this software can be submitted here:
 https://github.com/PennLINC/xcp_d/issues.
 
-If you have a question about using XCP-D, please create a new topic on
+If you have a question about using *XCP-D*, please create a new topic on
 `NeuroStars <https://neurostars.org>`_ with `the "Software Support" category and the "xcp_d" tag
 <https://neurostars.org/tags/c/software-support/234/xcp_d>`_.
-The XCP-D developers follow NeuroStars, and will be able to answer your question there.
+The *XCP-D* developers follow NeuroStars, and will be able to answer your question there.

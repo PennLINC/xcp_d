@@ -5,21 +5,23 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
-from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.config import dismiss_hash
+from xcp_d.interfaces.bids import BIDSURI, AddHashToTSV, DerivativesDataSink
+from xcp_d.interfaces.censoring import Censor, RandomCensor
 from xcp_d.interfaces.concatenation import (
     CleanNameSource,
     ConcatenateInputs,
     FilterOutFailedRuns,
 )
-from xcp_d.interfaces.connectivity import TSVConnect
-from xcp_d.utils.bids import _make_xcpd_uri, _make_xcpd_uri_lol
+from xcp_d.interfaces.connectivity import CiftiToTSV, TSVConnect
+from xcp_d.interfaces.workbench import CiftiCorrelation
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _make_dictionary, _select_first
+from xcp_d.utils.utils import _select_first
 from xcp_d.workflows.bold.plotting import init_qc_report_wf
 
 
 @fill_doc
-def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
+def init_concatenate_data_wf(TR, head_radius, exact_scans, mem_gb, name='concatenate_data_wf'):
     """Concatenate postprocessed data across runs and directions.
 
     Workflow Graph
@@ -29,12 +31,14 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.concatenation import init_concatenate_data_wf
+            from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
 
             with mock_config():
                 wf = init_concatenate_data_wf(
                     TR=2,
                     head_radius=50,
+                    exact_scans=[],
+                    mem_gb={"bold": 2.0, "volume": 0.01},
                     name="concatenate_data_wf",
                 )
 
@@ -42,6 +46,12 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     ----------
     %(TR)s
     %(head_radius)s
+    exact_scans : :obj:`list` of :obj:`int`
+        List of exact scan counts for which to compute correlation matrices from the
+        concatenated temporal mask.
+    mem_gb : :obj:`dict`
+        Dictionary of memory allocations with keys ``'bold'`` and ``'volume'``.
+        This should represent the *total* memory across all runs being concatenated.
     %(name)s
         Default is "concatenate_data_wf".
 
@@ -60,6 +70,8 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
         One list entry for each run.
     %(censored_denoised_bold)s
         One list entry for each run.
+    atlas_labels_files
+        Atlas labels files for each of the runs and each of the atlases.
     bold_mask : :obj:`list` of :obj:`str` or :obj:`~nipype.interfaces.base.Undefined`
         Brain mask files for each of the BOLD runs.
         This will be a list of paths for NIFTI inputs, or a list of Undefineds for CIFTI ones.
@@ -87,341 +99,748 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "name_source",
-                "preprocessed_bold",
-                "motion_file",
-                "temporal_mask",
-                "denoised_bold",
-                "denoised_interpolated_bold",
-                "censored_denoised_bold",
-                "smoothed_denoised_bold",
-                "bold_mask",  # only for niftis, from postproc workflows
-                "boldref",  # only for niftis, from postproc workflows
-                "anat_native",  # only for niftis, from data collection
-                "anat_brainmask",  # only for niftis, from data collection
-                "template_to_anat_xfm",  # only for niftis, from data collection
-                "timeseries",
-                "timeseries_ciftis",  # only for ciftis, from postproc workflows
+                'name_source',
+                'preprocessed_bold',
+                'motion_file',
+                'temporal_mask',
+                'denoised_bold',
+                'denoised_interpolated_bold',
+                'censored_denoised_bold',
+                'smoothed_denoised_bold',
+                'atlas_labels_files',
+                'bold_mask',  # only for niftis, from postproc workflows
+                'boldref',  # only for niftis, from postproc workflows
+                'anat_native',  # only for niftis, from data collection
+                'anat_brainmask',  # only for niftis, from data collection
+                'template_to_anat_xfm',  # only for niftis, from data collection
+                'timeseries',
+                'timeseries_ciftis',  # only for ciftis, from postproc workflows
             ],
         ),
-        name="inputnode",
+        name='inputnode',
     )
 
     clean_name_source = pe.Node(
         CleanNameSource(),
-        name="clean_name_source",
+        name='clean_name_source',
     )
-    workflow.connect([(inputnode, clean_name_source, [("name_source", "name_source")])])
+    workflow.connect([(inputnode, clean_name_source, [('name_source', 'name_source')])])
 
     filter_runs = pe.Node(
         FilterOutFailedRuns(),
-        name="filter_runs",
+        name='filter_runs',
     )
 
     workflow.connect([
         (inputnode, filter_runs, [
-            ("preprocessed_bold", "preprocessed_bold"),
-            ("motion_file", "motion_file"),
-            ("temporal_mask", "temporal_mask"),
-            ("denoised_bold", "denoised_bold"),
-            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
-            ("censored_denoised_bold", "censored_denoised_bold"),
-            ("smoothed_denoised_bold", "smoothed_denoised_bold"),
-            ("bold_mask", "bold_mask"),
-            ("boldref", "boldref"),
-            ("timeseries", "timeseries"),
-            ("timeseries_ciftis", "timeseries_ciftis"),
+            ('preprocessed_bold', 'preprocessed_bold'),
+            ('motion_file', 'motion_file'),
+            ('temporal_mask', 'temporal_mask'),
+            ('denoised_bold', 'denoised_bold'),
+            ('denoised_interpolated_bold', 'denoised_interpolated_bold'),
+            ('censored_denoised_bold', 'censored_denoised_bold'),
+            ('smoothed_denoised_bold', 'smoothed_denoised_bold'),
+            ('bold_mask', 'bold_mask'),
+            ('boldref', 'boldref'),
+            ('timeseries', 'timeseries'),
+            ('timeseries_ciftis', 'timeseries_ciftis'),
         ])
     ])  # fmt:skip
 
     concatenate_inputs = pe.Node(
         ConcatenateInputs(),
-        name="concatenate_inputs",
+        name='concatenate_inputs',
+        mem_gb=mem_gb['bold'],
     )
 
     workflow.connect([
         (filter_runs, concatenate_inputs, [
-            ("preprocessed_bold", "preprocessed_bold"),
-            ("motion_file", "motion_file"),
-            ("temporal_mask", "temporal_mask"),
-            ("denoised_bold", "denoised_bold"),
-            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
-            ("censored_denoised_bold", "censored_denoised_bold"),
-            ("smoothed_denoised_bold", "smoothed_denoised_bold"),
-            ("timeseries", "timeseries"),
-            ("timeseries_ciftis", "timeseries_ciftis"),
+            ('preprocessed_bold', 'preprocessed_bold'),
+            ('motion_file', 'motion_file'),
+            ('temporal_mask', 'temporal_mask'),
+            ('denoised_bold', 'denoised_bold'),
+            ('denoised_interpolated_bold', 'denoised_interpolated_bold'),
+            ('censored_denoised_bold', 'censored_denoised_bold'),
+            ('smoothed_denoised_bold', 'smoothed_denoised_bold'),
+            ('timeseries', 'timeseries'),
+            ('timeseries_ciftis', 'timeseries_ciftis'),
         ]),
     ])  # fmt:skip
+
+    if exact_scans:
+        random_censor = pe.Node(
+            RandomCensor(
+                exact_scans=exact_scans,
+                random_seed=config.seeds.master,
+                temporal_mask_metadata={},
+            ),
+            name='random_censor',
+        )
+        workflow.connect([
+            (concatenate_inputs, random_censor, [('temporal_mask', 'temporal_mask')]),
+        ])  # fmt:skip
+        temporal_mask_src = random_censor
+        temporal_mask_out = 'temporal_mask'
+    else:
+        temporal_mask_src = concatenate_inputs
+        temporal_mask_out = 'temporal_mask'
 
     # Now, run the QC report workflow on the concatenated BOLD file.
     qc_report_wf = init_qc_report_wf(
         TR=TR,
         head_radius=head_radius,
-        name="concat_qc_report_wf",
+        mem_gb=mem_gb,
+        name='concat_qc_report_wf',
     )
     qc_report_wf.inputs.inputnode.dummy_scans = 0
 
     workflow.connect([
         (inputnode, qc_report_wf, [
-            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-            ("anat_native", "inputnode.anat"),
-            ("anat_brainmask", "inputnode.anat_brainmask"),
+            ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
+            ('anat_native', 'inputnode.anat'),
+            ('anat_brainmask', 'inputnode.anat_brainmask'),
         ]),
-        (clean_name_source, qc_report_wf, [("name_source", "inputnode.name_source")]),
+        (clean_name_source, qc_report_wf, [('name_source', 'inputnode.name_source')]),
         (filter_runs, qc_report_wf, [
             # nifti-only inputs
-            (("bold_mask", _select_first), "inputnode.bold_mask"),
-            (("boldref", _select_first), "inputnode.boldref"),
+            (('bold_mask', _select_first), 'inputnode.bold_mask'),
+            (('boldref', _select_first), 'inputnode.boldref'),
         ]),
         (concatenate_inputs, qc_report_wf, [
-            ("preprocessed_bold", "inputnode.preprocessed_bold"),
-            ("denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
-            ("censored_denoised_bold", "inputnode.censored_denoised_bold"),
-            ("motion_file", "inputnode.motion_file"),
-            ("temporal_mask", "inputnode.temporal_mask"),
-            ("run_index", "inputnode.run_index"),
+            ('preprocessed_bold', 'inputnode.preprocessed_bold'),
+            ('denoised_interpolated_bold', 'inputnode.denoised_interpolated_bold'),
+            ('censored_denoised_bold', 'inputnode.censored_denoised_bold'),
+            ('motion_file', 'inputnode.motion_file'),
+            ('temporal_mask', 'inputnode.temporal_mask'),
+            ('run_index', 'inputnode.run_index'),
         ]),
     ])  # fmt:skip
 
+    motion_src = pe.Node(
+        BIDSURI(
+            numinputs=1,
+            dataset_links=config.execution.dataset_links,
+            out_dir=str(output_dir),
+        ),
+        name='motion_src',
+        run_without_submitting=True,
+    )
+    workflow.connect([(filter_runs, motion_src, [('motion_file', 'in1')])])
+
     ds_motion_file = pe.Node(
         DerivativesDataSink(
-            dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
-            suffix="motion",
-            extension=".tsv",
+            dismiss_entities=dismiss_hash(),
+            extension='.tsv',
         ),
-        name="ds_motion_file",
+        name='ds_motion_file',
         run_without_submitting=True,
         mem_gb=1,
     )
     workflow.connect([
-        (clean_name_source, ds_motion_file, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_motion_file, [("motion_file", "in_file")]),
-        (filter_runs, ds_motion_file, [(("motion_file", _make_xcpd_uri, output_dir), "Sources")]),
+        (filter_runs, ds_motion_file, [(('motion_file', _combine_name), 'source_file')]),
+        (concatenate_inputs, ds_motion_file, [('motion_file', 'in_file')]),
+        (motion_src, ds_motion_file, [('out', 'Sources')]),
     ])  # fmt:skip
 
     if fd_thresh > 0:
+        temporal_mask_bids_src = pe.Node(
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
+            ),
+            name='temporal_mask_bids_src',
+            run_without_submitting=True,
+        )
+        workflow.connect([(filter_runs, temporal_mask_bids_src, [('temporal_mask', 'in1')])])
+
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
-                suffix="outliers",
-                extension=".tsv",
+                dismiss_entities=dismiss_hash(),
+                extension='.tsv',
             ),
-            name="ds_temporal_mask",
+            name='ds_temporal_mask',
             run_without_submitting=True,
             mem_gb=1,
         )
-
         workflow.connect([
-            (clean_name_source, ds_temporal_mask, [("name_source", "source_file")]),
-            (concatenate_inputs, ds_temporal_mask, [("temporal_mask", "in_file")]),
-            (filter_runs, ds_temporal_mask, [
-                (("temporal_mask", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
+            (filter_runs, ds_temporal_mask, [(('temporal_mask', _combine_name), 'source_file')]),
+            (concatenate_inputs, ds_temporal_mask, [('temporal_mask', 'in_file')]),
+            (temporal_mask_bids_src, ds_temporal_mask, [('out', 'Sources')]),
         ])  # fmt:skip
 
-    if file_format == "cifti":
+    if file_format == 'cifti':
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=["den"],
-                desc="denoised",
-                den="91k",
-                extension=".dtseries.nii",
+                dismiss_entities=dismiss_hash(),
+                extension='.dtseries.nii',
             ),
-            name="ds_denoised_bold",
-            run_without_submitting=True,
+            name='ds_denoised_bold',
             mem_gb=2,
         )
 
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
-                    dismiss_entities=["den"],
-                    desc="denoisedSmoothed",
-                    den="91k",
-                    extension=".dtseries.nii",
+                    dismiss_entities=dismiss_hash(),
+                    extension='.dtseries.nii',
                 ),
-                name="ds_smoothed_denoised_bold",
-                run_without_submitting=True,
+                name='ds_smoothed_denoised_bold',
                 mem_gb=2,
             )
 
     else:
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
-                desc="denoised",
-                extension=".nii.gz",
+                dismiss_entities=dismiss_hash(),
+                extension='.nii.gz',
                 compression=True,
             ),
-            name="ds_denoised_bold",
-            run_without_submitting=True,
+            name='ds_denoised_bold',
             mem_gb=2,
         )
 
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
-                    desc="denoisedSmoothed",
-                    extension=".nii.gz",
+                    dismiss_entities=dismiss_hash(),
+                    extension='.nii.gz',
                     compression=True,
                 ),
-                name="ds_smoothed_denoised_bold",
-                run_without_submitting=True,
+                name='ds_smoothed_denoised_bold',
                 mem_gb=2,
             )
 
+    denoised_bold_src = pe.Node(
+        BIDSURI(
+            numinputs=1,
+            dataset_links=config.execution.dataset_links,
+            out_dir=str(output_dir),
+        ),
+        name='denoised_bold_src',
+        run_without_submitting=True,
+    )
+    workflow.connect([(filter_runs, denoised_bold_src, [('denoised_bold', 'in1')])])
+
     workflow.connect([
-        (clean_name_source, ds_denoised_bold, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_denoised_bold, [("denoised_bold", "in_file")]),
-        (filter_runs, ds_denoised_bold, [
-            (("denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
-        ]),
+        (filter_runs, ds_denoised_bold, [(('denoised_bold', _combine_name), 'source_file')]),
+        (concatenate_inputs, ds_denoised_bold, [('denoised_bold', 'in_file')]),
+        (denoised_bold_src, ds_denoised_bold, [('out', 'Sources')]),
     ])  # fmt:skip
 
     if smoothing:
+        smoothed_src = pe.Node(
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
+            ),
+            name='smoothed_src',
+            run_without_submitting=True,
+        )
         workflow.connect([
-            (clean_name_source, ds_smoothed_denoised_bold, [("name_source", "source_file")]),
-            (concatenate_inputs, ds_smoothed_denoised_bold, [
-                ("smoothed_denoised_bold", "in_file"),
-            ]),
+            (filter_runs, smoothed_src, [('smoothed_denoised_bold', 'in1')]),
             (filter_runs, ds_smoothed_denoised_bold, [
-                (("smoothed_denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
+                (('smoothed_denoised_bold', _combine_name), 'source_file'),
             ]),
+            (concatenate_inputs, ds_smoothed_denoised_bold, [
+                ('smoothed_denoised_bold', 'in_file'),
+            ]),
+            (smoothed_src, ds_smoothed_denoised_bold, [('out', 'Sources')]),
         ])  # fmt:skip
 
     # Functional connectivity outputs
     if atlases:
         make_timeseries_dict = pe.MapNode(
-            niu.Function(
-                function=_make_dictionary,
-                input_names=["Sources"],
-                output_names=["metadata"],
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
             ),
             run_without_submitting=True,
             mem_gb=1,
-            name="make_timeseries_dict",
-            iterfield=["Sources"],
+            name='make_timeseries_dict',
+            iterfield=['in1'],
         )
-        workflow.connect([
-            (filter_runs, make_timeseries_dict, [
-                (("timeseries", _make_xcpd_uri_lol, output_dir), "Sources"),
-            ]),
-        ])  # fmt:skip
+        workflow.connect([(filter_runs, make_timeseries_dict, [('timeseries', 'in1')])])
 
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
-                dismiss_entities=["desc", "den", "res"],
-                statistic="mean",
-                suffix="timeseries",
-                extension=".tsv",
+                dismiss_entities=dismiss_hash(),
+                extension='.tsv',
                 # Metadata
-                SamplingFrequency="TR",
+                SamplingFrequency='TR',
             ),
-            name="ds_timeseries",
+            name='ds_timeseries',
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["segmentation", "in_file", "meta_dict"],
+            iterfield=['source_file', 'in_file', 'meta_dict'],
         )
-        ds_timeseries.inputs.segmentation = atlases
 
         workflow.connect([
-            (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
-            (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
-            (make_timeseries_dict, ds_timeseries, [("metadata", "meta_dict")]),
+            (filter_runs, ds_timeseries, [(('timeseries', _combine_name), 'source_file')]),
+            (concatenate_inputs, ds_timeseries, [('timeseries', 'in_file')]),
+            (make_timeseries_dict, ds_timeseries, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
 
-        correlate_timeseries = pe.MapNode(
-            TSVConnect(),
-            run_without_submitting=True,
-            mem_gb=1,
-            name="correlate_timeseries",
-            iterfield=["timeseries"],
-        )
-        workflow.connect([
-            (concatenate_inputs, correlate_timeseries, [
-                ("timeseries", "timeseries"),
-                ("temporal_mask", "temporal_mask"),
-            ]),
-        ])  # fmt:skip
-
-        make_correlations_dict = pe.MapNode(
-            niu.Function(
-                function=_make_dictionary,
-                input_names=["Sources"],
-                output_names=["metadata"],
-            ),
-            run_without_submitting=True,
-            mem_gb=1,
-            name="make_correlations_dict",
-            iterfield=["Sources"],
-        )
-        workflow.connect([
-            (ds_timeseries, make_correlations_dict, [
-                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
-        ])  # fmt:skip
-
-        ds_correlations = pe.MapNode(
-            DerivativesDataSink(
-                dismiss_entities=["desc"],
-                statistic="pearsoncorrelation",
-                suffix="relmat",
-                extension=".tsv",
-            ),
-            name="ds_correlations",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["segmentation", "in_file", "meta_dict"],
-        )
-        ds_correlations.inputs.segmentation = atlases
-
-        workflow.connect([
-            (clean_name_source, ds_correlations, [("name_source", "source_file")]),
-            (correlate_timeseries, ds_correlations, [("correlations", "in_file")]),
-            (make_correlations_dict, ds_correlations, [("metadata", "meta_dict")]),
-        ])  # fmt:skip
-
-        if file_format == "cifti":
-            make_timeseries_ciftis_dict = pe.MapNode(
-                niu.Function(
-                    function=_make_dictionary,
-                    input_names=["Sources"],
-                    output_names=["metadata"],
-                ),
+        if config.workflow.correlation_lengths and file_format == 'nifti':
+            correlate_timeseries = pe.MapNode(
+                TSVConnect(),
                 run_without_submitting=True,
                 mem_gb=1,
-                name="make_timeseries_ciftis_dict",
-                iterfield=["Sources"],
+                name='correlate_timeseries',
+                iterfield=['timeseries'],
             )
             workflow.connect([
-                (filter_runs, make_timeseries_ciftis_dict, [
-                    (("timeseries_ciftis", _make_xcpd_uri_lol, output_dir), "Sources"),
+                (concatenate_inputs, correlate_timeseries, [('timeseries', 'timeseries')]),
+                (temporal_mask_src, correlate_timeseries, [
+                    (temporal_mask_out, 'temporal_mask'),
                 ]),
             ])  # fmt:skip
 
-            ds_timeseries_cifti_files = pe.MapNode(
+            if 'all' in config.workflow.correlation_lengths:
+                make_correlations_dict = pe.MapNode(
+                    BIDSURI(
+                        numinputs=1,
+                        dataset_links=config.execution.dataset_links,
+                        out_dir=str(output_dir),
+                    ),
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    name='make_correlations_dict',
+                    iterfield=['in1'],
+                )
+                workflow.connect([(ds_timeseries, make_correlations_dict, [('out_file', 'in1')])])
+
+                ds_correlations = pe.MapNode(
+                    DerivativesDataSink(
+                        # Be explicit with entities because the source file is the timeseries
+                        dismiss_entities=dismiss_hash(['desc']),
+                        statistic='pearsoncorrelation',
+                        suffix='relmat',
+                        extension='.tsv',
+                    ),
+                    name='ds_correlations',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    iterfield=['source_file', 'in_file', 'meta_dict'],
+                )
+
+                workflow.connect([
+                    (filter_runs, ds_correlations, [
+                        (('timeseries', _combine_name), 'source_file'),
+                    ]),
+                    (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
+                    (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
+                ])  # fmt:skip
+
+            for i_exact_scan, exact_scan in enumerate(exact_scans):
+                select_exact_scan_files = pe.MapNode(
+                    niu.Select(index=i_exact_scan),
+                    name=f'select_exact_scan_files_{i_exact_scan}',
+                    iterfield=['inlist'],
+                )
+                workflow.connect([
+                    (correlate_timeseries, select_exact_scan_files, [
+                        ('correlations_exact', 'inlist'),
+                    ]),
+                ])  # fmt:skip
+
+                add_hash_correlations_exact = pe.MapNode(
+                    AddHashToTSV(
+                        add_to_columns=True,
+                        add_to_rows=True,
+                    ),
+                    name=f'add_hash_correlations_exact_{i_exact_scan}',
+                    iterfield=['in_file'],
+                )
+                workflow.connect([
+                    (select_exact_scan_files, add_hash_correlations_exact, [
+                        ('out', 'in_file'),
+                    ]),
+                ])  # fmt:skip
+
+                ds_correlations_exact = pe.MapNode(
+                    DerivativesDataSink(
+                        dismiss_entities=dismiss_hash(['desc']),
+                        statistic='pearsoncorrelation',
+                        desc=f'{exact_scan}volumes',
+                        suffix='relmat',
+                        extension='.tsv',
+                    ),
+                    name=f'ds_correlations_exact_{i_exact_scan}',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    iterfield=['source_file', 'in_file'],
+                )
+                workflow.connect([
+                    (filter_runs, ds_correlations_exact, [
+                        (('timeseries', _combine_name), 'source_file'),
+                    ]),
+                    (add_hash_correlations_exact, ds_correlations_exact, [
+                        ('out_file', 'in_file'),
+                    ]),
+                ])  # fmt:skip
+
+        if file_format == 'cifti':
+            cifti_ts_src = pe.MapNode(
+                BIDSURI(
+                    numinputs=1,
+                    dataset_links=config.execution.dataset_links,
+                    out_dir=str(output_dir),
+                ),
+                run_without_submitting=True,
+                mem_gb=1,
+                name='cifti_ts_src',
+                iterfield=['in1'],
+            )
+            workflow.connect([(filter_runs, cifti_ts_src, [('timeseries_ciftis', 'in1')])])
+
+            ds_cifti_ts = pe.MapNode(
                 DerivativesDataSink(
+                    dismiss_entities=dismiss_hash(),
                     check_hdr=False,
-                    dismiss_entities=["desc", "den"],
-                    den="91k",
-                    statistic="mean",
-                    suffix="timeseries",
-                    extension=".ptseries.nii",
+                    extension='.ptseries.nii',
                 ),
-                name="ds_timeseries_cifti_files",
+                name='ds_cifti_ts',
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=["segmentation", "in_file", "meta_dict"],
+                iterfield=['source_file', 'in_file', 'meta_dict'],
             )
-            ds_timeseries_cifti_files.inputs.segmentation = atlases
 
             workflow.connect([
-                (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
-                (concatenate_inputs, ds_timeseries_cifti_files, [
-                    ("timeseries_ciftis", "in_file"),
+                (filter_runs, ds_cifti_ts, [(
+                    ('timeseries_ciftis', _combine_name), 'source_file'),
                 ]),
-                (make_timeseries_ciftis_dict, ds_timeseries_cifti_files, [
-                    ("metadata", "meta_dict"),
-                ]),
+                (concatenate_inputs, ds_cifti_ts, [('timeseries_ciftis', 'in_file')]),
+                (cifti_ts_src, ds_cifti_ts, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
+
+            if 'all' in config.workflow.correlation_lengths:
+                correlate_cifti_ts_src = pe.MapNode(
+                    BIDSURI(
+                        numinputs=1,
+                        dataset_links=config.execution.dataset_links,
+                        out_dir=str(output_dir),
+                    ),
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    name='correlate_cifti_ts_src',
+                    iterfield=['in1'],
+                )
+                workflow.connect([(ds_cifti_ts, correlate_cifti_ts_src, [('out_file', 'in1')])])
+
+                # Correlate the parcellated data
+                correlate_cifti_ts = pe.MapNode(
+                    CiftiCorrelation(
+                        num_threads=config.nipype.omp_nthreads,
+                    ),
+                    name='correlate_cifti_ts',
+                    iterfield=['in_file'],
+                    n_procs=config.nipype.omp_nthreads,
+                )
+                workflow.connect([
+                    (ds_cifti_ts, correlate_cifti_ts, [('out_file', 'in_file')]),
+                ])  # fmt:skip
+
+                ds_cifti_correlations = pe.MapNode(
+                    DerivativesDataSink(
+                        dismiss_entities=dismiss_hash(['desc']),
+                        statistic='pearsoncorrelation',
+                        suffix='boldmap',
+                        extension='.pconn.nii',
+                    ),
+                    name='ds_cifti_correlations',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    iterfield=['source_file', 'in_file', 'meta_dict'],
+                )
+                workflow.connect([
+                    (filter_runs, ds_cifti_correlations, [
+                        (('timeseries_ciftis', _combine_name), 'source_file'),
+                    ]),
+                    (correlate_cifti_ts, ds_cifti_correlations, [('out_file', 'in_file')]),
+                    (correlate_cifti_ts_src, ds_cifti_correlations, [('metadata', 'meta_dict')]),
+                ])  # fmt:skip
+
+                # Convert correlation pconn file to TSV
+                cifti_correlations_to_tsv = pe.MapNode(
+                    CiftiToTSV(),
+                    name='cifti_correlations_to_tsv',
+                    iterfield=['in_file', 'atlas_labels'],
+                )
+                workflow.connect([
+                    (inputnode, cifti_correlations_to_tsv, [
+                        ('atlas_labels_files', 'atlas_labels'),
+                    ]),
+                    (correlate_cifti_ts, cifti_correlations_to_tsv, [('out_file', 'in_file')]),
+                ])  # fmt:skip
+
+                cifti_correlations_tsv_src = pe.MapNode(
+                    BIDSURI(
+                        numinputs=1,
+                        dataset_links=config.execution.dataset_links,
+                        out_dir=str(output_dir),
+                    ),
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    name='cifti_correlations_tsv_src',
+                    iterfield=['in1'],
+                )
+                workflow.connect([
+                    (ds_cifti_correlations, cifti_correlations_tsv_src, [('out_file', 'in1')]),
+                ])  # fmt:skip
+
+                ds_cifti_correlations_tsv = pe.MapNode(
+                    DerivativesDataSink(
+                        # Be explicit with entities because the source file is the timeseries
+                        dismiss_entities=dismiss_hash(['desc']),
+                        statistic='pearsoncorrelation',
+                        suffix='relmat',
+                        extension='.tsv',
+                    ),
+                    name='ds_cifti_correlations_tsv',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    iterfield=['source_file', 'in_file', 'meta_dict'],
+                )
+                workflow.connect([
+                    (filter_runs, ds_cifti_correlations_tsv, [
+                        (('timeseries', _combine_name), 'source_file'),
+                    ]),
+                    (cifti_correlations_to_tsv, ds_cifti_correlations_tsv, [
+                        ('out_file', 'in_file'),
+                    ]),
+                    (cifti_correlations_tsv_src, ds_cifti_correlations_tsv, [
+                        ('metadata', 'meta_dict'),
+                    ]),
+                ])  # fmt:skip
+
+            if exact_scans:
+                # The concatenated parcellated timeseries may be interpolated (e.g., in abcd
+                # mode) and therefore include FD-censored volumes. Censor those volumes before
+                # exact-scan subsetting so that the exact_N column row count matches the image.
+                censor_cifti_ts_for_exact = pe.MapNode(
+                    Censor(column='denoising'),
+                    name='censor_cifti_ts_for_exact',
+                    iterfield=['in_file'],
+                )
+                workflow.connect([
+                    (concatenate_inputs, censor_cifti_ts_for_exact, [
+                        ('temporal_mask', 'temporal_mask'),
+                    ]),
+                    (ds_cifti_ts, censor_cifti_ts_for_exact, [('out_file', 'in_file')]),
+                ])  # fmt:skip
+
+                for i_exact_scan, exact_scan in enumerate(exact_scans):
+                    reduce_exact_bold = pe.MapNode(
+                        Censor(column=f'exact_{exact_scan}'),
+                        name=f'reduce_bold_{exact_scan}volumes',
+                        iterfield=['in_file'],
+                    )
+                    workflow.connect([
+                        (temporal_mask_src, reduce_exact_bold, [
+                            (temporal_mask_out, 'temporal_mask'),
+                        ]),
+                        (censor_cifti_ts_for_exact, reduce_exact_bold, [
+                            ('out_file', 'in_file'),
+                        ]),
+                    ])  # fmt:skip
+
+                    correlate_exact_bold = pe.MapNode(
+                        CiftiCorrelation(num_threads=1),
+                        name=f'correlate_bold_{exact_scan}volumes',
+                        iterfield=['in_file'],
+                        n_procs=1,
+                    )
+                    workflow.connect([
+                        (reduce_exact_bold, correlate_exact_bold, [('out_file', 'in_file')]),
+                    ])  # fmt:skip
+
+                    exact_dconn_to_tsv = pe.MapNode(
+                        CiftiToTSV(),
+                        name=f'dconn_to_tsv_{exact_scan}volumes',
+                        iterfield=['in_file', 'atlas_labels'],
+                    )
+                    workflow.connect([
+                        (inputnode, exact_dconn_to_tsv, [('atlas_labels_files', 'atlas_labels')]),
+                        (correlate_exact_bold, exact_dconn_to_tsv, [('out_file', 'in_file')]),
+                    ])  # fmt:skip
+
+                    cifti_exact_src = pe.MapNode(
+                        BIDSURI(
+                            numinputs=1,
+                            dataset_links=config.execution.dataset_links,
+                            out_dir=str(output_dir),
+                        ),
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        name=f'cifti_exact_src_{exact_scan}volumes',
+                        iterfield=['in1'],
+                    )
+                    workflow.connect([
+                        (correlate_exact_bold, cifti_exact_src, [('out_file', 'in1')]),
+                    ])  # fmt:skip
+
+                    ds_cifti_correlations_exact = pe.MapNode(
+                        DerivativesDataSink(
+                            dismiss_entities=dismiss_hash(['desc']),
+                            statistic='pearsoncorrelation',
+                            desc=f'{exact_scan}volumes',
+                            suffix='boldmap',
+                            extension='.pconn.nii',
+                        ),
+                        name=f'ds_cifti_correlations_exact_{i_exact_scan}',
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        iterfield=['source_file', 'in_file', 'meta_dict'],
+                    )
+                    workflow.connect([
+                        (filter_runs, ds_cifti_correlations_exact, [
+                            (('timeseries_ciftis', _combine_name), 'source_file'),
+                        ]),
+                        (correlate_exact_bold, ds_cifti_correlations_exact, [
+                            ('out_file', 'in_file'),
+                        ]),
+                        (cifti_exact_src, ds_cifti_correlations_exact, [
+                            ('metadata', 'meta_dict'),
+                        ]),
+                    ])  # fmt:skip
+
+                    cifti_exact_tsv_src = pe.MapNode(
+                        BIDSURI(
+                            numinputs=1,
+                            dataset_links=config.execution.dataset_links,
+                            out_dir=str(output_dir),
+                        ),
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        name=f'cifti_exact_tsv_src_{exact_scan}volumes',
+                        iterfield=['in1'],
+                    )
+                    workflow.connect([
+                        (ds_cifti_correlations_exact, cifti_exact_tsv_src, [('out_file', 'in1')]),
+                    ])  # fmt:skip
+
+                    ds_cifti_correlations_exact_tsv = pe.MapNode(
+                        DerivativesDataSink(
+                            dismiss_entities=dismiss_hash(['desc']),
+                            statistic='pearsoncorrelation',
+                            desc=f'{exact_scan}volumes',
+                            suffix='relmat',
+                            extension='.tsv',
+                        ),
+                        name=f'ds_cifti_correlations_exact_tsv_{i_exact_scan}',
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        iterfield=['source_file', 'in_file', 'meta_dict'],
+                    )
+                    workflow.connect([
+                        (filter_runs, ds_cifti_correlations_exact_tsv, [
+                            (('timeseries', _combine_name), 'source_file'),
+                        ]),
+                        (exact_dconn_to_tsv, ds_cifti_correlations_exact_tsv, [
+                            ('out_file', 'in_file'),
+                        ]),
+                        (cifti_exact_tsv_src, ds_cifti_correlations_exact_tsv, [
+                            ('metadata', 'meta_dict'),
+                        ]),
+                    ])  # fmt:skip
 
     return workflow
+
+
+def _combine_name(in_files):
+    """Remove unmatched entities from a list of files to produce a single name, plus dir and run.
+
+    Parameters
+    ----------
+    in_files : :obj:`list` of :obj:`list` of :obj:`str` or :obj:`list` of :obj:`str`
+        List of lists of file paths. Each sublist contains files for a single atlas.
+
+    Returns
+    -------
+    names : :obj:`list` of :obj:`str` or :obj:`str`
+        Combined names, containing only the entities that are present in all files in a sublist.
+        Also drops dir and run entities.
+
+    Examples
+    --------
+    >>> _combine_name([
+    ...     ['/path/to/sub-01_task-rest_run-1_bold.nii.gz',
+    ...      '/path/to/sub-01_task-rest_run-2_bold.nii.gz'],
+    ... ])
+    ['/path/to/sub-01_task-rest_bold.nii.gz']
+
+    >>> _combine_name([
+    ...     ['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...      '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz'],
+    ... ])
+    ['/path/to/sub-01_task-rest_bold.nii.gz']
+
+    >>> _combine_name([
+    ...     ['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...      '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz'],
+    ... ])
+    ['/path/to/sub-01_task-rest_bold.nii.gz']
+
+    >>> _combine_name([
+    ...     '/path/to/sub-01_task-rest_run-1_bold.nii.gz',
+    ...     '/path/to/sub-01_task-rest_run-2_bold.nii.gz',
+    ... ])
+    '/path/to/sub-01_task-rest_bold.nii.gz'
+
+    >>> _combine_name([
+    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...     '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz',
+    ... ])
+    '/path/to/sub-01_task-rest_bold.nii.gz'
+
+    >>> _combine_name([
+    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...     '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz',
+    ... ])
+    '/path/to/sub-01_task-rest_bold.nii.gz'
+
+    >>> _combine_name([
+    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...     '/path/to/sub-01_task-rest_dir-PA_run-1_bold.nii.gz',
+    ... ])
+    '/path/to/sub-01_task-rest_bold.nii.gz'
+
+    """
+    import os
+
+    # List of files
+    if isinstance(in_files[0], str):
+        directory = os.path.dirname(in_files[0])
+        filenames = [os.path.basename(f) for f in in_files]
+        filename_parts = [f.split('_') for f in filenames]
+        to_remove = [
+            part
+            for part in filename_parts[0]
+            if part.startswith(('run-', 'dir-'))
+            or any(part not in next_part for next_part in filename_parts[1:])
+        ]
+        new_filename_parts = [p for p in filename_parts[0] if p not in to_remove]
+        new_filename = '_'.join(new_filename_parts)
+        return os.path.join(directory, new_filename)
+
+    # List of lists of files
+    names = []
+    for atlas_files in in_files:
+        directory = os.path.dirname(atlas_files[0])
+        filenames = [os.path.basename(f) for f in atlas_files]
+        filename_parts = [f.split('_') for f in filenames]
+        to_remove = [
+            part
+            for part in filename_parts[0]
+            if part.startswith(('run-', 'dir-'))
+            or any(part not in next_part for next_part in filename_parts[1:])
+        ]
+        new_filename_parts = [p for p in filename_parts[0] if p not in to_remove]
+        new_filename = '_'.join(new_filename_parts)
+        new_file = os.path.join(directory, new_filename)
+        names.append(new_file)
+
+    return names

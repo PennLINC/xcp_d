@@ -10,12 +10,13 @@ from num2words import num2words
 from templateflow.api import get as get_template
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
+    ExpandTemporalMask,
     GenerateConfounds,
     ProcessMotion,
-    RandomCensor,
     RemoveDummyVolumes,
 )
 from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
@@ -32,12 +33,41 @@ from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
 from xcp_d.utils.utils import fwhm2sigma
 
 
+def _load_confounds_config():
+    """Load the confounds configuration from the execution config.
+
+    Returns
+    -------
+    confounds_config : :obj:`dict` or None
+        Parsed confounds configuration, or None if not provided.
+    """
+    if config.execution.confounds_config is None:
+        return None
+
+    return yaml.safe_load(config.execution.confounds_config.read_text())
+
+
+def _count_voxelwise_confounds():
+    """Count the voxel-wise confounds in the confounds configuration.
+
+    Returns
+    -------
+    n_voxelwise_confounds : :obj:`int`
+        Number of confounds that are images rather than columns of a table.
+    """
+    confounds_config = _load_confounds_config()
+    if confounds_config is None:
+        return 0
+
+    return sum('columns' not in params for params in confounds_config['confounds'].values())
+
+
 @fill_doc
 def init_prepare_confounds_wf(
     TR,
-    exact_scans,
     head_radius,
-    name="prepare_confounds_wf",
+    mem_gb,
+    name='prepare_confounds_wf',
 ):
     """Prepare confounds.
 
@@ -51,22 +81,23 @@ def init_prepare_confounds_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_prepare_confounds_wf
+            from xcp_d.workflows.bold.postprocessing import init_prepare_confounds_wf
 
             with mock_config():
                 wf = init_prepare_confounds_wf(
                     TR=0.8,
-                    exact_scans=[],
                     head_radius=70,
+                    mem_gb={"bold": 1.0},
                     name="prepare_confounds_wf",
                 )
 
     Parameters
     ----------
     %(TR)s
-    %(exact_scans)s
     %(head_radius)s
         This will already be estimated before this workflow.
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "prepare_confounds_wf".
 
@@ -105,21 +136,22 @@ def init_prepare_confounds_wf(
     band_stop_max = config.workflow.band_stop_max
     motion_filter_order = config.workflow.motion_filter_order
     fd_thresh = config.workflow.fd_thresh
+    censor_between = config.workflow.censor_between
 
-    dummy_scans_str = ""
-    if dummy_scans == "auto":
+    dummy_scans_str = ''
+    if dummy_scans == 'auto':
         dummy_scans_str = (
-            "Non-steady-state volumes were extracted from the preprocessed confounds "
-            "and were discarded from both the BOLD data and nuisance regressors. "
+            'Non-steady-state volumes were extracted from the preprocessed confounds '
+            'and were discarded from both the BOLD data and nuisance regressors. '
         )
     elif dummy_scans == 1:
         dummy_scans_str = (
-            "The first volume of both the BOLD data and nuisance "
+            'The first volume of both the BOLD data and nuisance '
             "regressors was discarded as a non-steady-state volume, or 'dummy scan'. "
         )
     elif dummy_scans > 1:
         dummy_scans_str = (
-            f"The first {num2words(dummy_scans)} volumes of both the BOLD data and nuisance "
+            f'The first {num2words(dummy_scans)} volumes of both the BOLD data and nuisance '
             "regressors were discarded as non-steady-state volumes, or 'dummy scans'. "
         )
 
@@ -131,20 +163,18 @@ def init_prepare_confounds_wf(
         TR=TR,
     )
 
-    if (fd_thresh > 0) or exact_scans:
+    if fd_thresh > 0:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
             head_radius=head_radius,
             fd_thresh=fd_thresh,
-            exact_scans=exact_scans,
+            censor_between=censor_between,
+            exact_scans=[],
         )
     else:
-        censoring_description = ""
+        censoring_description = ''
 
-    if config.execution.confounds_config is None:
-        confounds_config = None
-    else:
-        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
+    confounds_config = _load_confounds_config()
 
     confounds_description = describe_regression(
         confounds_config=confounds_config,
@@ -157,39 +187,39 @@ def init_prepare_confounds_wf(
     )
 
     workflow.__desc__ = (
-        f" {dummy_scans_str}{motion_description} {censoring_description} {confounds_description}"
+        f' {dummy_scans_str}{motion_description} {censoring_description} {confounds_description}'
     )
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "name_source",
-                "preprocessed_bold",
-                "dummy_scans",
-                "motion_file",
-                "motion_json",
-                "confounds_files",
+                'name_source',
+                'preprocessed_bold',
+                'dummy_scans',
+                'motion_file',
+                'motion_json',
+                'confounds_files',
             ],
         ),
-        name="inputnode",
+        name='inputnode',
     )
     inputnode.inputs.dummy_scans = dummy_scans
 
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "preprocessed_bold",
-                "dummy_scans",
-                "motion_file",
-                "motion_metadata",
-                "temporal_mask",
-                "temporal_mask_metadata",
-                "confounds_tsv",
-                "confounds_images",
-                "confounds_metadata",
+                'preprocessed_bold',
+                'dummy_scans',
+                'motion_file',
+                'motion_metadata',
+                'temporal_mask',
+                'temporal_mask_metadata',
+                'confounds_tsv',
+                'confounds_images',
+                'confounds_metadata',
             ],
         ),
-        name="outputnode",
+        name='outputnode',
     )
 
     # Filter motion parameters and calculate FD for censoring
@@ -203,22 +233,20 @@ def init_prepare_confounds_wf(
             fd_thresh=fd_thresh,
             head_radius=head_radius,
         ),
-        name="process_motion",
+        name='process_motion',
         mem_gb=1,
         n_procs=1,
     )
 
     workflow.connect([
         (inputnode, process_motion, [
-            ("motion_file", "motion_file"),
-            ("motion_json", "motion_json"),
+            ('motion_file', 'motion_file'),
+            ('motion_json', 'motion_json'),
         ]),
-        (process_motion, outputnode, [("motion_metadata", "motion_metadata")]),
+        (process_motion, outputnode, [('motion_metadata', 'motion_metadata')]),
     ])  # fmt:skip
 
-    if config.execution.confounds_config is not None:
-        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
-
+    if confounds_config is not None:
         generate_confounds = pe.Node(
             GenerateConfounds(
                 confounds_config=confounds_config,
@@ -230,153 +258,152 @@ def init_prepare_confounds_wf(
                 motion_filter_type=motion_filter_type,
                 motion_filter_order=motion_filter_order,
             ),
-            name="generate_confounds",
+            name='generate_confounds',
             mem_gb=2,
         )
 
         # Load and filter confounds
         workflow.connect([
             (inputnode, generate_confounds, [
-                ("name_source", "in_file"),
-                ("confounds_files", "confounds_files"),
+                ('name_source', 'in_file'),
+                ('confounds_files', 'confounds_files'),
             ]),
-            (generate_confounds, outputnode, [("confounds_metadata", "confounds_metadata")]),
+            (generate_confounds, outputnode, [('confounds_metadata', 'confounds_metadata')]),
         ])  # fmt:skip
 
     # A buffer node to hold either the original files or the files with the first N vols removed.
     dummy_scan_buffer = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "preprocessed_bold",
-                "dummy_scans",
-                "confounds_tsv",
-                "confounds_images",
-                "motion_file",
-                "temporal_mask",
+                'preprocessed_bold',
+                'dummy_scans',
+                'confounds_tsv',
+                'confounds_images',
+                'motion_file',
+                'temporal_mask',
             ]
         ),
-        name="dummy_scan_buffer",
+        name='dummy_scan_buffer',
     )
 
     if dummy_scans:
         remove_dummy_scans = pe.Node(
             RemoveDummyVolumes(),
-            name="remove_dummy_scans",
-            mem_gb=4,
+            name='remove_dummy_scans',
+            mem_gb=2 * mem_gb['bold'],
         )
 
         workflow.connect([
             (inputnode, remove_dummy_scans, [
-                ("preprocessed_bold", "bold_file"),
-                ("dummy_scans", "dummy_scans"),
+                ('preprocessed_bold', 'bold_file'),
+                ('dummy_scans', 'dummy_scans'),
+                # The full confounds file, not the filtered motion file
+                ('motion_file', 'dummy_scan_source'),
             ]),
             (process_motion, remove_dummy_scans, [
-                ("motion_file", "motion_file"),
-                ("temporal_mask", "temporal_mask"),
+                ('motion_file', 'motion_file'),
+                ('temporal_mask', 'temporal_mask'),
             ]),
             (remove_dummy_scans, dummy_scan_buffer, [
-                ("bold_file_dropped_TR", "preprocessed_bold"),
-                ("confounds_tsv_dropped_TR", "confounds_tsv"),
-                ("confounds_images_dropped_TR", "confounds_images"),
-                ("motion_file_dropped_TR", "motion_file"),
-                ("temporal_mask_dropped_TR", "temporal_mask"),
-                ("dummy_scans", "dummy_scans"),
+                ('bold_file_dropped_TR', 'preprocessed_bold'),
+                ('confounds_tsv_dropped_TR', 'confounds_tsv'),
+                ('confounds_images_dropped_TR', 'confounds_images'),
+                ('motion_file_dropped_TR', 'motion_file'),
+                ('temporal_mask_dropped_TR', 'temporal_mask'),
+                ('dummy_scans', 'dummy_scans'),
             ]),
         ])  # fmt:skip
 
         if config.execution.confounds_config is not None:
             workflow.connect([
                 (generate_confounds, remove_dummy_scans, [
-                    ("confounds_tsv", "confounds_tsv"),
-                    ("confounds_images", "confounds_images"),
+                    ('confounds_tsv', 'confounds_tsv'),
+                    ('confounds_images', 'confounds_images'),
                 ]),
             ])  # fmt:skip
     else:
         workflow.connect([
             (inputnode, dummy_scan_buffer, [
-                ("dummy_scans", "dummy_scans"),
-                ("preprocessed_bold", "preprocessed_bold"),
+                ('dummy_scans', 'dummy_scans'),
+                ('preprocessed_bold', 'preprocessed_bold'),
             ]),
             (process_motion, dummy_scan_buffer, [
-                ("motion_file", "motion_file"),
-                ("temporal_mask", "temporal_mask"),
+                ('motion_file', 'motion_file'),
+                ('temporal_mask', 'temporal_mask'),
             ]),
         ])  # fmt:skip
 
         if config.execution.confounds_config is not None:
             workflow.connect([
                 (generate_confounds, dummy_scan_buffer, [
-                    ("confounds_tsv", "confounds_tsv"),
-                    ("confounds_images", "confounds_images"),
+                    ('confounds_tsv', 'confounds_tsv'),
+                    ('confounds_images', 'confounds_images'),
                 ]),
             ])  # fmt:skip
 
     workflow.connect([
         (dummy_scan_buffer, outputnode, [
-            ("preprocessed_bold", "preprocessed_bold"),
-            ("dummy_scans", "dummy_scans"),
-            ("motion_file", "motion_file"),
+            ('preprocessed_bold', 'preprocessed_bold'),
+            ('dummy_scans', 'dummy_scans'),
+            ('motion_file', 'motion_file'),
         ]),
     ])  # fmt:skip
 
     if config.execution.confounds_config is not None:
         workflow.connect([
             (dummy_scan_buffer, outputnode, [
-                ("confounds_tsv", "confounds_tsv"),
-                ("confounds_images", "confounds_images"),
+                ('confounds_tsv', 'confounds_tsv'),
+                ('confounds_images', 'confounds_images'),
             ]),
         ])  # fmt:skip
 
-    if config.workflow.dcan_correlation_lengths:
-        random_censor = pe.Node(
-            RandomCensor(exact_scans=exact_scans, random_seed=config.seeds.master),
-            name="random_censor",
-        )
+    # Flag short runs of retained volumes. This runs after dummy-scan removal so that the
+    # beginning and end of the run refer to the data that are actually analyzed.
+    expand_temporal_mask = pe.Node(
+        ExpandTemporalMask(censor_between=censor_between),
+        name='expand_temporal_mask',
+        mem_gb=1,
+    )
 
-        workflow.connect([
-            (process_motion, random_censor, [
-                ("temporal_mask_metadata", "temporal_mask_metadata"),
-            ]),
-            (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
-            (random_censor, outputnode, [
-                ("temporal_mask", "temporal_mask"),
-                ("temporal_mask_metadata", "temporal_mask_metadata"),
-            ]),
-        ])  # fmt:skip
-    else:
-        workflow.connect([
-            (process_motion, outputnode, [("temporal_mask_metadata", "temporal_mask_metadata")]),
-            (dummy_scan_buffer, outputnode, [("temporal_mask", "temporal_mask")]),
-        ])  # fmt:skip
+    workflow.connect([
+        (dummy_scan_buffer, expand_temporal_mask, [('temporal_mask', 'temporal_mask')]),
+        (process_motion, expand_temporal_mask, [
+            ('temporal_mask_metadata', 'temporal_mask_metadata'),
+        ]),
+        (expand_temporal_mask, outputnode, [
+            ('temporal_mask', 'temporal_mask'),
+            ('temporal_mask_metadata', 'temporal_mask_metadata'),
+        ]),
+    ])  # fmt:skip
 
     if config.execution.confounds_config is not None:
         plot_design_matrix = pe.Node(
             niu.Function(
-                input_names=["design_matrix", "temporal_mask"],
-                output_names=["design_matrix_figure"],
+                input_names=['design_matrix', 'temporal_mask'],
+                output_names=['design_matrix_figure'],
                 function=_plot_design_matrix,
             ),
-            name="plot_design_matrix",
+            name='plot_design_matrix',
         )
 
         workflow.connect([
-            (dummy_scan_buffer, plot_design_matrix, [("confounds_tsv", "design_matrix")]),
-            (outputnode, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
+            (dummy_scan_buffer, plot_design_matrix, [('confounds_tsv', 'design_matrix')]),
+            (outputnode, plot_design_matrix, [('temporal_mask', 'temporal_mask')]),
         ])  # fmt:skip
 
         ds_report_design_matrix = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=["space", "res", "den", "desc"],
-                suffix="design",
-                extension=".svg",
+                dismiss_entities=dismiss_hash(['space', 'res', 'den', 'desc']),
+                suffix='design',
+                extension='.svg',
             ),
-            name="ds_report_design_matrix",
-            run_without_submitting=False,
+            name='ds_report_design_matrix',
+            run_without_submitting=True,
         )
 
         workflow.connect([
-            (inputnode, ds_report_design_matrix, [("name_source", "source_file")]),
-            (plot_design_matrix, ds_report_design_matrix, [("design_matrix_figure", "in_file")]),
+            (inputnode, ds_report_design_matrix, [('name_source', 'source_file')]),
+            (plot_design_matrix, ds_report_design_matrix, [('design_matrix_figure', 'in_file')]),
         ])  # fmt:skip
 
     censor_report = pe.Node(
@@ -386,37 +413,38 @@ def init_prepare_confounds_wf(
             fd_thresh=fd_thresh,
             head_radius=head_radius,
         ),
-        name="censor_report",
+        name='censor_report',
         mem_gb=2,
     )
 
     workflow.connect([
         # use the full version of the confounds, for dummy scans in the figure
-        (process_motion, censor_report, [("motion_file", "motion_file")]),
-        (dummy_scan_buffer, censor_report, [("dummy_scans", "dummy_scans")]),
-        (outputnode, censor_report, [("temporal_mask", "temporal_mask")]),
+        (process_motion, censor_report, [('motion_file', 'motion_file')]),
+        (dummy_scan_buffer, censor_report, [('dummy_scans', 'dummy_scans')]),
+        (outputnode, censor_report, [('temporal_mask', 'temporal_mask')]),
     ])  # fmt:skip
 
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
-            desc="censoring",
-            suffix="motion",
-            extension=".svg",
+            dismiss_entities=dismiss_hash(),
+            desc='censoring',
+            suffix='motion',
+            extension='.svg',
         ),
-        name="ds_report_censoring",
-        run_without_submitting=False,
+        name='ds_report_censoring',
+        run_without_submitting=True,
     )
 
     workflow.connect([
-        (inputnode, ds_report_censoring, [("name_source", "source_file")]),
-        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
+        (inputnode, ds_report_censoring, [('name_source', 'source_file')]),
+        (censor_report, ds_report_censoring, [('out_file', 'in_file')]),
     ])  # fmt:skip
 
     return workflow
 
 
 @fill_doc
-def init_despike_wf(TR, name="despike_wf"):
+def init_despike_wf(TR, mem_gb, name='despike_wf'):
     """Despike BOLD data with AFNI's 3dDespike.
 
     Despiking truncates large spikes in the BOLD times series.
@@ -433,17 +461,20 @@ def init_despike_wf(TR, name="despike_wf"):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_despike_wf
+            from xcp_d.workflows.bold.postprocessing import init_despike_wf
 
             with mock_config():
                 wf = init_despike_wf(
                     TR=0.8,
+                    mem_gb={"bold": 1.0},
                     name="despike_wf",
                 )
 
     Parameters
     ----------
     %(TR)s
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "despike_wf".
 
@@ -461,17 +492,17 @@ def init_despike_wf(TR, name="despike_wf"):
     file_format = config.workflow.file_format
     omp_nthreads = config.nipype.omp_nthreads
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
-    outputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="outputnode")
+    inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']), name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']), name='outputnode')
 
     despike3d = pe.Node(
-        DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW"),
-        name="despike3d",
-        mem_gb=4,
+        DespikePatch(outputtype='NIFTI_GZ', args='-nomask -NEW'),
+        name='despike3d',
+        mem_gb=2 * mem_gb['bold'],
         n_procs=omp_nthreads,
     )
 
-    if file_format == "cifti":
+    if file_format == 'cifti':
         workflow.__desc__ = """
 The BOLD data were converted to NIfTI format, despiked with *AFNI*'s *3dDespike*,
 and converted back to CIFTI format.
@@ -479,27 +510,27 @@ and converted back to CIFTI format.
 
         # first, convert the cifti to a nifti
         convert_to_nifti = pe.Node(
-            CiftiConvert(target="to", num_threads=config.nipype.omp_nthreads),
-            name="convert_to_nifti",
-            mem_gb=4,
+            CiftiConvert(target='to', num_threads=config.nipype.omp_nthreads),
+            name='convert_to_nifti',
+            mem_gb=2 * mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
-            (inputnode, convert_to_nifti, [("bold_file", "in_file")]),
-            (convert_to_nifti, despike3d, [("out_file", "in_file")]),
+            (inputnode, convert_to_nifti, [('bold_file', 'in_file')]),
+            (convert_to_nifti, despike3d, [('out_file', 'in_file')]),
         ])  # fmt:skip
 
         # finally, convert the despiked nifti back to cifti
         convert_to_cifti = pe.Node(
-            CiftiConvert(target="from", TR=TR, num_threads=config.nipype.omp_nthreads),
-            name="convert_to_cifti",
-            mem_gb=4,
+            CiftiConvert(target='from', TR=TR, num_threads=config.nipype.omp_nthreads),
+            name='convert_to_cifti',
+            mem_gb=2 * mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
-            (inputnode, convert_to_cifti, [("bold_file", "cifti_template")]),
-            (despike3d, convert_to_cifti, [("out_file", "in_file")]),
-            (convert_to_cifti, outputnode, [("out_file", "bold_file")]),
+            (inputnode, convert_to_cifti, [('bold_file', 'cifti_template')]),
+            (despike3d, convert_to_cifti, [('out_file', 'in_file')]),
+            (convert_to_cifti, outputnode, [('out_file', 'bold_file')]),
         ])  # fmt:skip
 
     else:
@@ -507,15 +538,15 @@ and converted back to CIFTI format.
 The BOLD data were despiked with *AFNI*'s *3dDespike*.
 """
         workflow.connect([
-            (inputnode, despike3d, [("bold_file", "in_file")]),
-            (despike3d, outputnode, [("out_file", "bold_file")]),
+            (inputnode, despike3d, [('bold_file', 'in_file')]),
+            (despike3d, outputnode, [('out_file', 'bold_file')]),
         ])  # fmt:skip
 
     return workflow
 
 
 @fill_doc
-def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
+def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
     """Denoise BOLD data.
 
     Workflow Graph
@@ -525,11 +556,12 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_denoise_bold_wf
+            from xcp_d.workflows.bold.postprocessing import init_denoise_bold_wf
 
             with mock_config():
                 wf = init_denoise_bold_wf(
                     TR=0.8,
+                    mem_gb={"bold": 1.0, "denoise": 3.0},
                     name="denoise_bold_wf",
                 )
 
@@ -538,6 +570,8 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     %(TR)s
     mem_gb : :obj:`dict`
         Memory size in GB to use for each of the nodes.
+        The ``'denoise'`` entry is the estimated peak memory of the denoising node,
+        from :func:`~xcp_d.utils.utils._estimate_denoise_mem_gb`.
     %(name)s
         Default is "denoise_bold_wf".
 
@@ -556,8 +590,13 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     denoised_bold
         The selected denoised BOLD data to write out.
     """
+    # Log the start of workflow initialization
+    config.loggers.workflow.debug(f'Initializing denoise BOLD workflow: {name}')
+
+    # Create the main workflow object
     workflow = Workflow(name=name)
 
+    # Retrieve workflow parameters from the configuration
     fd_thresh = config.workflow.fd_thresh
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
@@ -566,79 +605,107 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
 
+    config.loggers.workflow.debug(
+        f'Workflow parameters: fd_thresh={fd_thresh}, low_pass={low_pass}, high_pass={high_pass}, '
+        f'bpf_order={bpf_order}, bandpass_filter={bandpass_filter}, smoothing={smoothing}, '
+        f'file_format={file_format}'
+    )
+
+    # Build the workflow description that details the denoising steps
     workflow.__desc__ = """\
 
 Nuisance regressors were regressed from the BOLD data using a denoising method based on *Nilearn*'s
 approach.
 """
+    # Describe interpolation of high-motion volumes if applicable
     if fd_thresh > 0:
         workflow.__desc__ += (
-            "Any volumes censored earlier in the workflow were first cubic spline interpolated in "
-            "the BOLD data. "
-            "Outlier volumes at the beginning or end of the time series were replaced with the "
+            'Any volumes censored earlier in the workflow were first cubic spline interpolated in '
+            'the BOLD data. '
+            'Outlier volumes at the beginning or end of the time series were replaced with the '
             "closest low-motion volume's values, "
-            "as cubic spline interpolation can produce extreme extrapolations. "
+            'as cubic spline interpolation can produce extreme extrapolations. '
         )
 
+    # Describe bandpass (or high-/low-pass) filtering if enabled
     if bandpass_filter:
         if low_pass > 0 and high_pass > 0:
-            btype = "band-pass"
-            preposition = "between"
-            filt_input = f"{high_pass}-{low_pass}"
+            btype = 'band-pass'
+            preposition = 'between'
+            filt_input = f'{high_pass}-{low_pass}'
         elif high_pass > 0:
-            btype = "high-pass"
-            preposition = "above"
-            filt_input = f"{high_pass}"
+            btype = 'high-pass'
+            preposition = 'above'
+            filt_input = f'{high_pass}'
         elif low_pass > 0:
-            btype = "low-pass"
-            preposition = "below"
-            filt_input = f"{low_pass}"
+            btype = 'low-pass'
+            preposition = 'below'
+            filt_input = f'{low_pass}'
 
         workflow.__desc__ += (
-            f"The timeseries were {btype} filtered using a(n) "
-            f"{num2words(bpf_order, ordinal=True)}-order Butterworth filter, "
-            f"in order to retain signals {preposition} {filt_input} Hz. "
-            "The same filter was applied to the confounds."
+            f'The timeseries were {btype} filtered using a(n) '
+            f'{num2words(bpf_order, ordinal=True)}-order Butterworth filter, '
+            f'in order to retain signals {preposition} {filt_input} Hz. '
+            'The same filter was applied to the confounds.'
         )
 
+    # Describe the nuisance regression and whether censoring was applied to the interpolated data
     if fd_thresh > 0:
         workflow.__desc__ += (
-            " The resulting time series were then denoised via linear regression, "
-            "in which the low-motion volumes from the BOLD time series and confounds were used to "
-            "calculate parameter estimates, and then the interpolated time series were denoised "
-            "using the low-motion parameter estimates. "
-            "The interpolated time series were then censored using the temporal mask."
+            ' The resulting time series were then denoised via linear regression, '
+            'in which the low-motion volumes from the BOLD time series and confounds were used to '
+            'calculate parameter estimates, and then the interpolated time series were denoised '
+            'using the low-motion parameter estimates. '
+            'The interpolated time series were then censored using the temporal mask.'
         )
     else:
         workflow.__desc__ += (
-            " The resulting time series were then denoised using linear regression. "
+            ' The resulting time series were then denoised using linear regression. '
         )
 
+    # Denoise BOLD Workflow summary:
+    # Node1: preprocessed_bold -> regress_and_filter_bold -> denoised_interpolated_bold
+    # Node2: denoised_interpolated_bold -> censor_interpolated_data -> censored_denoised_bold
+    # Node3:
+    #   if output_interpolated: denoised_interpolated_bold -> denoised_bold_buffer -> denoised_bold
+    #   if not output_interpolated: censored_denoised_bold -> denoised_bold_buffer -> denoised_bold
+    # Node4 if smoothing: denoised_bold -> resd_smoothing_wf -> smoothed_denoised_bold
+
+    # Define the input node with all necessary fields for the workflow
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "preprocessed_bold",
-                "temporal_mask",
-                "confounds_tsv",
-                "confounds_images",
-                "mask",  # only used for NIFTIs
+                'preprocessed_bold',  # preprocessed BOLD data, after dummy volume removal
+                'temporal_mask',  # high-motion outliers
+                'confounds_tsv',
+                'confounds_images',  # currently not being used, planned voxelwise confounds
+                'mask',  # only used for NIFTIs
             ],
         ),
-        name="inputnode",
+        name='inputnode',
     )
+    # Define the output node that will collect the workflow outputs
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "denoised_interpolated_bold",
-                "censored_denoised_bold",
-                "smoothed_denoised_bold",
-                "denoised_bold",
+                'denoised_interpolated_bold',
+                'censored_denoised_bold',
+                'smoothed_denoised_bold',
+                'denoised_bold',
             ],
         ),
-        name="outputnode",
+        name='outputnode',
     )
 
-    denoising_interface = DenoiseCifti if (file_format == "cifti") else DenoiseNifti
+    # Denoise BOLD using Nilearn. Details in:
+    # :py:class:`~xcp_d.interfaces.nilearn.DenoiseCifti`,
+    # :py:class:`~xcp_d.interfaces.nilearn.DenoiseNifti`,
+    # and :py:func:`~xcp_d.utils.utils.denoise_with_nilearn`.
+
+    # Select the appropriate denoising interface based on file format
+    denoising_interface = DenoiseCifti if (file_format == 'cifti') else DenoiseNifti
+
+    # Create a node for regressing and filtering the BOLD data
     regress_and_filter_bold = pe.Node(
         denoising_interface(
             TR=TR,
@@ -646,71 +713,95 @@ approach.
             high_pass=high_pass,
             filter_order=bpf_order,
             bandpass_filter=bandpass_filter,
+            num_threads=config.nipype.omp_nthreads,
         ),
-        name="regress_and_filter_bold",
-        mem_gb=mem_gb["timeseries"],
+        name='regress_and_filter_bold',
+        mem_gb=mem_gb['denoise'],
+        n_procs=config.nipype.omp_nthreads,
     )
+    config.loggers.workflow.debug('Created node for regression and filtering of BOLD data.')
 
+    # Node1: preprocessed_bold -> regress_and_filter_bold -> denoised_interpolated_bold
+    # regress_and_filter_bold includes:
+    # interpolation,
+    # detrending + mean centering (if have_confounds or have_voxelwise_confounds),
+    # bandpass filtering, and denoising
     workflow.connect([
         (inputnode, regress_and_filter_bold, [
-            ("preprocessed_bold", "preprocessed_bold"),
-            ("confounds_tsv", "confounds_tsv"),
-            ("confounds_images", "confounds_images"),
-            ("temporal_mask", "temporal_mask"),
+            ('preprocessed_bold', 'preprocessed_bold'),
+            ('confounds_tsv', 'confounds_tsv'),
+            ('confounds_images', 'confounds_images'),
+            ('temporal_mask', 'temporal_mask'),
         ]),
         (regress_and_filter_bold, outputnode, [
-            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
+            ('denoised_interpolated_bold', 'denoised_interpolated_bold'),
         ]),
     ])  # fmt:skip
-    if file_format == "nifti":
-        workflow.connect([(inputnode, regress_and_filter_bold, [("mask", "mask")])])
+    # For NIFTI files, connect the mask input as well
+    if file_format == 'nifti':
+        workflow.connect([(inputnode, regress_and_filter_bold, [('mask', 'mask')])])
 
+    # Create a node for censoring the interpolated data using framewise displacement
     censor_interpolated_data = pe.Node(
-        Censor(column="framewise_displacement"),
-        name="censor_interpolated_data",
-        mem_gb=mem_gb["resampled"],
+        Censor(column='denoising'),
+        name='censor_interpolated_data',
+        mem_gb=2 * mem_gb['bold'],
     )
+    config.loggers.workflow.debug('Created censor node for high-motion volumes.')
 
+    # Node2: denoised_interpolated_bold -> censor_interpolated_data -> censored_denoised_bold
     workflow.connect([
-        (inputnode, censor_interpolated_data, [("temporal_mask", "temporal_mask")]),
+        (inputnode, censor_interpolated_data, [('temporal_mask', 'temporal_mask')]),
         (regress_and_filter_bold, censor_interpolated_data, [
-            ("denoised_interpolated_bold", "in_file"),
+            ('denoised_interpolated_bold', 'in_file'),
         ]),
-        (censor_interpolated_data, outputnode, [("out_file", "censored_denoised_bold")]),
+        (censor_interpolated_data, outputnode, [('out_file', 'censored_denoised_bold')]),
     ])  # fmt:skip
 
+    # Create an identity node to buffer the final denoised BOLD output
     denoised_bold_buffer = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold"]),
-        name="denoised_bold_buffer",
+        niu.IdentityInterface(fields=['denoised_bold']),
+        name='denoised_bold_buffer',
     )
+    config.loggers.workflow.debug('Created denoised_bold_buffer node.')
+
+    # Node3:
+    # if output_interpolated: denoised_interpolated_bold -> denoised_bold_buffer -> denoised_bold
     if config.workflow.output_interpolated:
         workflow.connect([
             (regress_and_filter_bold, denoised_bold_buffer, [
-                ("denoised_interpolated_bold", "denoised_bold"),
+                ('denoised_interpolated_bold', 'denoised_bold'),
             ]),
         ])  # fmt:skip
+    # if not output_interpolated: censored_denoised_bold -> denoised_bold_buffer -> denoised_bold
     else:
         workflow.connect([
-            (censor_interpolated_data, denoised_bold_buffer, [("out_file", "denoised_bold")]),
+            (censor_interpolated_data, denoised_bold_buffer, [('out_file', 'denoised_bold')]),
         ])  # fmt:skip
 
-    workflow.connect([(denoised_bold_buffer, outputnode, [("denoised_bold", "denoised_bold")])])
+    # Connect the buffered denoised data to the output node
+    workflow.connect([(denoised_bold_buffer, outputnode, [('denoised_bold', 'denoised_bold')])])
 
+    # If smoothing is enabled, initialize and connect the smoothing workflow
+    # Node4: denoised_bold -> resd_smoothing_wf -> smoothed_denoised_bold
     if smoothing:
         resd_smoothing_wf = init_resd_smoothing_wf(mem_gb=mem_gb)
 
         workflow.connect([
-            (denoised_bold_buffer, resd_smoothing_wf, [("denoised_bold", "inputnode.bold_file")]),
+            (denoised_bold_buffer, resd_smoothing_wf, [('denoised_bold', 'inputnode.bold_file')]),
             (resd_smoothing_wf, outputnode, [
-                ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
+                ('outputnode.smoothed_bold', 'smoothed_denoised_bold'),
             ]),
         ])  # fmt:skip
+
+    # Final log message indicating completion of workflow setup
+    config.loggers.workflow.debug('Denoise BOLD workflow initialization complete.')
 
     return workflow
 
 
 @fill_doc
-def init_resd_smoothing_wf(mem_gb, name="resd_smoothing_wf"):
+def init_resd_smoothing_wf(mem_gb, name='resd_smoothing_wf'):
     """Smooth BOLD residuals.
 
     Workflow Graph
@@ -720,10 +811,10 @@ def init_resd_smoothing_wf(mem_gb, name="resd_smoothing_wf"):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
+            from xcp_d.workflows.bold.postprocessing import init_resd_smoothing_wf
 
             with mock_config():
-                wf = init_resd_smoothing_wf()
+                wf = init_resd_smoothing_wf(mem_gb={"bold": 1.0})
 
     Parameters
     ----------
@@ -744,15 +835,15 @@ def init_resd_smoothing_wf(mem_gb, name="resd_smoothing_wf"):
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
-    outputnode = pe.Node(niu.IdentityInterface(fields=["smoothed_bold"]), name="outputnode")
+    inputnode = pe.Node(niu.IdentityInterface(fields=['bold_file']), name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(fields=['smoothed_bold']), name='outputnode')
 
     # Turn specified FWHM (Full-Width at Half Maximum) to standard deviation.
     sigma_lx = fwhm2sigma(smoothing)
-    if file_format == "cifti":
+    if file_format == 'cifti':
         workflow.__desc__ = f""" \
 The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian kernel
-(FWHM={str(smoothing)} mm).
+(FWHM={smoothing!s} mm).
 """
 
         # Call connectome workbench to smooth for each hemisphere
@@ -760,58 +851,60 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
             CiftiSmooth(
                 sigma_surf=sigma_lx,  # the size of the surface kernel
                 sigma_vol=sigma_lx,  # the volume of the surface kernel
-                direction="COLUMN",  # which direction to smooth along@
+                direction='COLUMN',  # which direction to smooth along@
                 # pull out atlases for each hemisphere
                 right_surf=str(
                     get_template(
-                        template="fsLR",
+                        template='fsLR',
                         space=None,
-                        hemi="R",
-                        density="32k",
+                        hemi='R',
+                        density='32k',
                         desc=None,
-                        suffix="sphere",
+                        suffix='midthickness',
+                        raise_empty=True,
                     )
                 ),
                 left_surf=str(
                     get_template(
-                        template="fsLR",
+                        template='fsLR',
                         space=None,
-                        hemi="L",
-                        density="32k",
+                        hemi='L',
+                        density='32k',
                         desc=None,
-                        suffix="sphere",
+                        suffix='midthickness',
+                        raise_empty=True,
                     )
                 ),
                 num_threads=config.nipype.omp_nthreads,
             ),
-            name="cifti_smoothing",
-            mem_gb=mem_gb["timeseries"],
+            name='cifti_smoothing',
+            mem_gb=2 * mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
 
         # Always check the intent code in CiftiSmooth's output file
         fix_cifti_intent = pe.Node(
             FixCiftiIntent(),
-            name="fix_cifti_intent",
-            mem_gb=1,
+            name='fix_cifti_intent',
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
-            (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
-            (fix_cifti_intent, outputnode, [("out_file", "smoothed_bold")]),
+            (smooth_data, fix_cifti_intent, [('out_file', 'in_file')]),
+            (fix_cifti_intent, outputnode, [('out_file', 'smoothed_bold')]),
         ])  # fmt:skip
 
     else:
         workflow.__desc__ = f""" \
-The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str(smoothing)} mm).
+The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={smoothing!s} mm).
 """
         # Use nilearn to smooth the image
         smooth_data = pe.Node(
             Smooth(fwhm=smoothing),  # FWHM = kernel size
-            name="nifti_smoothing",
-            mem_gb=mem_gb["timeseries"],
+            name='nifti_smoothing',
+            mem_gb=2 * mem_gb['bold'],
         )
-        workflow.connect([(smooth_data, outputnode, [("out_file", "smoothed_bold")])])
+        workflow.connect([(smooth_data, outputnode, [('out_file', 'smoothed_bold')])])
 
-    workflow.connect([(inputnode, smooth_data, [("bold_file", "in_file")])])
+    workflow.connect([(inputnode, smooth_data, [('bold_file', 'in_file')])])
 
     return workflow

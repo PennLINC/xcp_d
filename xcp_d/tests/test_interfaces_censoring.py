@@ -2,12 +2,12 @@
 
 import json
 import os
-import yaml
 
 import nibabel as nb
 import numpy as np
 import pandas as pd
 import pytest
+import yaml
 
 from xcp_d.data import load as load_data
 from xcp_d.interfaces import censoring
@@ -15,34 +15,34 @@ from xcp_d.interfaces import censoring
 
 def test_generate_confounds(ds001419_data, tmp_path_factory):
     """Check results."""
-    tmpdir = tmp_path_factory.mktemp("test_generate_confounds")
-    in_file = ds001419_data["nifti_file"]
-    confounds_file = ds001419_data["confounds_file"]
-    confounds_json = ds001419_data["confounds_json"]
+    tmpdir = tmp_path_factory.mktemp('test_generate_confounds')
+    in_file = ds001419_data['nifti_file']
+    confounds_file = ds001419_data['confounds_file']
+    confounds_json = ds001419_data['confounds_json']
 
     df = pd.read_table(confounds_file)
-    with open(confounds_json, "r") as fo:
+    with open(confounds_json) as fo:
         metadata = json.load(fo)
 
     # Replace confounds tsv values with values that should be omitted
-    df.loc[1:3, "trans_x"] = [6, 8, 9]
-    df.loc[4:6, "trans_y"] = [7, 8, 9]
-    df.loc[7:9, "trans_z"] = [12, 8, 9]
+    df.loc[1:3, 'trans_x'] = [6, 8, 9]
+    df.loc[4:6, 'trans_y'] = [7, 8, 9]
+    df.loc[7:9, 'trans_z'] = [12, 8, 9]
 
     # Modify JSON file
-    metadata["trans_x"] = {"test": "hello"}
+    metadata['trans_x'] = {'test': 'hello'}
 
     # Rename with same convention as initial confounds tsv
-    confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
-    df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
-    confounds_tsv2 = os.path.join(tmpdir, "edited_confounds_with_signal.tsv")
-    df["signal__fingerpress_condition"] = np.random.random(df.shape[0])
-    df.to_csv(confounds_tsv2, sep="\t", index=False, header=True)
+    confounds_tsv = os.path.join(tmpdir, 'edited_confounds.tsv')
+    df.to_csv(confounds_tsv, sep='\t', index=False, header=True)
+    confounds_tsv2 = os.path.join(tmpdir, 'edited_confounds_with_signal.tsv')
+    df['signal__fingerpress_condition'] = np.random.random(df.shape[0])
+    df.to_csv(confounds_tsv2, sep='\t', index=False, header=True)
 
-    confounds_files = {"preproc_confounds": {"file": confounds_tsv, "metadata": metadata}}
+    confounds_files = {'preproc_confounds': {'file': confounds_tsv, 'metadata': metadata}}
 
     # Test with no motion filtering
-    config = load_data.readable("nuisance/24P.yml")
+    config = load_data.readable('nuisance/24P.yml')
     config = yaml.safe_load(config.read_text())
     interface = censoring.GenerateConfounds(
         in_file=in_file,
@@ -62,17 +62,17 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24(P)
-    assert "trans_x" in out_df.columns
+    assert 'trans_x' in out_df.columns
 
     # Test with notch motion filtering
-    config = load_data.readable("nuisance/24P.yml")
+    config = load_data.readable('nuisance/24P.yml')
     config = yaml.safe_load(config.read_text())
     interface = censoring.GenerateConfounds(
         in_file=in_file,
         confounds_config=config,
         TR=0.8,
         confounds_files=confounds_files,
-        motion_filter_type="notch",
+        motion_filter_type='notch',
         motion_filter_order=4,
         band_stop_min=12,
         band_stop_max=20,
@@ -85,17 +85,17 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24(P)
-    assert "trans_x_filtered" in out_df.columns
+    assert 'trans_x_filtered' in out_df.columns
 
     # Test with low-pass motion filtering
-    config = load_data.readable("nuisance/24P.yml")
+    config = load_data.readable('nuisance/24P.yml')
     config = yaml.safe_load(config.read_text())
     interface = censoring.GenerateConfounds(
         in_file=in_file,
         confounds_config=config,
         TR=0.8,
         confounds_files=confounds_files,
-        motion_filter_type="lp",
+        motion_filter_type='lp',
         motion_filter_order=4,
         band_stop_min=6,
         band_stop_max=0,
@@ -108,10 +108,10 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24(P)
-    assert "trans_x_filtered" in out_df.columns
+    assert 'trans_x_filtered' in out_df.columns
 
     # Test with regular expressions in confounds_config
-    config = load_data.readable("nuisance/acompcor_gsr.yml")
+    config = load_data.readable('nuisance/acompcor_gsr.yml')
     config = yaml.safe_load(config.read_text())
     interface = censoring.GenerateConfounds(
         in_file=in_file,
@@ -130,13 +130,13 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     assert os.path.isfile(results.outputs.confounds_tsv)
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
-    assert out_df.shape[1] == 31  # 31 parameters
+    assert out_df.shape[1] == 29  # 29 parameters
 
     # Test with signal regressors
-    config = load_data.readable("nuisance/24P.yml")
+    config = load_data.readable('nuisance/24P.yml')
     config = yaml.safe_load(config.read_text())
-    config["confounds"]["preproc_confounds"]["columns"].append("signal__fingerpress_condition")
-    confounds_files = {"preproc_confounds": {"file": confounds_tsv2, "metadata": metadata}}
+    config['confounds']['preproc_confounds']['columns'].append('signal__fingerpress_condition')
+    confounds_files = {'preproc_confounds': {'file': confounds_tsv2, 'metadata': metadata}}
     interface = censoring.GenerateConfounds(
         in_file=in_file,
         confounds_config=config,
@@ -155,16 +155,16 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24 parameters (doesn't include 25th signal column)
-    assert "signal__fingerpress_condition" not in out_df.columns
-    assert all([col.endswith("_orth") for col in out_df.columns])
-    assert "signal__fingerpress_condition" in results.outputs.confounds_metadata.keys()
+    assert 'signal__fingerpress_condition' not in out_df.columns
+    assert all(col.endswith('_orth') for col in out_df.columns)
+    assert 'signal__fingerpress_condition' in results.outputs.confounds_metadata.keys()
 
     # Test with image-based confounds
-    config = load_data.readable("nuisance/rapidtide+24P.yml")
+    config = load_data.readable('nuisance/rapidtide+24P.yml')
     config = yaml.safe_load(config.read_text())
     confounds_files = {
-        "preproc_confounds": {"file": confounds_tsv, "metadata": metadata},
-        "rapidtide_slfo": {"file": in_file, "metadata": {}},
+        'preproc_confounds': {'file': confounds_tsv, 'metadata': metadata},
+        'rapidtide_slfo': {'file': in_file, 'metadata': {}},
     }
     interface = censoring.GenerateConfounds(
         in_file=in_file,
@@ -185,16 +185,16 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 25  # 24P + rapidtide (stand-in for the voxel-wise regressor)
     assert os.path.isfile(results.outputs.confounds_images[0])
-    assert out_df["rapidtide_slfo"].isna().all()
+    assert out_df['rapidtide_slfo'].isna().all()
 
     # Test with image-based confounds and a signal column (will fail)
-    config = load_data.readable("nuisance/rapidtide+24P.yml")
+    config = load_data.readable('nuisance/rapidtide+24P.yml')
     config = yaml.safe_load(config.read_text())
-    config["confounds"]["preproc_confounds"]["columns"].append("signal__fingerpress_condition")
+    config['confounds']['preproc_confounds']['columns'].append('signal__fingerpress_condition')
 
     confounds_files = {
-        "preproc_confounds": {"file": confounds_tsv2, "metadata": metadata},
-        "rapidtide_slfo": {"file": in_file, "metadata": {}},
+        'preproc_confounds': {'file': confounds_tsv2, 'metadata': metadata},
+        'rapidtide_slfo': {'file': in_file, 'metadata': {}},
     }
     interface = censoring.GenerateConfounds(
         in_file=in_file,
@@ -214,10 +214,10 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
 
 def test_process_motion(ds001419_data, tmp_path_factory):
     """Test censoring.ProcessMotion."""
-    tmpdir = tmp_path_factory.mktemp("test_process_motion")
+    tmpdir = tmp_path_factory.mktemp('test_process_motion')
 
-    motion_file = ds001419_data["confounds_file"]
-    motion_json = ds001419_data["confounds_json"]
+    motion_file = ds001419_data['confounds_file']
+    motion_json = ds001419_data['confounds_json']
 
     # Basic test without filtering
     interface = censoring.ProcessMotion(
@@ -234,6 +234,9 @@ def test_process_motion(ds001419_data, tmp_path_factory):
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    # ProcessMotion must write exactly one column; expansion into censor_between/denoising
+    # happens downstream in ExpandTemporalMask, not here.
+    assert list(pd.read_table(results.outputs.temporal_mask).columns) == ['framewise_displacement']
 
     # Basic test with censoring, but no filtering
     interface = censoring.ProcessMotion(
@@ -250,6 +253,7 @@ def test_process_motion(ds001419_data, tmp_path_factory):
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    assert list(pd.read_table(results.outputs.temporal_mask).columns) == ['framewise_displacement']
 
     # Basic test with filtering, but not censoring
     interface = censoring.ProcessMotion(
@@ -258,7 +262,7 @@ def test_process_motion(ds001419_data, tmp_path_factory):
         TR=2.0,
         fd_thresh=0,
         head_radius=50,
-        motion_filter_type="notch",
+        motion_filter_type='notch',
         motion_filter_order=4,
         band_stop_min=12,
         band_stop_max=20,
@@ -266,6 +270,7 @@ def test_process_motion(ds001419_data, tmp_path_factory):
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    assert list(pd.read_table(results.outputs.temporal_mask).columns) == ['framewise_displacement']
 
     # Basic test with filtering and censoring
     interface = censoring.ProcessMotion(
@@ -274,7 +279,7 @@ def test_process_motion(ds001419_data, tmp_path_factory):
         TR=2.0,
         fd_thresh=0.2,
         head_radius=50,
-        motion_filter_type="notch",
+        motion_filter_type='notch',
         motion_filter_order=4,
         band_stop_min=12,
         band_stop_max=20,
@@ -282,15 +287,16 @@ def test_process_motion(ds001419_data, tmp_path_factory):
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    assert list(pd.read_table(results.outputs.temporal_mask).columns) == ['framewise_displacement']
 
 
 def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
     """Test RemoveDummyVolumes() for NIFTI input data."""
     # Define inputs
-    tmpdir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_nifti")
+    tmpdir = tmp_path_factory.mktemp('test_RemoveDummyVolumes_nifti')
 
-    boldfile = ds001419_data["nifti_file"]
-    confounds_file = ds001419_data["confounds_file"]
+    boldfile = ds001419_data['nifti_file']
+    confounds_file = ds001419_data['confounds_file']
 
     # Find the original number of volumes acc. to nifti & confounds timeseries
     original_confounds = pd.read_table(confounds_file)
@@ -304,6 +310,7 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
         motion_file=confounds_file,
         temporal_mask=confounds_file,
         dummy_scans=0,
+        dummy_scan_source=confounds_file,
     )
     results = remove_nothing.run(cwd=tmpdir)
     undropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
@@ -327,6 +334,7 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
             motion_file=confounds_file,
             temporal_mask=confounds_file,
             dummy_scans=n,
+            dummy_scan_source=confounds_file,
         )
         results = remove_n_vols.run(cwd=tmpdir)
         dropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
@@ -337,24 +345,19 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
         # Have the confounds changed correctly?
         assert dropped_confounds.shape[0] == original_confounds.shape[0] - n
         # Has the nifti changed correctly?
-        try:
-            assert (
-                nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
-                == original_nvols_nifti - n
-            )
-        except Exception as exc:
-            exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
-            print(f"Tests failing at N = {n}.")
-            raise Exception(f"Number of volumes in dropped nifti is {exc}.")
+        n_vols = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
+        if n_vols != (original_nvols_nifti - n):
+            print(f'Tests failing at N = {n}.')
+            raise ValueError(f'Number of volumes in dropped nifti is {n_vols}.')
 
 
 def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
     """Test RemoveDummyVolumes() for CIFTI input data."""
     # Define inputs
-    tmpdir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_cifti")
+    tmpdir = tmp_path_factory.mktemp('test_RemoveDummyVolumes_cifti')
 
-    boldfile = ds001419_data["cifti_file"]
-    confounds_file = ds001419_data["confounds_file"]
+    boldfile = ds001419_data['cifti_file']
+    confounds_file = ds001419_data['confounds_file']
 
     # Find the original number of volumes acc. to cifti & confounds timeseries
     original_confounds = pd.read_table(confounds_file)
@@ -368,6 +371,7 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
         motion_file=confounds_file,
         temporal_mask=confounds_file,
         dummy_scans=0,
+        dummy_scan_source=confounds_file,
     )
     results = remove_nothing.run(cwd=tmpdir)
     undropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
@@ -390,6 +394,7 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
             motion_file=confounds_file,
             temporal_mask=confounds_file,
             dummy_scans=n,
+            dummy_scan_source=confounds_file,
         )
 
         results = remove_n_vols.run(cwd=tmpdir)
@@ -400,20 +405,15 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
         # Have the confounds changed correctly?
         assert dropped_confounds.shape[0] == original_confounds.shape[0] - n
         # Has the cifti changed correctly?
-        try:
-            assert (
-                nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
-                == original_nvols_cifti - n
-            )
-        except Exception as exc:
-            exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
-            print(f"Tests failing at N = {n}.")
-            raise Exception(f"Number of volumes in dropped cifti is {exc}.")
+        n_vols = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
+        if n_vols != (original_nvols_cifti - n):
+            print(f'Tests failing at N = {n}.')
+            raise ValueError(f'Number of volumes in dropped cifti is {n_vols}.')
 
 
 def test_random_censor(tmp_path_factory):
     """Test RandomCensor."""
-    tmpdir = tmp_path_factory.mktemp("test_random_censor")
+    tmpdir = tmp_path_factory.mktemp('test_random_censor')
     n_volumes, n_outliers = 500, 100
     exact_scans = [100, 200, 300, 400]
 
@@ -421,9 +421,15 @@ def test_random_censor(tmp_path_factory):
     rng = np.random.default_rng(0)
     outlier_idx = rng.choice(np.arange(n_volumes, dtype=int), size=n_outliers, replace=False)
     outliers_arr[outlier_idx] = 1
-    temporal_mask_df = pd.DataFrame(data=outliers_arr, columns=["framewise_displacement"])
-    original_temporal_mask = os.path.join(tmpdir, "orig_tmask.tsv")
-    temporal_mask_df.to_csv(original_temporal_mask, index=False, sep="\t")
+    temporal_mask_df = pd.DataFrame(
+        {
+            'framewise_displacement': outliers_arr,
+            'censor_between': np.zeros(n_volumes, dtype=int),
+            'denoising': outliers_arr,
+        }
+    )
+    original_temporal_mask = os.path.join(tmpdir, 'orig_tmask.tsv')
+    temporal_mask_df.to_csv(original_temporal_mask, index=False, sep='\t')
 
     # Run the RandomCensor interface without any exact_scans.
     interface = censoring.RandomCensor(
@@ -448,10 +454,10 @@ def test_random_censor(tmp_path_factory):
     assert isinstance(results.outputs.temporal_mask_metadata, dict)
     new_temporal_mask_df = pd.read_table(results.outputs.temporal_mask)
     new_temporal_mask_df_no_outliers = new_temporal_mask_df.loc[
-        new_temporal_mask_df["framewise_displacement"] == 0
+        new_temporal_mask_df['denoising'] == 0
     ]
     for exact_scan in exact_scans:
-        exact_scan_col = f"exact_{exact_scan}"
+        exact_scan_col = f'exact_{exact_scan}'
         assert exact_scan_col in new_temporal_mask_df_no_outliers.columns
         # The column's values should sum to the number of volumes minus the number of retained.
         # Outliers don't show up here.
@@ -460,29 +466,122 @@ def test_random_censor(tmp_path_factory):
         )
         # The outlier volumes and exact-scan censored volumes shouldn't overlap.
         assert all(
-            new_temporal_mask_df_no_outliers[[exact_scan_col, "framewise_displacement"]].sum(
-                axis=1
-            )
-            <= 1
+            new_temporal_mask_df_no_outliers[[exact_scan_col, 'denoising']].sum(axis=1) <= 1
         )
+
+
+def test_expand_temporal_mask(tmp_path_factory):
+    """Test ExpandTemporalMask."""
+    tmpdir = tmp_path_factory.mktemp('test_expand_temporal_mask')
+
+    # 1-volume run at index 1, 2-volume run at indices 3-4, 4-volume run at indices 6-9.
+    outliers_arr = np.array([1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1], dtype=int)
+    temporal_mask = os.path.join(tmpdir, 'tmask.tsv')
+    pd.DataFrame({'framewise_displacement': outliers_arr}).to_csv(
+        temporal_mask, sep='\t', index=False
+    )
+    metadata = {'framewise_displacement': {'Description': 'original'}}
+
+    # censor_between=0 is a no-op, but still writes both new columns.
+    interface = censoring.ExpandTemporalMask(
+        temporal_mask=temporal_mask,
+        temporal_mask_metadata=metadata,
+        censor_between=0,
+    )
+    results = interface.run(cwd=tmpdir)
+    df = pd.read_table(results.outputs.temporal_mask)
+    assert list(df.columns) == ['framewise_displacement', 'censor_between', 'denoising']
+    assert df['censor_between'].sum() == 0
+    assert np.array_equal(df['denoising'].values, outliers_arr)
+
+    # Metadata is extended, not replaced.
+    out_metadata = results.outputs.temporal_mask_metadata
+    assert out_metadata['framewise_displacement']['Description'] == 'original'
+    assert out_metadata['censor_between']['MaxSegmentLength'] == 0
+    assert 'Levels' in out_metadata['censor_between']
+    assert 'Levels' in out_metadata['denoising']
+    # The input metadata dict is not mutated.
+    assert 'denoising' not in metadata
+
+    # censor_between=2 flags the 1-volume and 2-volume runs but not the 4-volume run.
+    interface = censoring.ExpandTemporalMask(
+        temporal_mask=temporal_mask,
+        temporal_mask_metadata=metadata,
+        censor_between=2,
+    )
+    results = interface.run(cwd=tmpdir)
+    df = pd.read_table(results.outputs.temporal_mask)
+    assert np.array_equal(
+        df['censor_between'].values,
+        np.array([0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0]),
+    )
+    # denoising is the union of the other two columns.
+    assert np.array_equal(
+        df['denoising'].values,
+        ((df['framewise_displacement'].values + df['censor_between'].values) > 0).astype(int),
+    )
+    assert df['denoising'].sum() > df['framewise_displacement'].sum()
+    # framewise_displacement is untouched.
+    assert np.array_equal(df['framewise_displacement'].values, outliers_arr)
+    assert results.outputs.temporal_mask_metadata['censor_between']['MaxSegmentLength'] == 2
+
+
+def test_random_censor_uses_denoising_column(tmp_path_factory):
+    """RandomCensor draws only from volumes retained by the denoising column."""
+    tmpdir = tmp_path_factory.mktemp('test_random_censor_denoising')
+    n_volumes = 200
+
+    fd_arr = np.zeros(n_volumes, dtype=int)
+    fd_arr[:20] = 1
+    between_arr = np.zeros(n_volumes, dtype=int)
+    between_arr[20:40] = 1
+    temporal_mask_df = pd.DataFrame(
+        {
+            'framewise_displacement': fd_arr,
+            'censor_between': between_arr,
+            'denoising': ((fd_arr + between_arr) > 0).astype(int),
+        }
+    )
+    temporal_mask = os.path.join(tmpdir, 'tmask.tsv')
+    temporal_mask_df.to_csv(temporal_mask, sep='\t', index=False)
+
+    interface = censoring.RandomCensor(
+        temporal_mask=temporal_mask,
+        temporal_mask_metadata={},
+        exact_scans=[100],
+        random_seed=0,
+    )
+    results = interface.run(cwd=tmpdir)
+    out_df = pd.read_table(results.outputs.temporal_mask)
+
+    # No volume censored by `denoising` may be marked in the exact_ column.
+    assert out_df.loc[out_df['denoising'] == 1, 'exact_100'].sum() == 0
+    # Of the 160 volumes retained by `denoising`, 100 are kept and 60 are randomly censored.
+    assert out_df['exact_100'].sum() == 60
 
 
 def test_censor(ds001419_data, tmp_path_factory):
     """Test Censor interface."""
-    tmpdir = tmp_path_factory.mktemp("test_censor")
-    nifti_file = ds001419_data["nifti_file"]
-    cifti_file = ds001419_data["cifti_file"]
+    tmpdir = tmp_path_factory.mktemp('test_censor')
+    nifti_file = ds001419_data['nifti_file']
+    cifti_file = ds001419_data['cifti_file']
     in_img = nb.load(nifti_file)
     n_volumes = in_img.shape[3]
-    censoring_df = pd.DataFrame(columns=["framewise_displacement"], data=np.zeros(n_volumes))
-    temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+    censoring_df = pd.DataFrame(
+        {
+            'framewise_displacement': np.zeros(n_volumes),
+            'censor_between': np.zeros(n_volumes),
+            'denoising': np.zeros(n_volumes),
+        }
+    )
+    temporal_mask = os.path.join(tmpdir, 'temporal_mask.tsv')
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
 
     # Test with a NIfTI file, with no censored volumes
     interface = censoring.Censor(
         in_file=nifti_file,
         temporal_mask=temporal_mask,
-        column="framewise_displacement",
+        column='denoising',
     )
     results = interface.run(cwd=tmpdir)
     out_file = results.outputs.out_file
@@ -494,7 +593,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface = censoring.Censor(
         in_file=cifti_file,
         temporal_mask=temporal_mask,
-        column="framewise_displacement",
+        column='denoising',
     )
     results = interface.run(cwd=tmpdir)
     out_file = results.outputs.out_file
@@ -505,17 +604,18 @@ def test_censor(ds001419_data, tmp_path_factory):
     # Create a temporal mask with some censored volumes
     n_censored_volumes = 10
     n_retained_volumes = n_volumes - n_censored_volumes
-    censoring_df.loc[range(10), "framewise_displacement"] = 1
+    censoring_df.loc[range(10), 'framewise_displacement'] = 1
+    censoring_df.loc[range(10), 'denoising'] = 1
     # Add random censor column
-    censoring_df["random_censor"] = 0
-    censoring_df.loc[20:29, "random_censor"] = 1
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+    censoring_df['random_censor'] = 0
+    censoring_df.loc[20:29, 'random_censor'] = 1
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
 
     # Test with a NIfTI file, with some censored volumes
     interface = censoring.Censor(
         in_file=nifti_file,
         temporal_mask=temporal_mask,
-        column="framewise_displacement",
+        column='denoising',
     )
     results = interface.run(cwd=tmpdir)
     out_file = results.outputs.out_file
@@ -527,7 +627,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface2 = censoring.Censor(
         in_file=results.outputs.out_file,
         temporal_mask=temporal_mask,
-        column="random_censor",
+        column='random_censor',
     )
     results2 = interface2.run(cwd=tmpdir)
     out_file2 = results2.outputs.out_file
@@ -539,7 +639,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface = censoring.Censor(
         in_file=cifti_file,
         temporal_mask=temporal_mask,
-        column="framewise_displacement",
+        column='denoising',
     )
     results = interface.run(cwd=tmpdir)
     out_file = results.outputs.out_file
@@ -551,10 +651,178 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface2 = censoring.Censor(
         in_file=results.outputs.out_file,
         temporal_mask=temporal_mask,
-        column="random_censor",
+        column='random_censor',
     )
     results2 = interface2.run(cwd=tmpdir)
     out_file2 = results2.outputs.out_file
     assert os.path.isfile(out_file2)
     out_img2 = nb.load(out_file2)
     assert out_img2.shape[0] == (n_retained_volumes - 10)
+
+
+def test_censor_hash_suffixed_columns(tmp_path_factory):
+    """Censor must resolve hash-suffixed temporal mask columns via get_col.
+
+    This is a data-free regression test (no ds001419_data fixture) for the case where
+    the requested column exists only under a `_hash-<hash>` suffix, e.g.
+    `denoising_hash-abc123`. Both the existence guard and the actual lookup must agree.
+    """
+    tmpdir = tmp_path_factory.mktemp('test_censor_hash_suffixed_columns')
+
+    n_volumes = 20
+    rng = np.random.default_rng(0)
+    data = rng.random((4, 4, 4, n_volumes))
+    nifti_file = os.path.join(tmpdir, 'bold.nii.gz')
+    nb.Nifti1Image(data, affine=np.eye(4)).to_filename(nifti_file)
+
+    n_censored_volumes = 5
+    n_retained_volumes = n_volumes - n_censored_volumes
+    fd_arr = np.zeros(n_volumes, dtype=int)
+    fd_arr[:n_censored_volumes] = 1
+    censoring_df = pd.DataFrame(
+        {
+            'framewise_displacement_hash-abc123': fd_arr,
+            'censor_between_hash-abc123': np.zeros(n_volumes, dtype=int),
+            'denoising_hash-abc123': fd_arr,
+        }
+    )
+    temporal_mask = os.path.join(tmpdir, 'temporal_mask.tsv')
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
+
+    interface = censoring.Censor(
+        in_file=nifti_file,
+        temporal_mask=temporal_mask,
+        column='denoising',
+    )
+    results = interface.run(cwd=tmpdir)
+    out_file = results.outputs.out_file
+    assert os.path.isfile(out_file)
+    out_img = nb.load(out_file)
+    assert out_img.shape[3] == n_retained_volumes
+
+    # A genuinely missing column must still raise, with the same message as before.
+    bad_interface = censoring.Censor(
+        in_file=nifti_file,
+        temporal_mask=temporal_mask,
+        column='nonexistent_column',
+    )
+    with pytest.raises(ValueError, match="Column 'nonexistent_column' not found"):
+        bad_interface.run(cwd=tmpdir)
+
+
+def _load_offline_config(**workflow_overrides):
+    """Populate the global config from the test TOML without downloading example data.
+
+    ``xcp_d.tests.tests.mock_config`` downloads a dataset from Box, which is not available in
+    every environment, so workflow-construction tests load the same TOML directly instead.
+    """
+    import tempfile
+    from pathlib import Path
+
+    try:
+        from tomllib import loads
+    except ImportError:  # Python < 3.11
+        from tomli import loads
+
+    from xcp_d import config
+    from xcp_d.data import load as load_data
+
+    settings = loads(load_data('tests/config.toml').read_text())
+    for section_name, section_settings in settings.items():
+        if section_name != 'environment':
+            getattr(config, section_name).load(section_settings, init=False)
+
+    config.execution.output_dir = Path(tempfile.mkdtemp())
+    config.execution.work_dir = Path(tempfile.mkdtemp())
+    for key, value in workflow_overrides.items():
+        setattr(config.workflow, key, value)
+
+    return config
+
+
+def test_prepare_confounds_wf_expands_temporal_mask():
+    """The prepare-confounds workflow expands the temporal mask after dummy-scan removal."""
+    from xcp_d.interfaces.censoring import ExpandTemporalMask
+    from xcp_d.workflows.bold.postprocessing import init_prepare_confounds_wf
+
+    _load_offline_config(censor_between=3, fd_thresh=0.3, dummy_scans=0)
+
+    wf = init_prepare_confounds_wf(TR=2.0, head_radius=50, mem_gb={'bold': 1, 'volume': 1})
+
+    node = wf.get_node('expand_temporal_mask')
+    assert node is not None
+    assert isinstance(node.interface, ExpandTemporalMask)
+    assert node.inputs.censor_between == 3
+
+    # outputnode.temporal_mask must be fed by the expansion node, not the dummy-scan buffer,
+    # and its metadata must come from the expansion node rather than process_motion.
+    incoming = {
+        (source.name, source_field, dest_field)
+        for source, _, data in wf._graph.in_edges(wf.get_node('outputnode'), data=True)
+        for source_field, dest_field in data['connect']
+    }
+    assert ('expand_temporal_mask', 'temporal_mask', 'temporal_mask') in incoming
+    assert ('expand_temporal_mask', 'temporal_mask_metadata', 'temporal_mask_metadata') in incoming
+    assert ('dummy_scan_buffer', 'temporal_mask', 'temporal_mask') not in incoming
+    assert ('process_motion', 'temporal_mask_metadata', 'temporal_mask_metadata') not in incoming
+
+
+def test_count_voxelwise_confounds(tmp_path, monkeypatch):
+    """Confounds without columns in the confounds config are counted as voxel-wise confounds."""
+    from xcp_d import config
+    from xcp_d.workflows.bold.postprocessing import _count_voxelwise_confounds
+
+    monkeypatch.setattr(config.execution, 'confounds_config', None)
+    assert _count_voxelwise_confounds() == 0
+
+    confounds_config = {
+        'name': 'test',
+        'description': 'Global and voxel-wise confounds',
+        'confounds': {
+            'motion': {
+                'dataset': 'preprocessed',
+                'query': {'desc': 'confounds'},
+                'columns': ['trans_x'],
+            },
+            'voxelwise1': {'dataset': 'custom', 'query': {'desc': 'a'}},
+            'voxelwise2': {'dataset': 'custom', 'query': {'desc': 'b'}},
+        },
+    }
+    config_file = tmp_path / 'confounds_config.yml'
+    config_file.write_text(yaml.safe_dump(confounds_config))
+    monkeypatch.setattr(config.execution, 'confounds_config', config_file)
+    assert _count_voxelwise_confounds() == 2
+
+
+def test_denoising_column_is_the_censoring_contract():
+    """Every temporal-mask consumer reads the denoising column, not framewise_displacement.
+
+    ``interfaces/plotting.py`` (``CensoringPlot``) and ``interfaces/censoring.py``
+    (``ExpandTemporalMask``) are deliberately excluded: they legitimately read the raw
+    ``framewise_displacement`` flag column (to plot it separately, or to derive ``denoising``
+    from it) rather than treating it as the censoring contract.
+    """
+    import re
+    from pathlib import Path
+
+    repo_root = Path(__file__).parent.parent
+    consumers = [
+        'interfaces/nilearn.py',
+        'interfaces/restingstate.py',
+        'interfaces/connectivity.py',
+        'interfaces/utils.py',
+        'utils/plotting.py',
+    ]
+    # Matches get_col(<any var>, 'framewise_displacement'), but reads from the motion file
+    # (conventionally `motion_df`) are legitimate, since that's where FD in millimeters lives.
+    pattern = re.compile(r"get_col\(\s*(\w+)\s*,\s*'framewise_displacement'\s*\)")
+    offenders = []
+    for relative_path in consumers:
+        text = (repo_root / relative_path).read_text()
+        offenders.extend(
+            f'{relative_path}: {match.group(0)}'
+            for match in pattern.finditer(text)
+            if match.group(1) != 'motion_df'
+        )
+
+    assert offenders == []

@@ -1,0 +1,351 @@
+# Skeleton based on Nibabies derivatives
+# There is only a T1w anatomical image, so it should only collect T1w files.
+"01":
+  - anat:
+    - run: 1
+      desc: preproc
+      suffix: T1w
+    - run: 1
+      from: MNI152NLin6Asym
+      to: T1w
+      mode: image
+      suffix: xfm
+      extension: .h5
+    - run: 1
+      from: MNIInfant+2
+      to: T1w
+      mode: image
+      suffix: xfm
+      extension: .h5
+    - run: 1
+      from: T1w
+      to: MNI152NLin6Asym
+      mode: image
+      suffix: xfm
+      extension: .h5
+    - run: 1
+      from: T1w
+      to: MNIInfant+2
+      mode: image
+      suffix: xfm
+      extension: .h5
+    - run: 1
+      from: T1w
+      to: fsnative
+      mode: image
+      suffix: xfm
+      extension: .txt
+    - run: 1
+      from: fsnative
+      to: T1w
+      mode: image
+      suffix: xfm
+      extension: .h5
+    - run: 1
+      hemi: L
+      suffix: curv
+      extension: .shape.gii
+    - run: 1
+      hemi: L
+      suffix: inflated
+      extension: .surf.gii
+    - run: 1
+      hemi: L
+      suffix: midthickness
+      extension: .surf.gii
+    - run: 1
+      hemi: L
+      suffix: pial
+      extension: .surf.gii
+    - run: 1
+      hemi: L
+      space: fsLR
+      den: 32k
+      suffix: midthickness
+      extension: .surf.gii
+    - run: 1
+      hemi: L
+      space: fsLR
+      den: 32k
+      suffix: pial
+      extension: .surf.gii
+    - run: 1
+      hemi: L
+      space: fsLR
+      den: 32k
+      suffix: white
+      extension: .surf.gii
+    - run: 1
+      hemi: L
+      space: fsLR
+      desc: reg
+      suffix: sphere
+      extension: .surf.gii
+    - run: 1
+      hemi: L
+      suffix: sphere
+      extension: .surf.gii
+    - run: 1
+      hemi: L
+      suffix: sulc
+      extension: .shape.gii
+    - run: 1
+      hemi: L
+      suffix: thickness
+      extension: .shape.gii
+    - run: 1
+      hemi: L
+      suffix: white
+      extension: .surf.gii
+    - run: 1
+      hemi: R
+      suffix: curv
+      extension: .shape.gii
+    - run: 1
+      hemi: R
+      suffix: inflated
+      extension: .surf.gii
+    - run: 1
+      hemi: R
+      suffix: midthickness
+      extension: .surf.gii
+    - run: 1
+      hemi: R
+      suffix: pial
+      extension: .surf.gii
+    - run: 1
+      hemi: R
+      space: fsLR
+      den: 32k
+      suffix: midthickness
+      extension: .surf.gii
+    - run: 1
+      hemi: R
+      space: fsLR
+      den: 32k
+      suffix: pial
+      extension: .surf.gii
+    - run: 1
+      hemi: R
+      space: fsLR
+      den: 32k
+      suffix: white
+      extension: .surf.gii
+    - run: 1
+      hemi: R
+      space: fsLR
+      desc: reg
+      suffix: sphere
+      extension: .surf.gii
+    - run: 1
+      hemi: R
+      suffix: sphere
+      extension: .surf.gii
+    - run: 1
+      hemi: R
+      suffix: sulc
+      extension: .shape.gii
+    - run: 1
+      hemi: R
+      suffix: thickness
+      extension: .shape.gii
+    - run: 1
+      hemi: R
+      suffix: white
+      extension: .surf.gii
+    - run: 1
+      space: MNI152NLin6Asym
+      res: 2
+      desc: brain
+      suffix: mask
+    - run: 1
+      space: MNI152NLin6Asym
+      res: 2
+      desc: preproc
+      suffix: T1w
+    - run: 1
+      space: MNI152NLin6Asym
+      res: 2
+      suffix: dseg
+    - run: 1
+      space: MNI152NLin6Asym
+      res: 2
+      label: CSF
+      suffix: probseg
+    - run: 1
+      space: MNI152NLin6Asym
+      res: 2
+      label: GM
+      suffix: probseg
+    - run: 1
+      space: MNI152NLin6Asym
+      res: 2
+      label: WM
+      suffix: probseg
+    - run: 1
+      space: T1w
+      desc: aparcaseg
+      suffix: dseg
+    - run: 1
+      space: T1w
+      desc: aseg
+      suffix: dseg
+    - run: 1
+      space: T1w
+      desc: ribbon
+      suffix: mask
+    - run: 1
+      space: T1w
+      suffix: dseg
+    - run: 1
+      space: T1w
+      label: CSF
+      suffix: probseg
+    - run: 1
+      space: T1w
+      label: GM
+      suffix: probseg
+    - run: 1
+      space: T1w
+      label: WM
+      suffix: probseg
+    - run: 1
+      space: fsLR
+      den: 91k
+      suffix: curv
+      extension: .dscalar.nii
+    - run: 1
+      space: fsLR
+      den: 91k
+      suffix: sulc
+      extension: .dscalar.nii
+    - run: 1
+      space: fsLR
+      den: 91k
+      suffix: thickness
+      extension: .dscalar.nii
+    fmap:
+    - run: 1
+      fmapid: auto00000
+      desc: coeff
+      suffix: fieldmap
+    - run: 1
+      fmapid: auto00000
+      desc: epi
+      suffix: fieldmap
+    - run: 1
+      fmapid: auto00000
+      desc: preproc
+      suffix: fieldmap
+    - run: 1
+      fmapid: auto00001
+      desc: coeff
+      suffix: fieldmap
+    - run: 1
+      fmapid: auto00001
+      desc: epi
+      suffix: fieldmap
+    - run: 1
+      fmapid: auto00001
+      desc: preproc
+      suffix: fieldmap
+    func:
+    - task: rest
+      dir: PA
+      run: 1
+      desc: brain
+      suffix: mask
+    - task: rest
+      dir: PA
+      run: 1
+      desc: confounds
+      suffix: timeseries
+      extension: .tsv
+    - task: rest
+      dir: PA
+      run: 1
+      desc: preproc
+      suffix: bold
+    - task: rest
+      dir: PA
+      run: 1
+      space: fsLR
+      den: 91k
+      suffix: bold
+      extension: .dtseries.nii
+    - task: rest
+      dir: PA
+      run: 1
+      desc: coreg
+      suffix: boldref
+    - task: rest
+      dir: PA
+      run: 1
+      desc: hmc
+      suffix: boldref
+    - task: rest
+      dir: PA
+      run: 1
+      space: MNI152NLin6Asym
+      desc: preproc
+      suffix: bold
+    - task: rest
+      dir: PA
+      run: 1
+      space: MNI152NLin6Asym
+      suffix: boldref
+    - task: rest
+      dir: PA
+      run: 1
+      space: MNI152NLin6Asym
+      desc: brain
+      suffix: mask
+    - task: rest
+      dir: PA
+      run: 1
+      space: T1w
+      desc: preproc
+      suffix: bold
+    - task: rest
+      dir: PA
+      run: 1
+      space: T1w
+      suffix: boldref
+    - task: rest
+      dir: PA
+      run: 1
+      space: T1w
+      desc: brain
+      suffix: mask
+    - task: rest
+      dir: PA
+      run: 1
+      from: boldref
+      to: auto00000
+      mode: image
+      suffix: xfm
+      extension: .txt
+    - task: rest
+      dir: PA
+      run: 1
+      from: boldref
+      to: auto00001
+      mode: image
+      suffix: xfm
+      extension: .txt
+    - task: rest
+      dir: PA
+      run: 1
+      from: boldref
+      to: T1w
+      mode: image
+      suffix: xfm
+      extension: .txt
+    - task: rest
+      dir: PA
+      run: 1
+      from: orig
+      to: boldref
+      mode: image
+      suffix: xfm
+      extension: .txt

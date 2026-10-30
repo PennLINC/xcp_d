@@ -10,37 +10,37 @@ Processing Pipeline Details
 Input data
 **********
 
-XCP-D can post-process data from several different preprocessing pipelines,
+*XCP-D* can post-process data from several different preprocessing pipelines,
 including ``fMRIPrep`` (``--input-type fmriprep``), ``Nibabies`` (``--input-type nibabies``),
 ``HCPPipelines`` (``--input-type hcp``), ``abcd-hcp-pipeline`` (``--input-type dcan``),
 and UK Biobank's pipeline (``--input-type ukb``).
 
-The default input type depends on the mode that XCP-D is run in-
+The default input type depends on the mode that *XCP-D* is run in-
 ``fmriprep`` for ``abcd`` and ``linc`` modes, ``nibabies`` for ``hbcd`` mode.
 
-XCP-D's support for fMRIPrep and Nibabies derivatives will be the most robust,
+*XCP-D*'s support for fMRIPrep and Nibabies derivatives will be the most robust,
 as these pipelines produces BIDS-compliant derivatives.
 For the HCP, ABCD-HCP, and UK Biobank pipelines,
-XCP-D will read in the post-processed data and convert it to a BIDS-like structure.
+*XCP-D* will read in the post-processed data and convert it to a BIDS-like structure.
 
 
 ****************
 Processing Modes
 ****************
 
-Starting in version 0.8.0, XCP-D includes a required ``--mode`` parameter.
+Starting in version 0.8.0, *XCP-D* includes a required ``--mode`` parameter.
 The ``mode`` parameter automatically defines sets of other parameters,
 based on recommended processing pipelines for different studies.
 
-XCP-D can be run in one of three modes: ``linc``, ``abcd``, or ``hbcd``.
+*XCP-D* can be run in one of four modes: ``linc``, ``abcd``, ``hbcd``, or ``nichart``.
 Each mode is designed by a different group, and has different requirements.
 
-Users may also run XCP-D in ``none`` mode, in which case almost all of the parameters must be
+Users may also run *XCP-D* in ``none`` mode, in which case almost all of the parameters must be
 defined by the user.
 
 .. important::
 
-   If you have a "mode" you would like to see supported by XCP-D, follow the instructions in
+   If you have a "mode" you would like to see supported by *XCP-D*, follow the instructions in
    :ref:`contrib_modes`.
 
 
@@ -49,11 +49,38 @@ linc Mode
 
 The ``linc`` mode is designed by the `PennLINC`_ lab.
 
-In this mode, XCP-D will generate PennLINC-preferred outputs,
+In this mode, *XCP-D* will generate PennLINC-preferred outputs,
 such as the NiPreps-format HTML report and the LINC QC file.
 
 All denoised BOLD data, including dense time series, parcellated time series,
 and correlation matrices, will be censored.
+
+.. dropdown:: Default parameters of linc mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "linc"
+       file_format = "cifti"
+       dummy_scans = 0
+       input_type = "fmriprep"
+       despike = true
+       smoothing = 6
+       output_interpolated = false
+       combine_runs = false
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0
+       min_time = 0
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.5
+       process_surfaces = false
+       abcc_qc = false
+       linc_qc = true
+
 
 Defaults
 --------
@@ -64,27 +91,33 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0``: Censoring is disabled by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--linc-qc``: The LINC QC file will be created by default.
+-  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
+-  ``--smoothing 6``: Smoothing is enabled by default.
+-  ``--output-run-wise-correlations``: Per-run full correlations are computed by default.
 
 Optional Parameters
 -------------------
 
--  ``--abcc-qc``: By default, XCP-D will not create the DCAN executive summary or QC file when run
+-  ``--abcc-qc``: By default, *XCP-D* will not create the DCAN executive summary or QC file when run
    in the ``linc`` mode.
    If you would like to create these files, you must include the ``--abcc-qc`` flag.
--  ``--combine-runs``: By default, XCP-D will not combine runs when run in the ``linc`` mode.
+-  ``--combine-runs``: By default, *XCP-D* will not combine runs when run in the ``linc`` mode.
    If you would like to combine runs, you must include the ``--combine-runs`` flag.
--  ``--warp-surfaces-native2std``: By default, XCP-D will not warp surfaces to standard space when
+   When ``--combine-runs`` is enabled, a full-timeseries correlation matrix will be produced from the
+   concatenated data in addition to the per-run correlation matrices.
+-  ``--warp-surfaces-native2std``: By default, *XCP-D* will not warp surfaces to standard space when
    run in the ``linc`` mode.
    If you would like to warp surfaces, you must include the ``--warp-surfaces-native2std`` flag.
 
 Prohibited Parameters
 ---------------------
 
--  ``--create-matrices``: This option is not allowed in the ``linc`` mode.
-   Instead, correlation matrices will be created from the full (censored) time series,
-   which is equivalent to running ``--create-matrices all``.
+-  ``--create-matrices``: This option is not supported in ``linc`` mode.
+   When ``--combine-runs`` is enabled, a full-timeseries (``"all"`` volumes) correlation matrix is
+   produced automatically from the concatenated data; exact-N sub-sampled matrices are not available.
 
 
 abcd Mode
@@ -92,7 +125,7 @@ abcd Mode
 
 The ``abcd`` mode is designed by the `DCAN`_ lab for processing data from the `ABCD`_ study.
 
-In this mode, XCP-D will generate DCAN-preferred outputs,
+In this mode, *XCP-D* will generate DCAN-preferred outputs,
 such as the executive summary and the DCAN QC file.
 
 Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
@@ -103,6 +136,33 @@ Correlation matrices can be created optionally from the censored data.
    Currently, ``abcd`` mode is identical to ``hbcd`` mode, except for the expected preprocessing
    pipeline.
 
+.. dropdown:: Default parameters of abcd mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "abcd"
+       file_format = "cifti"
+       dummy_scans = 0
+       input_type = "fmriprep"
+       despike = true
+       smoothing = 6
+       output_interpolated = true
+       combine_runs = true
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0.3
+       min_time = 240
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.5
+       correlation_lengths = []
+       process_surfaces = true
+       abcc_qc = true
+       linc_qc = true
+
 Defaults
 --------
 
@@ -112,10 +172,13 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0.3``: The censoring threshold is set to 0.3 mm by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
 -  ``--linc-qc``: The LINC QC file will be created by default.
+-  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
+-  ``--smoothing 6``: Smoothing is enabled by default.
 
 Required Parameters
 -------------------
@@ -132,10 +195,12 @@ In ``abcd`` mode, the following parameters are required:
 Optional Parameters
 -------------------
 
--  ``--create-matrices``: By default, XCP-D will not create correlation matrices when run in the ``abcd`` mode.
-   If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
+-  ``--create-matrices``: By default, *XCP-D* will not create correlation matrices when run in the ``abcd`` mode.
+   If you would like to create correlation matrices from the concatenated data, you must include
+   the ``--create-matrices`` flag (``--combine-runs`` is enabled by default in this mode).
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
-   as well as the special value "all", which uses all of the low-motion data from the run.
+   as well as the special value "all", which uses all of the low-motion data from the concatenated run.
+-  ``--output-run-wise-correlations``: To obtain per-run correlation matrices, use this flag.
 
 
 hbcd Mode
@@ -143,7 +208,7 @@ hbcd Mode
 
 The ``hbcd`` mode is designed by the `DCAN`_ lab for processing data from the `HBCD`_ study.
 
-In this mode, XCP-D will generate DCAN-preferred outputs,
+In this mode, *XCP-D* will generate DCAN-preferred outputs,
 such as the executive summary and the DCAN QC file.
 
 Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
@@ -154,6 +219,33 @@ Correlation matrices can be created optionally from the censored data.
    Currently, ``hbcd`` mode is identical to ``abcd`` mode, except for the expected preprocessing
    pipeline.
 
+.. dropdown:: Default parameters of hbcd mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "hbcd"
+       file_format = "cifti"
+       dummy_scans = 0
+       input_type = "nibabies"
+       despike = true
+       smoothing = 6
+       output_interpolated = true
+       combine_runs = true
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0.3
+       min_time = 240
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.5
+       correlation_lengths = []
+       process_surfaces = true
+       abcc_qc = true
+       linc_qc = true
+
 Defaults
 --------
 
@@ -163,10 +255,13 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0.3``: The censoring threshold is set to 0.3 mm by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type nibabies``: Nibabies outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
 -  ``--linc-qc``: The LINC QC file will be created by default.
+-  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
+-  ``--smoothing 6``: Smoothing is enabled by default.
 
 Required Parameters
 -------------------
@@ -183,65 +278,116 @@ In ``hbcd`` mode, the following parameters are required:
 Optional Parameters
 -------------------
 
--  ``--create-matrices``: By default, XCP-D will not create correlation matrices when run in the ``hbcd`` mode.
-   If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
+-  ``--create-matrices``: By default, *XCP-D* will not create correlation matrices when run in the ``hbcd`` mode.
+   If you would like to create correlation matrices from the concatenated data, you must include
+   the ``--create-matrices`` flag (``--combine-runs`` is enabled by default in this mode).
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
-   as well as the special value "all", which uses all of the low-motion data from the run.
+   as well as the special value "all", which uses all of the low-motion data from the concatenated run.
+-  ``--output-run-wise-correlations``: To obtain per-run correlation matrices, use this flag.
 
 
-Major Differences Between Modes
-===============================
+nichart Mode
+============
 
-Interpolated vs. Censored Time Series
--------------------------------------
+The ``nichart`` mode is used by the `NiChart project <https://neuroimagingchart.com/>`_.
 
-The ``abcd`` and ``hbcd`` modes output denoised BOLD data and parcellated time series with
-interpolated volumes.
-The ``linc`` mode outputs denoised BOLD data and parcellated time series with censored volumes
-instead.
+This mode is very similar to ``linc`` mode, with the exception that it processes NIfTI files
+by default and has smoothing disabled.
 
-The benefit to writing out interpolated data is that the outputs retain the temporal structure of
-the original data.
-This may make it easier to use the post-processed BOLD data in conjunction with other data acquired
-at the same time, such as physiological recordings or task regressors.
-Additionally, some tools, such as `biceps <https://biceps-cmdln.readthedocs.io/en/latest/>`_,
-are designed to perform additional post-processing, such as additional censoring and parcellation,
-on interpolated data.
+.. dropdown:: Default parameters of nichart mode are in the .toml file below:
 
-The risk to working with interpolated data is that the interpolated volumes should not be used for
-actual analyses, as the values do not reflect real data.
-Thus, with the ``abcd`` and ``hbcd`` modes, it is imperative that users understand that additional
-steps must be taken before using the interpolated data for analyses.
+    .. code-block:: toml
 
-The benefit to writing out censored data is that the outputs are more directly usable for analyses,
-and there is less of a chance that users will accidentally use interpolated data in their analyses.
+       [workflow]
+       mode = "nichart"
+       file_format = "nifti"
+       dummy_scans = 0
+       input_type = "fmriprep"
+       despike = true
+       smoothing = 0
+       output_interpolated = false
+       combine_runs = false
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0
+       min_time = 0
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.4
+       correlation_lengths = "all"
+       process_surfaces = false
+       abcc_qc = false
+       linc_qc = true
 
-In this sense, the ``abcd`` and ``hbcd`` modes are designed to be used with additional tools,
-such as ``biceps``, or with additional steps taken by the user to ensure that the interpolated data
-are re-censored appropriately before being used in analyses.
-Conversely, the ``linc`` mode is designed to output data that is directly usable for analyses,
-at the cost of losing the temporal structure of the original data and making it harder to pass the
-data along to other tools that require the original temporal structure.
+Defaults
+--------
 
-Correlation Matrices From Matching Lengths
-------------------------------------------
+By default, the ``nichart`` mode will apply the following parameters,
+which may be overridden by the user:
 
-The ``abcd`` and ``hbcd`` modes allow the ``--create-matrices`` parameter,
-which will create correlation matrices from subsampled data,
-while ``linc`` mode does not allow this parameter.
+-  ``--file-format nifti``: NIfTI files are used as input.
+-  ``--despike``: Despiking is enabled by default.
+-  ``--fd-thresh 0``: Motion-based censoring is disabled by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
+-  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
+-  ``--linc-qc``: The LINC QC file will be created by default.
+-  ``--min-coverage 0.4``: The default coverage threshold is 0.4 instead of the more common 0.5.
+-  ``--output-type censored``: Censored data are the primary output.
+-  ``--smoothing 0``: Smoothing is disabled by default.
 
-This parameter exists because motion (and thus censoring) can exhibit a non-linear relationship
-with functional connectivity estimates.
-By randomly selecting a subset of volumes from each run before calculating correlations,
-the user can ensure that every run has the same number of data points contributing to its
-functional connectivity estimate, which may ameliorate the effect of motion on the estimates.
-This is the DCAN lab's recommended approach.
 
-Conversely, the LINC lab does not recommend doing this,
-as it removes meaningful data that may contribute to the functional connectivity estimates.
-Instead, the LINC lab recommends accounting for the number of volumes in group-level models,
-or using other methods, such as xDF :footcite:p:`afyouni2019effective`,
-to account for the effect of motion on functional connectivity estimates (or their variance).
+**********************
+Skipping Output Steps
+**********************
+
+*XCP-D* includes a ``--skip`` parameter that allows users to
+selectively skip certain postprocessing steps to optimize processing time.
+This is particularly useful when you only need a subset of the outputs.
+
+The ``--skip`` parameter accepts the following options:
+
+-  ``alff``: Skip ALFF (Amplitude of Low-Frequency Fluctuation) calculation.
+   ALFF is only calculated when bandpass filtering is enabled,
+   so this option only has an effect when ``--bandpass-filter`` is used.
+
+-  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
+
+-  ``parcellation``: Skip parcellation and time series extraction.
+   This is functionally equivalent to setting ``--atlases`` to an empty list.
+
+   .. admonition:: Deprecated option
+
+      Historically, users could pass the legacy ``--skip-parcellation`` flag to
+      achieve this behavior. That flag is now deprecated — use
+      ``--skip parcellation`` instead.
+
+   **Note that skipping parcellation will automatically skip connectivity as well,
+   since connectivity requires parcellated data.**
+
+-  ``connectivity``: Skip functional connectivity matrix calculations.
+   Parcellation will still be performed to extract parcellated time series,
+   but correlation matrices will not be computed.
+   This is useful when you need time series but not connectivity matrices.
+
+Multiple options can be specified simultaneously.
+For example, ``--skip alff reho`` will skip both ALFF and ReHo calculations.
+
+.. note::
+
+   Skipping certain steps can significantly reduce processing time and disk usage,
+   especially for large datasets.
+
+   - Use ``--skip connectivity`` if you need parcellated time series but not correlation matrices.
+   - Use ``--skip parcellation`` if you don't need either parcellated time series or connectivity
+     matrices (this automatically skips connectivity too).
+
+.. tip::
+
+   The ``--skip`` parameter is compatible with all processing modes (``linc``, ``abcd``, ``hbcd``,
+   etc.) and will not affect other outputs.
+   For example, skipping ALFF will not affect ReHo or connectivity calculations.
 
 
 ****************
@@ -255,7 +401,7 @@ Anatomical processing
 =====================
 :func:`~xcp_d.workflows.anatomical.volume.init_postprocess_anat_wf`
 
-XCP-D performs minimal postprocessing on anatomical derivatives from the preprocessing pipeline.
+*XCP-D* performs minimal postprocessing on anatomical derivatives from the preprocessing pipeline.
 This includes applying existing transforms to preprocessed T1w and T2w volumes,
 in order to warp them from native T1w space to the target standard space,
 while retaining the original resolution.
@@ -274,7 +420,7 @@ Identification of high-motion outlier volumes
 :func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.censoring.GenerateConfounds`
 
-XCP-D uses framewise displacement to identify high-motion outlier volumes.
+*XCP-D* uses framewise displacement to identify high-motion outlier volumes.
 These outlier volumes are removed from the BOLD data prior to denoising.
 
 The threshold used to identify outlier volumes can be set with the ``--fd-thresh`` parameter.
@@ -291,7 +437,7 @@ Motion parameter filtering [OPTIONAL]
 :func:`~xcp_d.utils.confounds.load_motion`
 
 Motion parameters may be contaminated with respiratory effects.:footcite:p:`power2019distinctions`
-In order to address this issue, XCP-D optionally allows users to specify a band-stop or low-pass
+In order to address this issue, *XCP-D* optionally allows users to specify a band-stop or low-pass
 filter to remove respiration-related signals from the motion parameters, prior to framewise
 displacement calculation.
 Please refer to :footcite:t:`fair2020correction` and :footcite:t:`gratton2020removal` for
@@ -366,10 +512,10 @@ Confound regressor selection
 :func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :func:`~xcp_d.interfaces.censoring.GenerateConfounds`
 
-XCP-D supports several different confound regressor strategies.
+*XCP-D* supports several different confound regressor strategies.
 In addition to the built-in regressor sets described below,
 users may design their own confound configuration files and use those instead.
-The default confound regressor set depends on the mode in which XCP-D is run-
+The default confound regressor set depends on the mode in which *XCP-D* is run-
 this corresponds to ``--nuisance-regressors auto``.
 
 If you want to skip the denoising step completely, you can use ``--nuisance-regressors none``.
@@ -459,7 +605,7 @@ please refer to :footcite:t:`benchmarkp`.
 
 .. warning::
 
-   In XCP-D versions prior to 0.3.1, the selected AROMA confounds were incorrect.
+   In *XCP-D* versions prior to 0.3.1, the selected AROMA confounds were incorrect.
    We strongly advise users of these versions not to use the ``aroma`` or ``aroma_gsr``
    options.
 
@@ -540,8 +686,8 @@ please refer to :footcite:t:`benchmarkp`.
 .. important::
    fMRIPrep removed AROMA support in 23.1.0.
    In order to use the ``aroma`` or ``aroma_gsr`` strategies,
-   please run ``fMRIPost-AROMA`` on your fMRIPrep outputs before running XCP-D.
-   You will need to supply the AROMA derivatives dataset to XCP-D via the ``--datasets``
+   please run ``fMRIPost-AROMA`` on your fMRIPrep outputs before running *XCP-D*.
+   You will need to supply the AROMA derivatives dataset to *XCP-D* via the ``--datasets``
    parameter (i.e., ``--datasets aroma=/path/to/fmripost-aroma/dset``).
 
 
@@ -567,18 +713,18 @@ while the ``confounds`` section specifies which confounds will actually be used.
 The ``confounds`` section is a dictionary/object, with a unique key for each set of confounds.
 Each set of confounds must contain a ``dataset`` key, which specifies the dataset to use.
 The dataset must be linked to what the user provides in the ``--datasets`` parameter,
-though the "preprocessed" key is a protected value for the dataset given to XCP-D as the
+though the "preprocessed" key is a protected value for the dataset given to *XCP-D* as the
 ``fmri_dir`` positional argument.
 For example, in the example below, three columns are collected from the fMRIPrep confounds file:
 "global_signal", "csf", and "white_matter".
 Other confounds must come from the "aroma" dataset (i.e., the output from fMRIPost-AROMA).
 Note that the "aroma" columns are selected using regular expressions, as they start with "^"
 and end with "$".
-XCP-D will collect any columns in the selected file that match the regular expression.
+*XCP-D* will collect any columns in the selected file that match the regular expression.
 
 Finally, there is the ``query`` field in each confound set.
 This defines the BIDS entities that will be used to find the confounds file associated with the
-preprocessed BOLD file that is being post-processed by XCP-D.
+preprocessed BOLD file that is being post-processed by *XCP-D*.
 
 .. code-block:: yaml
 
@@ -616,7 +762,7 @@ preprocessed BOLD file that is being post-processed by XCP-D.
          columns:
          - ^aroma_orth_motion_.*$
 
-In addition to TSV-based confound files, XCP-D also supports the use of voxel-wise confound files.
+In addition to TSV-based confound files, *XCP-D* also supports the use of voxel-wise confound files.
 Take this partial example:
 
 .. code-block:: yaml
@@ -640,8 +786,8 @@ Dummy scan removal [OPTIONAL]
 :func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.censoring.RemoveDummyVolumes`
 
-XCP-D allows the first *N* volumes to be removed before processing.
-These volumes are usually refered to as dummy volumes.
+*XCP-D* allows the first *N* volumes to be removed before processing.
+These volumes are usually referred to as dummy volumes.
 Most default scanning sequences include dummy volumes that are not reconstructed.
 However, some users still prefer to remove the first few reconstructed volumes.
 
@@ -666,7 +812,7 @@ Denoising
 =========
 :class:`~xcp_d.interfaces.nilearn.DenoiseNifti`, :class:`~xcp_d.interfaces.nilearn.DenoiseCifti`
 
-The denoising approach in XCP-D is heavily based on Nilearn's :footcite:p:`abraham2014machine`
+The denoising approach in *XCP-D* is heavily based on Nilearn's :footcite:p:`abraham2014machine`
 approach from :py:func:`~nilearn.signal.clean`,
 which was designed to follow recommendations made in :footcite:t:`lindquist2019modular`.
 
@@ -675,16 +821,16 @@ but the confounds are orthogonalized with respect to the temporal filter prior t
 regression,
 so that no variance from the temporal filter is reintroduced by the confound regression.
 
-XCP-D modifies Nilearn's approach in the following ways:
+*XCP-D* modifies Nilearn's approach in the following ways:
 
-1. XCP-D uses :func:`numpy.linalg.lstsq` to estimate betas instead of QR decomposition,
+1. *XCP-D* uses :func:`numpy.linalg.lstsq` to estimate betas instead of QR decomposition,
    in order to denoise the interpolated data as well.
    -  QR decomposition will not produce betas that can be applied to the interpolated data.
 
-2. XCP-D sets any leading or trailing high-motion volumes to the closest low-motion volume's values
+2. *XCP-D* sets any leading or trailing high-motion volumes to the closest low-motion volume's values
    instead of extrapolating those volumes or removing them completely.
 
-Both of these modifications allow XCP-D to produce a denoised, interpolated BOLD time series,
+Both of these modifications allow *XCP-D* to produce a denoised, interpolated BOLD time series,
 while Nilearn only produces the denoised, _censored_ BOLD time series.
 The interpolated BOLD time series is necessary for DCAN-specific tools,
 such as `biceps <https://biceps-cmdln.readthedocs.io/en/latest/>`_.
@@ -701,6 +847,31 @@ volume's data, in order to avoid extrapolation by the interpolation function.
 The same interpolation is applied to the confounds.
 
 Interpolation (and later censoring) can be disabled by setting ``--fd-thresh 0``.
+
+
+Censoring short retained segments [OPTIONAL]
+--------------------------------------------
+:class:`~xcp_d.interfaces.censoring.ExpandTemporalMask`
+
+When outliers are dense, the volumes that survive framewise displacement censoring can be
+scattered as very short segments, which contribute little usable signal and interact poorly
+with interpolation and bandpass filtering.
+
+``--censor-between N`` censors any contiguous segment of non-outlier volumes whose length is
+``N`` or fewer. The beginning and end of the time series are treated as outlier boundaries, so
+short segments at the start and end of the time series are censored as well. Equivalently, the
+shortest segment of volumes that ``--censor-between N`` will retain is ``N + 1`` volumes long.
+
+The expansion runs after dummy volumes are removed, so the beginning of the time series refers
+to the first volume that is actually analyzed rather than the first volume of the preprocessed
+file.
+
+The volumes flagged this way are recorded in the "censor_between" column of the temporal mask,
+and the union of these volumes and the framewise displacement outliers is recorded in the
+"denoising" column, which is what all later censoring steps use.
+
+This step is disabled by default (``--censor-between 0``), and has no effect when censoring is
+disabled with ``--fd-thresh 0``.
 
 
 Detrending
@@ -753,13 +924,13 @@ to satisfy DCAN-specific tools.
    so simply regressing the noise components out of the BOLD data,
    without considering the signal components, may remove signal of interest.
 
-   To address this issue, XCP-D will look for signal regressors in the selected confounds.
+   To address this issue, *XCP-D* will look for signal regressors in the selected confounds.
    If any signal regressors are detected
    (i.e., if any columns in the confounds file have a ``signal__`` prefix),
    then the noise regressors will be orthogonalized with respect to the signal regressors,
    to produce "pure evil" regressors.
 
-   This is done automatically for XCP-D's built-in nuisance strategies which include AROMA
+   This is done automatically for *XCP-D*'s built-in nuisance strategies which include AROMA
    components, but users must manually add the ``signal__`` prefix to any signal regressors in
    their custom confounds files, if they choose to use them.
 
@@ -858,7 +1029,13 @@ These atlases are documented in :doc:`outputs`.
 
 Users can control which atlases are used with the ``--atlases`` parameter
 (by default, all atlases are used),
-or can skip this step entirely with ``--skip-parcellation``.
+or can skip this step entirely with the unified ``--skip parcellation`` option.
+
+.. admonition:: Deprecated option
+
+   The legacy ``--skip-parcellation`` flag is deprecated and will be removed in a
+   future release. It is still accepted for backward compatibility, but please
+   migrate to ``--skip parcellation``.
 
 The resulting parcellated time series for each atlas is then used to generate static functional
 connectivity matrices, as measured with Pearson correlation coefficients.
@@ -883,10 +1060,11 @@ connectivity estimate.
 We have implemented this behavior via the optional ``--create-matrices`` parameter,
 which allows the user to provide a list of durations, in seconds,
 to be used for functional connectivity estimates.
+This parameter applies only to concatenated data and therefore requires ``--combine-runs``.
 These subsampled correlation matrices will be written out with ``desc-<numberOfVolumes>volumes``
 in the filenames.
 The correlation matrices *without* the ``desc`` entity still include all of the post-censoring
-volumes.
+volumes from the concatenated timeseries.
 
 The ``--random-seed`` parameter controls the random seed used to select the reduced set of volumes,
 which improves reproducibility.
@@ -922,9 +1100,9 @@ Quality control
 ===============
 :func:`~xcp_d.workflows.bold.plotting.init_qc_report_wf`
 
-The quality control (QC) in ``XCP-D`` estimates the quality of BOLD data before and after
+The quality control (QC) in *XCP-D* estimates the quality of BOLD data before and after
 regression and also estimates BOLD-T1w coregistration and BOLD-Template normalization
-qualites.
+qualities.
 The QC metrics include the following:
 
    a. Motion parameters summary: mean FD, mean and maximum RMS
@@ -937,9 +1115,9 @@ The QC metrics include the following:
 Outputs
 *******
 
-XCP-D generates three main types of outputs for every subject.
+*XCP-D* generates three main types of outputs for every subject.
 
-First, XCP-D generates HTML visual reports that display relevant information about the processed data.
+First, *XCP-D* generates HTML visual reports that display relevant information about the processed data.
 
 The first of these reports is a NiPreps-style HTML file for each subject.
 The report contains a Processing Summary with QC values, with the BOLD volume space, the TR,
@@ -947,7 +1125,7 @@ mean FD, mean RMSD, and mean and maximum RMS,
 the correlation between DVARS and FD before and after processing, and the number of volumes
 censored.
 Next, pre and post regression "carpet" plots are alongside DVARS and FD.
-An About section that notes the release version of XCP-D, a Methods section that can be copied and
+An About section that notes the release version of *XCP-D*, a Methods section that can be copied and
 pasted into the user's paper,
 which is customized based on command line options, and an Error section, which will read
 "No errors to report!" if no errors are found.
@@ -964,7 +1142,7 @@ Beside the segmentations, users can see the pre-regression and post-regression "
 as well as DVARS, FD, the global signal.
 The number of volumes remaining at various FD thresholds are shown.
 
-Second, XCP-D outputs processed BOLD data, including denoised unsmoothed and smoothed timeseries in
+Second, *XCP-D* outputs processed BOLD data, including denoised unsmoothed and smoothed timeseries in
 MNI152NLin2009cAsym and fsLR-32k spaces, parcellated time series, functional connectivity matrices,
 and ALFF and ReHo (smoothed and unsmoothed).
 
@@ -973,7 +1151,7 @@ If both images are not in MNI152NLin6Asym space, they are resampled to MNI space
 The fMRIPrep surfaces (gifti files) in each subject are also resampled to standard space
 (fsLR-32K).
 
-See :doc:`outputs` for details about XCP-D outputs.
+See :doc:`outputs` for details about *XCP-D* outputs.
 
 **********
 References

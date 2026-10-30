@@ -1,7 +1,7 @@
 // The rest of this is scripts for brainsprite. Since brainsprite is no
 // longer supported, and since this is working, leave as is!
-// This contant is only needed once (thank goodness) and does not need
-// any values inserted. Just include it in the HTML whereever you have
+// This constant is only needed once (thank goodness) and does not need
+// any values inserted. Just include it in the HTML wherever you have
 // your scripts.
 function brainsprite(params) {
 
@@ -100,7 +100,7 @@ function brainsprite(params) {
     //*************//
     brain.planes = {};
     // A series of canvas to represent the sprites along the three possible
-    // plane X: sagital;
+    // plane X: sagittal;
     brain.planes.canvasX = document.createElement('canvas');
     brain.planes.contextX = brain.planes.canvasX.getContext('2d');
 
@@ -319,7 +319,7 @@ function brainsprite(params) {
     // Now draw the slice
     switch(type) {
         case 'X':
-        // Draw a sagital slice
+        // Draw a sagittal slice
         pos.XW = ((brain.numSlice.X)%brain.nbCol);
         pos.XH = (brain.numSlice.X-pos.XW)/brain.nbCol;
         // Set fill color for the slice

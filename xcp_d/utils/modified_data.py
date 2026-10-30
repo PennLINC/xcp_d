@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for interpolating over high-motion volumes."""
+
 import os
 
 import nibabel as nb
@@ -12,7 +13,7 @@ from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, loa
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger('nipype.utils')
 
 
 @fill_doc
@@ -34,9 +35,9 @@ def compute_fd(confound, head_radius=50, filtered=False):
         The framewise displacement time series.
     """
     confound = confound.replace(np.nan, 0)
-    motion_columns = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
+    motion_columns = ['trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z']
     if filtered:
-        motion_columns = [f"{col}_filtered" for col in motion_columns]
+        motion_columns = [f'{col}_filtered' for col in motion_columns]
 
     mpars = confound[motion_columns].to_numpy()
     diff = mpars[:-1, :6] - mpars[1:, :6]
@@ -69,9 +70,9 @@ def _drop_dummy_scans(bold_file, dummy_scans):
 
     if bold_image.ndim == 2:  # cifti
         dropped_data = data[dummy_scans:, ...]  # time series is the first element
-        time_axis, brain_model_axis = [
+        time_axis, brain_model_axis = (
             bold_image.header.get_axis(i) for i in range(bold_image.ndim)
-        ]
+        )
         new_total_volumes = dropped_data.shape[0]
         dropped_time_axis = time_axis[:new_total_volumes]
         dropped_header = nb.cifti2.Cifti2Header.from_axes((dropped_time_axis, brain_model_axis))
@@ -112,10 +113,10 @@ def downcast_to_32(in_file):
         return in_file
 
     elif not os.path.isfile(in_file):
-        raise FileNotFoundError(f"File not found: {in_file}")
+        raise FileNotFoundError(f'File not found: {in_file}')
 
     img = nb.load(in_file)
-    if hasattr(img, "nifti_header"):
+    if hasattr(img, 'nifti_header'):
         header = img.nifti_header
     else:
         header = img.header
@@ -123,7 +124,7 @@ def downcast_to_32(in_file):
     SIZE32 = 4  # number of bytes in float32/int32
     dtype = header.get_data_dtype()
     if dtype.itemsize > SIZE32:
-        LOGGER.warning(f"Downcasting {in_file} to 32-bit.")
+        LOGGER.warning(f'Downcasting {in_file} to 32-bit.')
         if np.issubdtype(dtype, np.integer):
             header.set_data_dtype(np.int32)
         elif np.issubdtype(dtype, np.floating):
@@ -131,7 +132,7 @@ def downcast_to_32(in_file):
         else:
             raise TypeError(f"Unknown datatype '{dtype}'.")
 
-        out_file = fname_presuffix(in_file, newpath=os.getcwd(), suffix="_downcast", use_ext=True)
+        out_file = fname_presuffix(in_file, newpath=os.getcwd(), suffix='_downcast', use_ext=True)
         img.to_filename(out_file)
     else:
         out_file = in_file
@@ -150,6 +151,7 @@ def flag_bad_run(
     band_stop_max,
     head_radius,
     fd_thresh,
+    censor_between,
 ):
     """Determine if a run has too many high-motion volumes to continue processing.
 
@@ -165,7 +167,8 @@ def flag_bad_run(
     %(band_stop_max)s
     %(head_radius)s
     %(fd_thresh)s
-    brain_mask
+    censor_between : :obj:`int`
+        Maximum length of a contiguous run of non-outlier volumes to censor.
 
     Returns
     -------
@@ -207,7 +210,53 @@ def flag_bad_run(
         head_radius=head_radius,
         filtered=bool(motion_filter_type),
     )
-    return np.sum(fd_arr <= fd_thresh) * TR
+    outlier_mask = (fd_arr > fd_thresh).astype(int)
+    between_mask = censor_between_outliers(outlier_mask, censor_between)
+    denoising_mask = ((outlier_mask + between_mask) > 0).astype(int)
+    return np.sum(denoising_mask == 0) * TR
+
+
+def censor_between_outliers(outlier_mask, censor_between):
+    """Flag contiguous runs of non-outlier volumes that are too short to retain.
+
+    Parameters
+    ----------
+    outlier_mask : :obj:`numpy.ndarray`
+        One-dimensional array of zeros and ones, where ones mark outlier volumes.
+    censor_between : :obj:`int`
+        Maximum length of a contiguous run of non-outlier volumes to censor.
+        Must be greater than or equal to zero. A value of zero flags nothing.
+
+    Returns
+    -------
+    :obj:`numpy.ndarray`
+        One-dimensional integer array with the same length as ``outlier_mask``,
+        with ones at volumes newly flagged for censoring.
+        The result is disjoint from ``outlier_mask``.
+
+    Notes
+    -----
+    The beginning and end of the time series are treated as outliers,
+    so short runs of non-outlier volumes at the start or end of the time series are flagged
+    as well.
+    """
+    outlier_mask = np.asarray(outlier_mask).astype(int)
+    between_mask = np.zeros(outlier_mask.shape, dtype=int)
+    if censor_between < 1 or outlier_mask.size == 0:
+        return between_mask
+
+    # Pad with outliers so that runs at the edges of the time series are bounded on both sides.
+    padded = np.concatenate(([1], outlier_mask, [1]))
+    # A run of non-outliers starts where the padded mask steps 1 -> 0 and ends where it steps
+    # 0 -> 1. Both index into the unpadded mask.
+    diffs = np.diff(padded)
+    run_starts = np.flatnonzero(diffs == -1)
+    run_ends = np.flatnonzero(diffs == 1)
+    for run_start, run_end in zip(run_starts, run_ends, strict=True):
+        if (run_end - run_start) <= censor_between:
+            between_mask[run_start:run_end] = 1
+
+    return between_mask
 
 
 def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
@@ -232,6 +281,7 @@ def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
     float_times = []
     non_float_times = []
 
+    exact_times = [time for time in exact_times if time != 'all']
     for time in exact_times:
         try:
             float_times.append(float(time))
@@ -242,16 +292,15 @@ def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
     dropped_exact_times = [t for t in float_times if t > scan_length]
     if dropped_exact_times:
         LOGGER.warning(
-            f"{scan_length} seconds in {os.path.basename(bold_file)} "
-            "survive high-motion outlier scrubbing. "
-            "Only retaining exact-time values greater than this "
-            f"({retained_exact_times})."
+            f'{scan_length} seconds in {os.path.basename(bold_file)} '
+            'survive high-motion outlier scrubbing. '
+            'Only retaining exact-time values greater than this '
+            f'({retained_exact_times}).'
         )
 
     if non_float_times:
         LOGGER.warning(
-            f"Non-float values {non_float_times} in {os.path.basename(bold_file)} "
-            "will be ignored."
+            f'Non-float values {non_float_times} in {os.path.basename(bold_file)} will be ignored.'
         )
 
     exact_scans = [int(t // t_r) for t in retained_exact_times]

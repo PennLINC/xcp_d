@@ -43,6 +43,7 @@
 #    limitations under the License.
 #
 """Tools for debugging, from fMRIPrep."""
+
 import sys
 
 
@@ -74,7 +75,7 @@ def setup_exceptionhook(ipython=False):
         from IPython.core import ultratb
 
         sys.excepthook = ultratb.FormattedTB(
-            mode="Verbose",
+            mode='Verbose',
             # color_scheme='Linux',
             call_pdb=is_interactive(),
         )

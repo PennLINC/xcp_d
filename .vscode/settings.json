@@ -7,4 +7,8 @@
         "editor.rulers": [99]
     },
     "python.analysis.typeCheckingMode": "off",
+    "ruff.configuration": "pyproject.toml",
+    "ruff.lineLength": 99,
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "flake8.enabled": false,
 }

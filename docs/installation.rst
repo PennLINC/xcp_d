@@ -26,18 +26,18 @@ steps necessary for execution.
 
 Docker Installation
 ===================
-For every new version of *xcp_d* that is released, a corresponding Docker image is generated.
+For every new version of *XCP-D* that is released, a corresponding Docker image is generated.
 
-In order to run *xcp_d* via Docker images, the Docker Engine must be installed.
+In order to run *XCP-D* via Docker images, the Docker Engine must be installed.
 
-If you have used *xcp_d* via Docker in the past, you might need to pull down a more recent version
+If you have used *XCP-D* via Docker in the past, you might need to pull down a more recent version
 of the image: ::
 
     $ docker pull pennlinc/xcp_d:<latest-version>
 
 The image can also be found here: https://hub.docker.com/r/pennlinc/xcp_d
 
-*xcp_d* can be run interacting directly with the Docker Engine via the `docker run` command,
+*XCP-D* can be run interacting directly with the Docker Engine via the `docker run` command,
 or through a lightweight wrapper that was created for convenience.
 
 
@@ -65,11 +65,11 @@ Manually Prepared Environment (Python 3.10)
    This method is not recommended! Please use container alternatives
    in :ref:`run_docker`, and :ref:`run_apptainer`.
 
-XCP-D requires some `External Dependencies`_.
+*XCP-D* requires some `External Dependencies`_.
 These tools must be installed and their binaries available in the system's ``$PATH``.
 
 On a functional Python 3.10 environment with ``pip`` installed,
-XCP-D can be installed using the habitual command
+*XCP-D* can be installed using the habitual command
 ::
 
     $ pip install git+https://github.com/pennlinc/xcp_d.git
@@ -86,7 +86,7 @@ External Dependencies
 
 *XCP-D* is written using Python 3.10, is based on nipype_,
 and requires some other neuroimaging software tools that are not handled by the Python's packaging
-system (PyPi) used to deploy the XCP-D package:
+system (PyPi) used to deploy the *XCP-D* package:
 
 -  ANTs_ (version 2.2.0 - or higher)
 -  AFNI_ (version Debian-16.2.07)

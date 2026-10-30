@@ -6,6 +6,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.execsummary import FormatForBrainSwipes
 from xcp_d.interfaces.nilearn import BinaryMath
@@ -13,7 +14,7 @@ from xcp_d.interfaces.plotting import PNGAppend
 from xcp_d.utils.doc import fill_doc
 
 
-def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
+def init_plot_overlay_wf(desc, name='plot_overlay_wf'):
     """Use the default slices from slicesdir to make a plot."""
     from xcp_d.interfaces.plotting import SlicesDir
 
@@ -22,62 +23,62 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "underlay_file",
-                "overlay_file",
-                "name_source",
+                'underlay_file',
+                'overlay_file',
+                'name_source',
             ],
         ),
-        name="inputnode",
+        name='inputnode',
     )
 
     plot_overlay_figure = pe.Node(
-        SlicesDir(out_extension=".png"),
-        name="plot_overlay_figure",
+        SlicesDir(out_extension='.png'),
+        name='plot_overlay_figure',
         mem_gb=1,
     )
 
     workflow.connect([
         (inputnode, plot_overlay_figure, [
-            ("underlay_file", "in_files"),
-            ("overlay_file", "outline_image"),
+            ('underlay_file', 'in_files'),
+            ('overlay_file', 'outline_image'),
         ]),
     ])  # fmt:skip
 
     ds_report_overlay = pe.Node(
         DerivativesDataSink(
-            dismiss_entities=["den"],
+            dismiss_entities=dismiss_hash(['den']),
             desc=desc,
-            extension=".png",
+            extension='.png',
         ),
-        name="ds_report_overlay",
+        name='ds_report_overlay',
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     workflow.connect([
-        (inputnode, ds_report_overlay, [("name_source", "source_file")]),
-        (plot_overlay_figure, ds_report_overlay, [("out_files", "in_file")]),
+        (inputnode, ds_report_overlay, [('name_source', 'source_file')]),
+        (plot_overlay_figure, ds_report_overlay, [('out_files', 'in_file')]),
     ])  # fmt:skip
 
-    reformat_for_brain_swipes = pe.Node(FormatForBrainSwipes(), name="reformat_for_brain_swipes")
+    reformat_for_brain_swipes = pe.Node(FormatForBrainSwipes(), name='reformat_for_brain_swipes')
     workflow.connect([
-        (plot_overlay_figure, reformat_for_brain_swipes, [("slicewise_files", "in_files")]),
+        (plot_overlay_figure, reformat_for_brain_swipes, [('slicewise_files', 'in_files')]),
     ])  # fmt:skip
 
     ds_report_reformatted_figure = pe.Node(
         DerivativesDataSink(
-            dismiss_entities=["den"],
-            desc=f"{desc}BrainSwipes",
-            extension=".png",
+            dismiss_entities=dismiss_hash(['den']),
+            desc=f'{desc}BrainSwipes',
+            extension='.png',
         ),
-        name="ds_report_reformatted_figure",
+        name='ds_report_reformatted_figure',
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     workflow.connect([
-        (inputnode, ds_report_reformatted_figure, [("name_source", "source_file")]),
-        (reformat_for_brain_swipes, ds_report_reformatted_figure, [("out_file", "in_file")]),
+        (inputnode, ds_report_reformatted_figure, [('name_source', 'source_file')]),
+        (reformat_for_brain_swipes, ds_report_reformatted_figure, [('out_file', 'in_file')]),
     ])  # fmt:skip
 
     return workflow
@@ -86,7 +87,7 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
 @fill_doc
 def init_plot_custom_slices_wf(
     desc,
-    name="plot_custom_slices_wf",
+    name='plot_custom_slices_wf',
 ):
     """Plot a custom selection of slices with Slicer.
 
@@ -98,7 +99,7 @@ def init_plot_custom_slices_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.execsummary import init_plot_custom_slices_wf
+            from xcp_d.workflows.plotting import init_plot_custom_slices_wf
 
             wf = init_plot_custom_slices_wf(
                 desc="AtlasOnSubcorticals",
@@ -120,7 +121,7 @@ def init_plot_custom_slices_wf(
     name_source
     """
     # NOTE: These slices are almost certainly specific to a given MNI template and resolution.
-    SINGLE_SLICES = ["x", "x", "x", "y", "y", "y", "z", "z", "z"]
+    SINGLE_SLICES = ['x', 'x', 'x', 'y', 'y', 'y', 'z', 'z', 'z']
     SLICE_NUMBERS = [36, 45, 52, 43, 54, 65, 23, 33, 39]
 
     workflow = Workflow(name=name)
@@ -128,58 +129,58 @@ def init_plot_custom_slices_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "underlay_file",
-                "overlay_file",
-                "name_source",
+                'underlay_file',
+                'overlay_file',
+                'name_source',
             ],
         ),
-        name="inputnode",
+        name='inputnode',
     )
 
     # slices/slicer does not do well trying to make the red outline when it
     # cannot find the edges, so cannot use the ROI files with some low intensities.
     binarize_edges = pe.Node(
-        BinaryMath(expression="img.astype(bool).astype(int)"),
-        name="binarize_edges",
+        BinaryMath(expression='img.astype(bool).astype(int)'),
+        name='binarize_edges',
         mem_gb=1,
     )
 
-    workflow.connect([(inputnode, binarize_edges, [("overlay_file", "in_file")])])
+    workflow.connect([(inputnode, binarize_edges, [('overlay_file', 'in_file')])])
 
     make_image = pe.MapNode(
         fsl.Slicer(show_orientation=True, label_slices=True),
-        name="make_image",
-        iterfield=["single_slice", "slice_number"],
+        name='make_image',
+        iterfield=['single_slice', 'slice_number'],
         mem_gb=1,
     )
     make_image.inputs.single_slice = SINGLE_SLICES
     make_image.inputs.slice_number = SLICE_NUMBERS
     workflow.connect([
-        (inputnode, make_image, [("underlay_file", "in_file")]),
-        (binarize_edges, make_image, [("out_file", "image_edges")]),
+        (inputnode, make_image, [('underlay_file', 'in_file')]),
+        (binarize_edges, make_image, [('out_file', 'image_edges')]),
     ])  # fmt:skip
 
     combine_images = pe.Node(
-        PNGAppend(out_file="out.png"),
-        name="combine_images",
+        PNGAppend(out_file='out.png'),
+        name='combine_images',
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
-    workflow.connect([(make_image, combine_images, [("out_file", "in_files")])])
+    workflow.connect([(make_image, combine_images, [('out_file', 'in_files')])])
 
     ds_report_overlay = pe.Node(
         DerivativesDataSink(
-            dismiss_entities=["den"],
+            dismiss_entities=dismiss_hash(['den']),
             desc=desc,
-            extension=".png",
+            extension='.png',
         ),
-        name="ds_report_overlay",
+        name='ds_report_overlay',
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
     workflow.connect([
-        (inputnode, ds_report_overlay, [("name_source", "source_file")]),
-        (combine_images, ds_report_overlay, [("out_file", "in_file")]),
+        (inputnode, ds_report_overlay, [('name_source', 'source_file')]),
+        (combine_images, ds_report_overlay, [('out_file', 'in_file')]),
     ])  # fmt:skip
 
     return workflow

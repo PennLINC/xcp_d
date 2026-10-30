@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Confound matrix selection based on Ciric et al. 2007."""
+
 import os
 import warnings
 from pathlib import Path
@@ -12,21 +13,21 @@ from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger('nipype.utils')
 
 
 def volterra(df):
     """Perform Volterra expansion."""
     # Ignore pandas SettingWithCopyWarning
-    with pd.option_context("mode.chained_assignment", None):
+    with pd.option_context('mode.chained_assignment', None):
         columns = df.columns.tolist()
         for col in columns:
-            new_col = f"{col}_derivative1"
+            new_col = f'{col}_derivative1'
             df[new_col] = df[col].diff()
 
         columns = df.columns.tolist()
         for col in columns:
-            new_col = f"{col}_power2"
+            new_col = f'{col}_power2'
             df[new_col] = df[col] ** 2
 
     return df
@@ -66,19 +67,19 @@ def load_motion(
     ----------
     .. footbibliography::
     """
-    if motion_filter_type not in ("lp", "notch", None):
+    if motion_filter_type not in ('lp', 'notch', None):
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     # Select the motion columns from the overall confounds DataFrame
-    if isinstance(confounds_df, (str, Path)):
+    if isinstance(confounds_df, str | Path):
         confounds_df = pd.read_table(confounds_df)
 
     motion_confounds_df = confounds_df[
-        ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]
+        ['rot_x', 'rot_y', 'rot_z', 'trans_x', 'trans_y', 'trans_z']
     ]
 
     # Apply LP or notch filter
-    if motion_filter_type in ("lp", "notch"):
+    if motion_filter_type in ('lp', 'notch'):
         motion_confounds = filter_motion(
             data=motion_confounds_df.to_numpy(),
             TR=TR,
@@ -89,7 +90,7 @@ def load_motion(
         )
         filtered_motion_confounds_df = pd.DataFrame(
             data=motion_confounds,
-            columns=[f"{c}_filtered" for c in motion_confounds_df.columns],
+            columns=[f'{c}_filtered' for c in motion_confounds_df.columns],
         )
         motion_confounds_df = pd.concat(
             [motion_confounds_df, filtered_motion_confounds_df],
@@ -98,7 +99,7 @@ def load_motion(
 
     # Add RMSD column (used for QC measures later on)
     motion_confounds_df = pd.concat(
-        [motion_confounds_df, confounds_df[["rmsd"]]],
+        [motion_confounds_df, confounds_df[['rmsd']]],
         axis=1,
     )
 
@@ -139,6 +140,8 @@ def filter_motion(
     as in :footcite:t:`gratton2020removal`.
     The order of the Butterworth filter is determined by ``motion_filter_order``,
     although the original paper used a first-order filter.
+    Since filtfilt applies the filter twice, motion_filter_order is divided by 2 before applying
+    the filter.
     The original paper also used zero-padding with a padding size of 100.
     We use constant-padding, with the default padding size determined by
     :func:`scipy.signal.filtfilt`.
@@ -147,6 +150,8 @@ def filter_motion(
     as in :footcite:t:`fair2020correction`.
     This filter uses the mean of the stopband frequencies as the target frequency,
     and the range between the two frequencies as the bandwidth.
+    Because iirnotch is a second-order filter and filtfilt applies the filter twice,
+    motion_filter_order is divided by 4 before applying the filter.
     The filter is applied with constant-padding, using the default padding size determined by
     :func:`scipy.signal.filtfilt`.
 
@@ -154,33 +159,36 @@ def filter_motion(
     ----------
     .. footbibliography::
     """
-    if motion_filter_type not in ("lp", "notch"):
+    if motion_filter_type not in ('lp', 'notch'):
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     lowpass_hz = band_stop_min / 60
 
     sampling_frequency = 1 / TR
 
-    if motion_filter_type == "lp":  # low-pass filter
+    if motion_filter_type == 'lp':  # low-pass filter
+        n_filter_applications = int(np.floor(motion_filter_order / 2))
         b, a = butter(
-            motion_filter_order / 2,
+            n_filter_applications,
             lowpass_hz,
-            btype="lowpass",
-            output="ba",
+            btype='lowpass',
+            output='ba',
             fs=sampling_frequency,
         )
-        filtered_data = filtfilt(b, a, data, axis=0, padtype="constant", padlen=data.shape[0] - 1)
+        filtered_data = filtfilt(b, a, data, axis=0, padtype='constant', padlen=data.shape[0] - 1)
 
     else:  # notch filter
         highpass_hz = band_stop_max / 60
         stopband_hz = np.array([lowpass_hz, highpass_hz])
         # Convert stopband to a single notch frequency.
-        freq_to_remove = np.mean(stopband_hz)
+        freq_to_remove = np.nanmean(stopband_hz)
         bandwidth = np.abs(np.diff(stopband_hz))
 
         # Create filter coefficients.
         b, a = iirnotch(freq_to_remove, freq_to_remove / bandwidth, fs=sampling_frequency)
-        n_filter_applications = int(np.floor(motion_filter_order / 2))
+        # Both iirnotch and filtfilt are second-order,
+        # so we need to divide the motion_filter_order by 4.
+        n_filter_applications = int(np.floor(motion_filter_order / 4))
 
         filtered_data = data.copy()
         for _ in range(n_filter_applications):
@@ -189,7 +197,7 @@ def filter_motion(
                 a,
                 filtered_data,
                 axis=0,
-                padtype="constant",
+                padtype='constant',
                 padlen=data.shape[0] - 1,
             )
 
@@ -224,12 +232,14 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
     nyquist_bpm = nyquist_frequency * 60
 
     is_modified = False
-    if motion_filter_type == "lp":  # low-pass filter
+    if motion_filter_type == 'lp':  # low-pass filter
         # Remove any frequencies above band_stop_min.
-        assert band_stop_min is not None
-        assert band_stop_min > 0
+        if band_stop_min is None:
+            raise ValueError('band_stop_min must be set for low-pass motion filter.')
+        if band_stop_min <= 0:
+            raise ValueError(f'band_stop_min must be positive, got {band_stop_min}.')
         if band_stop_max:
-            warnings.warn("The parameter 'band_stop_max' will be ignored.")
+            warnings.warn("The parameter 'band_stop_max' will be ignored.", stacklevel=2)
 
         lowpass_hz = band_stop_min / 60  # change BPM to right time unit
 
@@ -243,20 +253,28 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
         band_stop_min_adjusted = lowpass_hz_adjusted * 60  # change Hertz back to BPM
         if band_stop_min_adjusted != band_stop_min:
             warnings.warn(
-                f"Low-pass filter frequency is above Nyquist frequency ({nyquist_bpm} BPM), "
-                f"so it has been changed ({band_stop_min} --> {band_stop_min_adjusted} BPM)."
+                f'Low-pass filter frequency is above Nyquist frequency ({nyquist_bpm} BPM), '
+                f'so it has been changed ({band_stop_min} --> {band_stop_min_adjusted} BPM).',
+                stacklevel=2,
             )
             is_modified = True
 
         band_stop_max_adjusted = None
 
-    elif motion_filter_type == "notch":  # notch filter
+    elif motion_filter_type == 'notch':  # notch filter
         # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
-        assert band_stop_max is not None
-        assert band_stop_min is not None
-        assert band_stop_max > 0
-        assert band_stop_min > 0
-        assert band_stop_min < band_stop_max, f"{band_stop_min} >= {band_stop_max}"
+        if band_stop_max is None:
+            raise ValueError('band_stop_max must be set for notch motion filter.')
+        if band_stop_min is None:
+            raise ValueError('band_stop_min must be set for notch motion filter.')
+        if band_stop_max <= 0:
+            raise ValueError(f'band_stop_max must be positive, got {band_stop_max}.')
+        if band_stop_min <= 0:
+            raise ValueError(f'band_stop_min must be positive, got {band_stop_min}.')
+        if band_stop_min >= band_stop_max:
+            raise ValueError(
+                f'band_stop_min ({band_stop_min}) must be < band_stop_max ({band_stop_max}).'
+            )
 
         stopband = np.array([band_stop_min, band_stop_max])
         stopband_hz = stopband / 60  # change BPM to Hertz
@@ -271,10 +289,11 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
         stopband_adjusted = stopband_hz_adjusted * 60  # change Hertz back to BPM
         if not np.array_equal(stopband_adjusted, stopband):
             warnings.warn(
-                f"One or both filter frequencies are above Nyquist frequency ({nyquist_bpm} BPM), "
-                "so they have been changed "
-                f"({stopband[0]} --> {stopband_adjusted[0]}, "
-                f"{stopband[1]} --> {stopband_adjusted[1]} BPM)."
+                f'One or both filter frequencies are above Nyquist frequency ({nyquist_bpm} BPM), '
+                'so they have been changed '
+                f'({stopband[0]} --> {stopband_adjusted[0]}, '
+                f'{stopband[1]} --> {stopband_adjusted[1]} BPM).',
+                stacklevel=2,
             )
             is_modified = True
 
@@ -308,10 +327,10 @@ def _infer_dummy_scans(dummy_scans, confounds_file=None):
     dummy_scans : int
         Estimated number of dummy scans.
     """
-    if dummy_scans == "auto":
+    if dummy_scans == 'auto':
         confounds_df = pd.read_table(confounds_file)
 
-        nss_cols = [c for c in confounds_df.columns if c.startswith("non_steady_state_outlier")]
+        nss_cols = [c for c in confounds_df.columns if c.startswith('non_steady_state_outlier')]
 
         if nss_cols:
             initial_volumes_df = confounds_df[nss_cols]
@@ -320,10 +339,10 @@ def _infer_dummy_scans(dummy_scans, confounds_file=None):
 
             # reasonably assumes all NSS volumes are contiguous
             dummy_scans = int(dummy_scans[-1] + 1)
-            LOGGER.info(f"Found {dummy_scans} dummy scans in {os.path.basename(confounds_file)}")
+            LOGGER.info(f'Found {dummy_scans} dummy scans in {os.path.basename(confounds_file)}')
 
         else:
-            LOGGER.warning(f"No non-steady-state outliers found in {confounds_file}")
+            LOGGER.warning(f'No non-steady-state outliers found in {confounds_file}')
             dummy_scans = 0
 
     return dummy_scans

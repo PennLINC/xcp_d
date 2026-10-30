@@ -1,0 +1,12 @@
+# Local pixi environments must never enter the build context:
+# `COPY . /app` would overwrite the container-built envs with host files
+# whose shebangs/prefixes point at the host checkout path.
+.pixi/
+
+# Local development artifacts
+**/__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.tox/
+docs/_build/

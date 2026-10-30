@@ -5,6 +5,7 @@
 .. testsetup::
 
 """
+
 import os
 import shutil
 
@@ -24,20 +25,21 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.restingstate import compute_2d_reho, mesh_adjacency
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
-LOGGER = logging.getLogger("nipype.interface")
+LOGGER = logging.getLogger('nipype.interface')
 
 
 # compute 2D reho
 class _SurfaceReHoInputSpec(BaseInterfaceInputSpec):
-    surf_bold = File(exists=True, mandatory=True, desc="left or right hemisphere gii ")
+    surf_bold = File(exists=True, mandatory=True, desc='left or right hemisphere gii ')
     # TODO: Change to Enum
-    surf_hemi = traits.Str(mandatory=True, desc="L or R ")
+    surf_hemi = traits.Str(mandatory=True, desc='L or R ')
 
 
 class _SurfaceReHoOutputSpec(TraitedSpec):
-    surf_gii = File(exists=True, mandatory=True, desc=" lh hemisphere reho")
+    surf_gii = File(exists=True, mandatory=True, desc=' lh hemisphere reho')
 
 
 class SurfaceReHo(SimpleInterface):
@@ -46,16 +48,21 @@ class SurfaceReHo(SimpleInterface):
     Examples
     --------
     .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
+
+        >>> from tempfile import TemporaryDirectory
+        >>> tmpdir = TemporaryDirectory()
+        >>> os.chdir(tmpdir.name)
+
     .. doctest::
-    >>> surfacereho_wf = SurfaceReHo()
-    >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
-    >>> surfacereho_wf.inputs.surf_hemi = 'R'
-    >>> surfacereho_wf.run()
+
+        >>> surfacereho_wf = SurfaceReHo()
+        >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
+        >>> surfacereho_wf.inputs.surf_hemi = 'R'
+        >>> surfacereho_wf.run()
+
     .. testcleanup::
-    >>> tmpdir.cleanup()
+
+        >>> tmpdir.cleanup()
     """
 
     input_spec = _SurfaceReHoInputSpec
@@ -72,13 +79,13 @@ class SurfaceReHo(SimpleInterface):
         reho_surf = compute_2d_reho(datat=data_matrix, adjacency_matrix=mesh_matrix)
 
         # Write the output out
-        self._results["surf_gii"] = fname_presuffix(
-            self.inputs.surf_bold, suffix=".shape.gii", newpath=runtime.cwd, use_ext=False
+        self._results['surf_gii'] = fname_presuffix(
+            self.inputs.surf_bold, suffix='.shape.gii', newpath=runtime.cwd, use_ext=False
         )
         write_gii(
             datat=reho_surf,
             template=self.inputs.surf_bold,
-            filename=self._results["surf_gii"],
+            filename=self._results['surf_gii'],
             hemi=self.inputs.surf_hemi,
         )
 
@@ -86,37 +93,31 @@ class SurfaceReHo(SimpleInterface):
 
 
 class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
-    TR = traits.Float(mandatory=True, desc="repetition time")
+    in_file = File(exists=True, mandatory=True, desc='nifti, cifti or gifti')
+    TR = traits.Float(mandatory=True, desc='repetition time')
     low_pass = traits.Float(
         mandatory=True,
-        desc="low_pass filter in Hz",
+        desc='low_pass filter in Hz',
     )
     high_pass = traits.Float(
         mandatory=True,
-        desc="high_pass filter in Hz",
+        desc='high_pass filter in Hz',
     )
     mask = File(
         exists=True,
         mandatory=False,
-        desc=" brain mask for nifti file",
+        desc=' brain mask for nifti file',
     )
     temporal_mask = traits.Either(
         File(exists=True),
         Undefined,
         mandatory=False,
-        desc="Temporal mask.",
-    )
-    n_threads = traits.Int(
-        1,
-        usedefault=True,
-        desc="number of threads to use",
-        nohash=True,
+        desc='Temporal mask.',
     )
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
-    alff = File(exists=True, mandatory=True, desc=" alff")
+    alff = File(exists=True, mandatory=True, desc=' alff')
 
 
 class ComputeALFF(SimpleInterface):
@@ -140,59 +141,40 @@ class ComputeALFF(SimpleInterface):
     output_spec = _ComputeALFFOutputSpec
 
     def _run_interface(self, runtime):
-        import gc
-        from multiprocessing import Pool
-
-        import numpy as np
-
-        from xcp_d.utils.restingstate import compute_alff_chunk
+        from xcp_d.utils.restingstate import compute_alff
 
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
-        n_voxels, n_volumes = data_matrix.shape
-
-        # Split the data_matrix into n_threads chunks of voxels
-        voxel_indices = np.array_split(np.arange(n_voxels), self.inputs.n_threads)
-        split_arrays = np.array_split(data_matrix, self.inputs.n_threads, axis=0)
-
-        del data_matrix
-        gc.collect()
+        n_volumes = data_matrix.shape[1]
 
         sample_mask = None
         temporal_mask = self.inputs.temporal_mask
         if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
-            sample_mask = ~censoring_df["framewise_displacement"].values.astype(bool)
-            assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
+            sample_mask = ~get_col(censoring_df, 'denoising').values.astype(bool)
+            if sample_mask.size != n_volumes:
+                raise ValueError(f'{sample_mask.size} != {n_volumes}')
 
-        alff_mat = np.zeros(n_voxels)
-        with Pool(processes=self.inputs.n_threads) as pool:
-            args = [
-                (
-                    split_arrays[i_thread],
-                    self.inputs.low_pass,
-                    self.inputs.high_pass,
-                    self.inputs.TR,
-                    sample_mask,
-                )
-                for i_thread in range(self.inputs.n_threads)
-            ]
-            results = pool.map(compute_alff_chunk, args)
-
-        for i_thread, result in enumerate(results):
-            alff_mat[voxel_indices[i_thread]] = result
+        alff_mat = compute_alff(
+            data_matrix=data_matrix,
+            low_pass=self.inputs.low_pass,
+            high_pass=self.inputs.high_pass,
+            TR=self.inputs.TR,
+            sample_mask=sample_mask,
+        )
+        del data_matrix
 
         # Add extra dimension to the matrix
         alff_mat = alff_mat[:, None]
 
         # Write out the data
-        if self.inputs.in_file.endswith(".dtseries.nii"):
-            suffix = "_alff.dscalar.nii"
-        elif self.inputs.in_file.endswith(".nii.gz"):
-            suffix = "_alff.nii.gz"
+        if self.inputs.in_file.endswith('.dtseries.nii'):
+            suffix = '_alff.dscalar.nii'
+        elif self.inputs.in_file.endswith('.nii.gz'):
+            suffix = '_alff.nii.gz'
 
-        self._results["alff"] = fname_presuffix(
+        self._results['alff'] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
             newpath=runtime.cwd,
@@ -201,7 +183,7 @@ class ComputeALFF(SimpleInterface):
         write_ndata(
             data_matrix=alff_mat,
             template=self.inputs.in_file,
-            filename=self._results["alff"],
+            filename=self._results['alff'],
             mask=self.inputs.mask,
         )
         return runtime
@@ -225,33 +207,33 @@ class ReHoNamePatch(SimpleInterface):
     >>> res = reho.run()  # doctest: +SKIP
     """
 
-    _cmd = "3dReHo"
+    _cmd = '3dReHo'
     input_spec = ReHoInputSpec
     output_spec = ReHoOutputSpec
 
     def _run_interface(self, runtime):
-        out_file = os.path.join(runtime.cwd, "reho.nii.gz")
+        out_file = os.path.join(runtime.cwd, 'reho.nii.gz')
 
-        in_file = os.path.join(runtime.cwd, "inset.nii.gz")
+        in_file = os.path.join(runtime.cwd, 'inset.nii.gz')
         shutil.copyfile(self.inputs.in_file, in_file)
 
         if traits_extension.isdefined(self.inputs.mask_file):
-            mask_file = os.path.join(runtime.cwd, "mask.nii.gz")
+            mask_file = os.path.join(runtime.cwd, 'mask.nii.gz')
             shutil.copyfile(self.inputs.mask_file, mask_file)
-            mask_cmd = f"-mask {mask_file}"
+            mask_cmd = f'-mask {mask_file}'
         else:
-            mask_cmd = ""
+            mask_cmd = ''
 
-        os.system(f"3dReHo -inset {in_file} {mask_cmd} -nneigh 27 -prefix {out_file}")
-        self._results["out_file"] = out_file
+        os.system(f'3dReHo -inset {in_file} {mask_cmd} -nneigh 27 -prefix {out_file}')  # noqa: S605
+        self._results['out_file'] = out_file
 
 
 class _DespikePatchInputSpec(DespikeInputSpec):
     out_file = File(
         mandatory=False,
         genfile=True,
-        desc="output image file name",
-        argstr="-prefix %s",
+        desc='output image file name',
+        argstr='-prefix %s',
     )
 
 
@@ -274,12 +256,12 @@ class DespikePatch(Despike):
     input_spec = _DespikePatchInputSpec
 
     def _gen_filename(self, name):
-        if name == "out_file":
-            return "inset.nii.gz"
+        if name == 'out_file':
+            return 'inset.nii.gz'
         else:
             return None
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
-        outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
+        outputs['out_file'] = os.path.abspath(self._gen_filename('out_file'))
         return outputs

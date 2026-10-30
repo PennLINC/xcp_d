@@ -24,15 +24,15 @@ def test_nifti_despike(fmriprep_without_freesurfer_data, tmp_path_factory):
     Confirm that the maximum and minimum voxel values decrease after despiking.
     """
     # Read in the necessary inputs
-    tempdir = tmp_path_factory.mktemp("test_despike_nifti")
-    boldfile = fmriprep_without_freesurfer_data["nifti_file"]
-    maskfile = fmriprep_without_freesurfer_data["brain_mask_file"]
+    tempdir = tmp_path_factory.mktemp('test_despike_nifti')
+    boldfile = fmriprep_without_freesurfer_data['nifti_file']
+    maskfile = fmriprep_without_freesurfer_data['brain_mask_file']
 
     # Create some spikes in the second voxel
     file_data = read_ndata(boldfile, maskfile)
     voxel_data = file_data[2, :]  # a voxel across time
-    voxel_data_mean = np.mean(voxel_data)
-    voxel_data_std = np.std(voxel_data)
+    voxel_data_mean = np.nanmean(voxel_data)
+    voxel_data_std = np.nanstd(voxel_data)
     voxel_data[2] = voxel_data_mean + 10 * voxel_data_std
     voxel_data[3] = voxel_data_mean - 10 * voxel_data_std
 
@@ -42,7 +42,7 @@ def test_nifti_despike(fmriprep_without_freesurfer_data, tmp_path_factory):
 
     # Let's write this temp file out for despiking
     file_data[2, :] = voxel_data
-    spikedfile = os.path.join(tempdir, "spikedfile.nii.gz")
+    spikedfile = os.path.join(tempdir, 'spikedfile.nii.gz')
     write_ndata(
         data_matrix=file_data,
         mask=maskfile,
@@ -52,7 +52,7 @@ def test_nifti_despike(fmriprep_without_freesurfer_data, tmp_path_factory):
     )
 
     # Let's despike the image and write it out to a temp file
-    despike_nifti = pe.Node(DespikePatch(outputtype="NIFTI_GZ", args="-NEW"), name="Despike")
+    despike_nifti = pe.Node(DespikePatch(outputtype='NIFTI_GZ', args='-NEW'), name='Despike')
     despike_nifti.inputs.in_file = spikedfile
     res = despike_nifti.run()
     despiked_file = res.outputs.out_file
@@ -82,14 +82,14 @@ def test_cifti_despike(ds001419_data, tmp_path_factory):
     Confirm that the maximum and minimum voxel values decrease
     after despiking.
     """
-    boldfile = ds001419_data["cifti_file"]
+    boldfile = ds001419_data['cifti_file']
     TR = 0.8
 
     # Let's add some noise
     file_data = read_ndata(boldfile)
     voxel_data = file_data[2, :]  # a voxel across time
-    voxel_data_mean = np.mean(voxel_data)
-    voxel_data_std = np.std(voxel_data)
+    voxel_data_mean = np.nanmean(voxel_data)
+    voxel_data_std = np.nanstd(voxel_data)
     voxel_data[2] = voxel_data_mean + 10 * voxel_data_std
     voxel_data[3] = voxel_data_mean - 10 * voxel_data_std
 
@@ -99,24 +99,24 @@ def test_cifti_despike(ds001419_data, tmp_path_factory):
 
     # Let's write this out
     file_data[2, :] = voxel_data
-    tempdir = tmp_path_factory.mktemp("test_despike_cifti")
-    filename = os.path.join(tempdir, "test.dtseries.nii")
+    tempdir = tmp_path_factory.mktemp('test_despike_cifti')
+    filename = os.path.join(tempdir, 'test.dtseries.nii')
 
     write_ndata(data_matrix=file_data, template=boldfile, TR=TR, filename=filename)
 
     # Let's despike the data
     # first, convert the cifti to a nifti
-    convert_to_nifti = CiftiConvert(target="to")
+    convert_to_nifti = CiftiConvert(target='to')
     convert_to_nifti.inputs.in_file = filename
     convert_to_nifti_results = convert_to_nifti.run(cwd=tempdir)
 
     # next, run 3dDespike
-    despike3d = DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW")
+    despike3d = DespikePatch(outputtype='NIFTI_GZ', args='-nomask -NEW')
     despike3d.inputs.in_file = convert_to_nifti_results.outputs.out_file
     despike3d_results = despike3d.run(cwd=tempdir)
 
     # finally, convert the despiked nifti back to cifti
-    convert_to_cifti = CiftiConvert(target="from", TR=TR)
+    convert_to_cifti = CiftiConvert(target='from', TR=TR)
     convert_to_cifti.inputs.in_file = despike3d_results.outputs.out_file
     convert_to_cifti.inputs.cifti_template = filename
     convert_to_cifti_results = convert_to_cifti.run(cwd=tempdir)

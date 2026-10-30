@@ -1,0 +1,27 @@
+# Derivatives skeleton to test confounds collection with mixed acq states
+"01":
+  - func:
+    # Run without acq
+    - task: rest
+      part: mag
+      desc: preproc
+      suffix: bold
+      extension: .nii.gz
+    - task: rest
+      part: mag
+      desc: confounds
+      suffix: timeseries
+      extension: .tsv
+    # Run with acq-3echo
+    - task: rest
+      acq: 3echo
+      part: mag
+      desc: preproc
+      suffix: bold
+      extension: .nii.gz
+    - task: rest
+      acq: 3echo
+      part: mag
+      desc: confounds
+      suffix: timeseries
+      extension: .tsv

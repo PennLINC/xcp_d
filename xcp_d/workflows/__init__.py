@@ -5,9 +5,9 @@
 from xcp_d.workflows import anatomical, base, bold, parcellation, plotting
 
 __all__ = [
-    "anatomical",
-    "base",
-    "bold",
-    "parcellation",
-    "plotting",
+    'anatomical',
+    'base',
+    'bold',
+    'parcellation',
+    'plotting',
 ]

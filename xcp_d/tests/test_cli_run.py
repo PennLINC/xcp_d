@@ -6,8 +6,12 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from niworkflows.utils.testing import generate_bids_skeleton
 
+from xcp_d import config
 from xcp_d.cli import parser
+from xcp_d.data import load as load_data
+from xcp_d.tests.test_config import _reset_config
 from xcp_d.tests.utils import modified_environ
 
 build_log = logging.getLogger()
@@ -21,37 +25,44 @@ class FakeOptions:
         self.__dict__.update(entries)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def base_opts():
     """Create base options."""
     opts_dict = {
-        "fmri_dir": Path("dset"),
-        "output_dir": Path("out"),
-        "work_dir": Path("work"),
-        "analysis_level": "participant",
-        "datasets": {},
-        "mode": "linc",
-        "file_format": "auto",
-        "input_type": "auto",
-        "confounds_config": "auto",
-        "high_pass": 0.01,
-        "low_pass": 0.1,
-        "bandpass_filter": True,
-        "fd_thresh": "auto",
-        "min_time": 240,
-        "motion_filter_type": None,
-        "band_stop_min": None,
-        "band_stop_max": None,
-        "motion_filter_order": None,
-        "process_surfaces": "auto",
-        "atlases": ["Glasser"],
-        "dcan_correlation_lengths": None,
-        "despike": "auto",
-        "abcc_qc": "auto",
-        "linc_qc": "auto",
-        "combine_runs": "auto",
-        "output_type": "auto",
-        "fs_license_file": None,
+        'fmri_dir': Path('dset'),
+        'output_dir': Path('out'),
+        'work_dir': Path('work'),
+        'analysis_level': 'participant',
+        'datasets': {},
+        'mode': 'linc',
+        'file_format': 'auto',
+        'input_type': 'auto',
+        'report_output_level': 'auto',
+        'confounds_config': 'auto',
+        'high_pass': 0.01,
+        'low_pass': 0.1,
+        'bandpass_filter': True,
+        'fd_thresh': 'auto',
+        'censor_between': 'auto',
+        'min_time': 240,
+        'motion_filter_type': None,
+        'band_stop_min': None,
+        'band_stop_max': None,
+        'motion_filter_order': None,
+        'process_surfaces': 'auto',
+        'atlases': ['Glasser'],
+        'min_coverage': 'auto',
+        'correlation_lengths': None,
+        'despike': 'auto',
+        'abcc_qc': 'auto',
+        'linc_qc': 'auto',
+        'smoothing': 'auto',
+        'combine_runs': 'auto',
+        'output_type': 'auto',
+        'output_layout': 'bids',
+        'output_run_wise_correlations': 'auto',
+        'fs_license_file': None,
+        'skip_outputs': [],
     }
     opts = FakeOptions(**opts_dict)
     return opts
@@ -73,7 +84,31 @@ def test_validate_parameters_02(base_opts, base_parser, caplog):
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.min_time == 0
-    assert "Framewise displacement-based scrubbing is disabled." in caplog.text
+    assert 'Framewise displacement-based scrubbing is disabled.' in caplog.text
+
+
+def test_validate_parameters_censor_between_disabled(base_opts, base_parser, caplog):
+    """Test that --censor-between is disabled when censoring is disabled."""
+    opts = deepcopy(base_opts)
+    opts.fd_thresh = 0
+    opts.censor_between = 5
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.censor_between == 0
+    assert 'Framewise displacement-based scrubbing is disabled.' in caplog.text
+    assert '--censor-between' in caplog.text
+
+
+def test_validate_parameters_censor_between_retained(base_opts, base_parser):
+    """Test that an explicit --censor-between survives when censoring is enabled."""
+    opts = deepcopy(base_opts)
+    opts.fd_thresh = 0.3
+    opts.censor_between = 5
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.censor_between == 5
 
 
 def test_validate_parameters_03(base_opts, base_parser):
@@ -81,7 +116,7 @@ def test_validate_parameters_03(base_opts, base_parser):
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
-    opts.input_type = "dcan"
+    opts.input_type = 'dcan'
     opts.process_surfaces = False
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
@@ -95,12 +130,12 @@ def test_validate_parameters_04(base_opts, base_parser, capsys):
 
     # Set min > max for notch filter
     opts.process_surfaces = True
-    opts.file_format = "nifti"
+    opts.file_format = 'nifti'
 
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "you must enable cifti processing" in capsys.readouterr().err
+    assert 'you must enable cifti processing' in capsys.readouterr().err
 
 
 def test_validate_parameters_05(base_opts, base_parser, caplog):
@@ -111,22 +146,22 @@ def test_validate_parameters_05(base_opts, base_parser, caplog):
 
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "When no atlases are selected" in caplog.text
+    assert 'When no atlases are selected' in caplog.text
 
 
 def test_validate_parameters_06(base_opts, base_parser, capsys):
     """Test parser._validate_parameters nifti + process_surfaces."""
     opts = deepcopy(base_opts)
-    opts.input_type = "ukb"
-    opts.file_format = "nifti"
+    opts.input_type = 'ukb'
+    opts.file_format = 'nifti'
     opts.process_surfaces = True
 
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     stderr = capsys.readouterr().err
-    assert "--warp-surfaces-native2std is not supported" in stderr
-    assert "In order to perform surface normalization" in stderr
+    assert '--warp-surfaces-native2std is not supported' in stderr
+    assert 'In order to perform surface normalization' in stderr
 
 
 def test_validate_parameters_motion_filtering(base_opts, base_parser, caplog, capsys):
@@ -134,55 +169,55 @@ def test_validate_parameters_motion_filtering(base_opts, base_parser, caplog, ca
     opts = deepcopy(base_opts)
 
     # Set notch filter with no min or max
-    opts.motion_filter_type = "notch"
+    opts.motion_filter_type = 'notch'
     opts.band_stop_min = None
     opts.band_stop_max = None
 
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "Please set both" in capsys.readouterr().err
+    assert 'Please set both' in capsys.readouterr().err
 
     # Set min > max for notch filter
-    opts.motion_filter_type = "notch"
+    opts.motion_filter_type = 'notch'
     opts.band_stop_min = 18
     opts.band_stop_max = 12
 
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "must be lower than" in capsys.readouterr().err
+    assert 'must be lower than' in capsys.readouterr().err
 
     # Set min <1 for notch filter
-    opts.motion_filter_type = "notch"
+    opts.motion_filter_type = 'notch'
     opts.band_stop_min = 0.01
     opts.band_stop_max = 15
 
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "suspiciously low." in caplog.text
+    assert 'suspiciously low.' in caplog.text
 
     # Set lp without min
-    opts.motion_filter_type = "lp"
+    opts.motion_filter_type = 'lp'
     opts.band_stop_min = None
     opts.band_stop_max = None
 
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "Please set '--band-stop-min'" in capsys.readouterr().err
 
     # Set min > max for notch filter
-    opts.motion_filter_type = "lp"
+    opts.motion_filter_type = 'lp'
     opts.band_stop_min = 0.01
     opts.band_stop_max = None
 
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "suspiciously low." in caplog.text
+    assert 'suspiciously low.' in caplog.text
 
     # Set min > max for notch filter
-    opts.motion_filter_type = "lp"
+    opts.motion_filter_type = 'lp'
     opts.band_stop_min = 12
     opts.band_stop_max = 18
 
@@ -213,17 +248,17 @@ def test_validate_parameters_bandpass_filter(base_opts, base_parser, caplog, cap
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.bandpass_filter is False
-    assert "Bandpass filtering is disabled." in caplog.text
+    assert 'Bandpass filtering is disabled.' in caplog.text
 
     # Set upper BPF below lower one
     opts.bandpass_filter = True
     opts.high_pass = 0.01
     opts.low_pass = 0.001
 
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "must be lower than" in capsys.readouterr().err
+    assert 'must be lower than' in capsys.readouterr().err
 
 
 def _test_validate_parameters_fs_license(base_opts, base_parser, caplog, capsys, tmp_path_factory):
@@ -231,66 +266,71 @@ def _test_validate_parameters_fs_license(base_opts, base_parser, caplog, capsys,
 
     Not run now that the license isn't required.
     """
-    tmpdir = tmp_path_factory.mktemp("test_validate_parameters_fs_license")
+    tmpdir = tmp_path_factory.mktemp('test_validate_parameters_fs_license')
 
     opts = deepcopy(base_opts)
     opts.fs_license_file = None
 
     # FS_LICENSE exists (set in conftest)
     parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-    assert "A valid FreeSurfer license file is required." not in caplog.text
+    assert 'A valid FreeSurfer license file is required.' not in caplog.text
 
     # FS_LICENSE doesn't exist
-    with pytest.raises(SystemExit, match="2"):
-        with modified_environ(FS_LICENSE="/path/to/missing/file.txt"):
+    with pytest.raises(SystemExit, match='2'):
+        with modified_environ(FS_LICENSE='/path/to/missing/file.txt'):
             parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "A valid FreeSurfer license file is required." in capsys.readouterr().err
+    assert 'A valid FreeSurfer license file is required.' in capsys.readouterr().err
 
     # FS_LICENSE is an existing file
-    license_file = os.path.join(tmpdir, "license.txt")
-    with open(license_file, "w") as fo:
-        fo.write("TEMP")
+    license_file = os.path.join(tmpdir, 'license.txt')
+    with open(license_file, 'w') as fo:
+        fo.write('TEMP')
 
     # If file exists, return_code should be 0
     opts.fs_license_file = Path(license_file)
     parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-    assert "Freesurfer license DNE" not in caplog.text
+    assert 'Freesurfer license DNE' not in caplog.text
 
     # If file doesn't exist, return_code should be 1
-    with pytest.raises(SystemExit, match="2"):
-        opts.fs_license_file = Path("/path/to/missing/file.txt")
+    opts.fs_license_file = Path('/path/to/missing/file.txt')
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "Freesurfer license DNE" in capsys.readouterr().err
+    assert 'Freesurfer license DNE' in capsys.readouterr().err
 
 
 def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
     """Test parser._validate_parameters with linc mode."""
     opts = deepcopy(base_opts)
-    opts.mode = "linc"
+    opts.mode = 'linc'
 
     # linc mode doesn't use abcc_qc but does use linc_qc
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.abcc_qc is False
+    assert opts.censor_between == 0
     assert opts.linc_qc is True
-    assert opts.file_format == "cifti"
+    assert opts.file_format == 'cifti'
+    assert opts.min_coverage == 0.5
+    assert opts.smoothing == 6.0
+    assert opts.correlation_lengths == []
+    assert opts.report_output_level == 'root'
 
-    # --create-matrices is not supported
-    opts.dcan_correlation_lengths = [300]
-    with pytest.raises(SystemExit, match="2"):
+    # --create-matrices is not supported in linc mode at all
+    opts.correlation_lengths = ['300']
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     stderr = capsys.readouterr().err
-    assert "'--create-matrices' is not supported" in stderr
+    assert "'--create-matrices' is not supported in 'linc' mode" in stderr
 
 
 def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
     """Test parser._validate_parameters with abcd mode."""
     opts = deepcopy(base_opts)
-    opts.mode = "abcd"
-    opts.motion_filter_type = "lp"
+    opts.mode = 'abcd'
+    opts.motion_filter_type = 'lp'
     opts.band_stop_min = 10
 
     # abcd mode does use abcc_qc but doesn't use linc_qc
@@ -298,23 +338,34 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
 
     assert opts.abcc_qc is True
     assert opts.combine_runs is True
-    assert opts.dcan_correlation_lengths == []
+    assert opts.correlation_lengths == []
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
-    assert opts.file_format == "cifti"
-    assert opts.input_type == "fmriprep"
+    assert opts.censor_between == 0
+    assert opts.file_format == 'cifti'
+    assert opts.input_type == 'fmriprep'
     assert opts.linc_qc is True
-    assert opts.output_correlations is False
+    assert opts.min_coverage == 0.5
     assert opts.process_surfaces is True
-
-    opts.dcan_correlation_lengths = ["300", "all"]
+    assert opts.smoothing == 6.0
+    assert opts.report_output_level == 'session'
+    opts.correlation_lengths = ['300', 'all']
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-    assert opts.dcan_correlation_lengths == ["300"]
-    assert opts.output_correlations is True
+    assert opts.correlation_lengths == ['300', 'all']
+
+    # --create-matrices requires --combine-runs
+    opts2 = deepcopy(opts)
+    opts2.combine_runs = False
+    opts2.correlation_lengths = ['300', 'all']
+    with pytest.raises(SystemExit, match='2'):
+        parser._validate_parameters(deepcopy(opts2), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--create-matrices' requires '--combine-runs'" in stderr
 
     # --motion-filter-type is required
     opts.motion_filter_type = None
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     stderr = capsys.readouterr().err
@@ -324,8 +375,8 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
 def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     """Test parser._validate_parameters with hbcd mode."""
     opts = deepcopy(base_opts)
-    opts.mode = "hbcd"
-    opts.motion_filter_type = "lp"
+    opts.mode = 'hbcd'
+    opts.motion_filter_type = 'lp'
     opts.band_stop_min = 10
 
     # hbcd mode does use abcc_qc but doesn't use linc_qc
@@ -333,81 +384,191 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
 
     assert opts.abcc_qc is True
     assert opts.combine_runs is True
-    assert opts.dcan_correlation_lengths == []
+    assert opts.correlation_lengths == []
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
-    assert opts.file_format == "cifti"
-    assert opts.input_type == "nibabies"
+    assert opts.censor_between == 0
+    assert opts.file_format == 'cifti'
+    assert opts.input_type == 'nibabies'
     assert opts.linc_qc is True
-    assert opts.output_correlations is False
+    assert opts.min_coverage == 0.5
     assert opts.process_surfaces is True
+    assert opts.report_output_level == 'session'
+    assert opts.smoothing == 6.0
 
-    opts.dcan_correlation_lengths = ["300", "all"]
+    opts.correlation_lengths = ['300', 'all']
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-    assert opts.dcan_correlation_lengths == ["300"]
-    assert opts.output_correlations is True
+    assert opts.correlation_lengths == ['300', 'all']
+
+    # --create-matrices requires --combine-runs
+    opts2 = deepcopy(opts)
+    opts2.combine_runs = False
+    opts2.correlation_lengths = ['300', 'all']
+    with pytest.raises(SystemExit, match='2'):
+        parser._validate_parameters(deepcopy(opts2), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--create-matrices' requires '--combine-runs'" in stderr
 
     # --motion-filter-type is required
     opts.motion_filter_type = None
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     stderr = capsys.readouterr().err
     assert "'--motion-filter-type' is required for" in stderr
 
 
+def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters with nichart mode."""
+    opts = deepcopy(base_opts)
+    opts.mode = 'nichart'
+
+    # linc mode doesn't use abcc_qc but does use linc_qc
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.abcc_qc is False
+    assert opts.censor_between == 0
+    assert opts.linc_qc is True
+    assert opts.file_format == 'nifti'
+    assert opts.min_coverage == 0.4
+    assert opts.smoothing == 0
+    assert opts.report_output_level == 'root'
+    assert opts.correlation_lengths == []
+
+
+@pytest.mark.parametrize(
+    ('mode', 'extra_opts', 'expected_error'),
+    [
+        ('linc', {}, "'--create-matrices' is not supported in 'linc' mode."),
+        ('nichart', {}, "'--create-matrices' requires '--combine-runs'"),
+        (
+            'none',
+            {
+                'abcc_qc': False,
+                'combine_runs': False,
+                'confounds_config': 'none',
+                'despike': False,
+                'fd_thresh': 0.0,
+                'censor_between': 0,
+                'file_format': 'nifti',
+                'input_type': 'fmriprep',
+                'linc_qc': False,
+                'min_coverage': 0.5,
+                'motion_filter_type': 'none',
+                'output_run_wise_correlations': False,
+                'output_type': 'censored',
+                'process_surfaces': False,
+                'report_output_level': 'root',
+                'smoothing': 0,
+            },
+            "'--create-matrices' requires '--combine-runs'",
+        ),
+    ],
+)
+def test_validate_parameters_create_matrices_requires_combine_runs(
+    mode, extra_opts, expected_error, base_opts, base_parser, capsys
+):
+    """Test that --create-matrices raises an error when --combine-runs is disabled."""
+    opts = deepcopy(base_opts)
+    opts.mode = mode
+    for key, val in extra_opts.items():
+        setattr(opts, key, val)
+    opts.correlation_lengths = ['300']
+
+    with pytest.raises(SystemExit, match='2'):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert expected_error in stderr
+
+
 def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     """Test parser._validate_parameters with none mode."""
     opts = deepcopy(base_opts)
-    opts.mode = "none"
+    opts.mode = 'none'
 
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     stderr = capsys.readouterr().err
     assert "'--abcc-qc' (y or n) is required for 'none' mode." in stderr
+    assert "'--censor-between' is required for 'none' mode." in stderr
     assert "'--combine-runs' (y or n) is required for 'none' mode." in stderr
     assert "'--despike' (y or n) is required for 'none' mode." in stderr
     assert "'--fd-thresh' is required for 'none' mode." in stderr
     assert "'--file-format' is required for 'none' mode." in stderr
     assert "'--input-type' is required for 'none' mode." in stderr
     assert "'--linc-qc' (y or n) is required for 'none' mode." in stderr
+    assert "'--min-coverage' is required for 'none' mode." in stderr
     assert "'--motion-filter-type' is required for 'none' mode." in stderr
     assert "'--nuisance-regressors' is required for 'none' mode." in stderr
+    assert "'--output-run-wise-correlations' (y or n) is required for 'none' mode." in stderr
     assert "'--output-type' is required for 'none' mode." in stderr
+    assert "'--smoothing' is required for 'none' mode." in stderr
     assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
 
     opts.abcc_qc = False
+    opts.censor_between = 0
     opts.combine_runs = False
-    opts.confounds_config = "none"
+    opts.confounds_config = 'none'
     opts.despike = False
     opts.fd_thresh = 0
-    opts.file_format = "nifti"
-    opts.input_type = "fmriprep"
+    opts.file_format = 'nifti'
+    opts.input_type = 'fmriprep'
     opts.linc_qc = False
-    opts.motion_filter_type = "none"
-    opts.output_type = "censored"
-    opts.params = "36P"
+    opts.min_coverage = 0.5
+    opts.motion_filter_type = 'none'
+    opts.output_run_wise_correlations = False
+    opts.output_type = 'censored'
+    opts.params = '36P'
     opts.process_surfaces = False
+    opts.smoothing = 0
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    assert opts.report_output_level == 'root'
 
 
 def test_validate_parameters_other_mode(base_opts, base_parser, capsys):
     """Test parser._validate_parameters with 'other' mode."""
     opts = deepcopy(base_opts)
-    opts.mode = "other"
+    opts.mode = 'other'
 
-    with pytest.raises(AssertionError, match="Unsupported mode 'other'"):
+    with pytest.raises(ValueError, match='Unsupported mode "other"'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+
+@pytest.mark.parametrize(
+    ('invalid_opt', 'invalid_val', 'expected_match'),
+    [
+        ('abcc_qc', 'invalid', 'Invalid abcc_qc'),
+        ('combine_runs', 'invalid', 'Invalid combine_runs'),
+        ('despike', 'invalid', 'Invalid despike'),
+        ('file_format', 'invalid', 'Invalid file_format'),
+        ('linc_qc', 'invalid', 'Invalid linc_qc'),
+        ('output_layout', 'invalid', 'Invalid output_layout'),
+        ('output_run_wise_correlations', 'invalid', 'Invalid output_run_wise_correlations'),
+        ('output_type', 'invalid', 'Invalid output_type'),
+        ('process_surfaces', 'invalid', 'Invalid process_surfaces'),
+    ],
+)
+def test_validate_parameters_invalid_option_values(
+    base_opts, base_parser, invalid_opt, invalid_val, expected_match
+):
+    """Test parser._validate_parameters raises ValueError for invalid option values."""
+    opts = deepcopy(base_opts)
+    setattr(opts, invalid_opt, invalid_val)
+
+    with pytest.raises(ValueError, match=expected_match):
+        parser._validate_parameters(opts, build_log, parser=base_parser)
 
 
 def test_build_parser_01(tmp_path_factory):
     """Test parser._build_parser with abcd mode."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_01")
-    data_dir = os.path.join(tmpdir, "data")
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_01')
+    data_dir = os.path.join(tmpdir, 'data')
     data_path = Path(data_dir)
     os.makedirs(data_dir, exist_ok=True)
-    out_dir = os.path.join(tmpdir, "out")
+    out_dir = os.path.join(tmpdir, 'out')
     out_path = Path(out_dir)
     os.makedirs(out_dir, exist_ok=True)
 
@@ -415,36 +576,36 @@ def test_build_parser_01(tmp_path_factory):
     base_args = [
         data_dir,
         out_dir,
-        "participant",
-        "--mode",
-        "abcd",
-        "--motion-filter-type",
-        "lp",
-        "--band-stop-min",
-        "10",
+        'participant',
+        '--mode',
+        'abcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
     ]
     parser_obj = parser._build_parser()
 
     opts = parser_obj.parse_args(args=base_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.despike == "auto"
+    assert opts.despike == 'auto'
 
     test_args = base_args[:]
-    test_args.extend(["--create-matrices", "all", "300", "480"])
+    test_args.extend(['--create-matrices', 'all', '300', '480'])
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths == ["all", 300, 480]
+    assert opts.correlation_lengths == ['all', '300.0', '480.0']
 
 
 def test_build_parser_02(tmp_path_factory):
     """Test parser._build_parser with hbcd mode."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_02")
-    data_dir = os.path.join(tmpdir, "data")
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_02')
+    data_dir = os.path.join(tmpdir, 'data')
     data_path = Path(data_dir)
     os.makedirs(data_dir, exist_ok=True)
-    out_dir = os.path.join(tmpdir, "out")
+    out_dir = os.path.join(tmpdir, 'out')
     out_path = Path(out_dir)
     os.makedirs(out_dir, exist_ok=True)
 
@@ -452,75 +613,75 @@ def test_build_parser_02(tmp_path_factory):
     base_args = [
         data_dir,
         out_dir,
-        "participant",
-        "--mode",
-        "hbcd",
-        "--motion-filter-type",
-        "lp",
-        "--band-stop-min",
-        "10",
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
     ]
     parser_obj = parser._build_parser()
 
     opts = parser_obj.parse_args(args=base_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.despike == "auto"
+    assert opts.despike == 'auto'
 
     test_args = base_args[:]
-    test_args.extend(["--create-matrices", "all", "300", "480"])
+    test_args.extend(['--create-matrices', 'all', '300', '480'])
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths == ["all", 300, 480]
+    assert opts.correlation_lengths == ['all', '300.0', '480.0']
 
 
 @pytest.mark.parametrize(
-    "mode,combine_runs,expectation",
+    ('mode', 'combine_runs', 'expectation'),
     [
-        ("linc", "auto", False),
-        ("abcd", "auto", True),
-        ("hbcd", "auto", True),
-        ("linc", None, True),
-        ("abcd", None, True),
-        ("hbcd", None, True),
-        ("linc", "y", True),
-        ("abcd", "y", True),
-        ("hbcd", "y", True),
-        ("linc", "n", False),
-        ("abcd", "n", False),
-        ("hbcd", "n", False),
+        ('linc', 'auto', False),
+        ('abcd', 'auto', True),
+        ('hbcd', 'auto', True),
+        ('linc', None, True),
+        ('abcd', None, True),
+        ('hbcd', None, True),
+        ('linc', 'y', True),
+        ('abcd', 'y', True),
+        ('hbcd', 'y', True),
+        ('linc', 'n', False),
+        ('abcd', 'n', False),
+        ('hbcd', 'n', False),
     ],
 )
 def test_build_parser_03(tmp_path_factory, mode, combine_runs, expectation):
     """Test processing of the "combine_runs" parameter."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_03")
-    data_dir = os.path.join(tmpdir, "data")
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_03')
+    data_dir = os.path.join(tmpdir, 'data')
     os.makedirs(data_dir, exist_ok=True)
-    out_dir = os.path.join(tmpdir, "out")
+    out_dir = os.path.join(tmpdir, 'out')
     os.makedirs(out_dir, exist_ok=True)
 
     # Parameters for hbcd mode
     base_args = [
         data_dir,
         out_dir,
-        "participant",
-        "--mode",
+        'participant',
+        '--mode',
         mode,
-        "--motion-filter-type",
-        "lp",
-        "--band-stop-min",
-        "10",
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
     ]
-    if combine_runs not in ("auto", None):
-        base_args += ["--combine-runs", combine_runs]
+    if combine_runs not in ('auto', None):
+        base_args += ['--combine-runs', combine_runs]
     elif combine_runs is None:
-        base_args += ["--combine-runs"]
+        base_args += ['--combine-runs']
 
     parser_obj = parser._build_parser()
     opts = parser_obj.parse_args(args=base_args, namespace=None)
-    if combine_runs == "auto":
-        assert opts.combine_runs == "auto"
+    if combine_runs == 'auto':
+        assert opts.combine_runs == 'auto'
 
     opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser_obj)
 
@@ -528,51 +689,51 @@ def test_build_parser_03(tmp_path_factory, mode, combine_runs, expectation):
 
 
 @pytest.mark.parametrize(
-    "mode,despike,expectation",
+    ('mode', 'despike', 'expectation'),
     [
-        ("linc", "auto", True),
-        ("abcd", "auto", True),
-        ("hbcd", "auto", True),
-        ("linc", None, True),
-        ("abcd", None, True),
-        ("hbcd", None, True),
-        ("linc", "y", True),
-        ("abcd", "y", True),
-        ("hbcd", "y", True),
-        ("linc", "n", False),
-        ("abcd", "n", False),
-        ("hbcd", "n", False),
+        ('linc', 'auto', True),
+        ('abcd', 'auto', True),
+        ('hbcd', 'auto', True),
+        ('linc', None, True),
+        ('abcd', None, True),
+        ('hbcd', None, True),
+        ('linc', 'y', True),
+        ('abcd', 'y', True),
+        ('hbcd', 'y', True),
+        ('linc', 'n', False),
+        ('abcd', 'n', False),
+        ('hbcd', 'n', False),
     ],
 )
 def test_build_parser_04(tmp_path_factory, mode, despike, expectation):
     """Test processing of the "despike" parameter."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_04")
-    data_dir = os.path.join(tmpdir, "data")
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_04')
+    data_dir = os.path.join(tmpdir, 'data')
     os.makedirs(data_dir, exist_ok=True)
-    out_dir = os.path.join(tmpdir, "out")
+    out_dir = os.path.join(tmpdir, 'out')
     os.makedirs(out_dir, exist_ok=True)
 
     # Parameters for hbcd mode
     base_args = [
         data_dir,
         out_dir,
-        "participant",
-        "--mode",
+        'participant',
+        '--mode',
         mode,
-        "--motion-filter-type",
-        "lp",
-        "--band-stop-min",
-        "10",
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
     ]
-    if despike not in ("auto", None):
-        base_args += ["--despike", despike]
+    if despike not in ('auto', None):
+        base_args += ['--despike', despike]
     elif despike is None:
-        base_args += ["--despike"]
+        base_args += ['--despike']
 
     parser_obj = parser._build_parser()
     opts = parser_obj.parse_args(args=base_args, namespace=None)
-    if despike == "auto":
-        assert opts.despike == "auto"
+    if despike == 'auto':
+        assert opts.despike == 'auto'
     else:
         assert opts.despike is expectation
 
@@ -582,53 +743,53 @@ def test_build_parser_04(tmp_path_factory, mode, despike, expectation):
 
 
 @pytest.mark.parametrize(
-    "mode,process_surfaces,expectation",
+    ('mode', 'process_surfaces', 'expectation'),
     [
-        ("linc", "auto", False),
-        ("abcd", "auto", True),
-        ("hbcd", "auto", True),
-        ("linc", None, True),
-        ("abcd", None, True),
-        ("hbcd", None, True),
-        ("linc", "y", True),
-        ("abcd", "y", True),
-        ("hbcd", "y", True),
-        ("linc", "n", False),
-        ("abcd", "n", False),
-        ("hbcd", "n", False),
+        ('linc', 'auto', False),
+        ('abcd', 'auto', True),
+        ('hbcd', 'auto', True),
+        ('linc', None, True),
+        ('abcd', None, True),
+        ('hbcd', None, True),
+        ('linc', 'y', True),
+        ('abcd', 'y', True),
+        ('hbcd', 'y', True),
+        ('linc', 'n', False),
+        ('abcd', 'n', False),
+        ('hbcd', 'n', False),
     ],
 )
 def test_build_parser_05(tmp_path_factory, mode, process_surfaces, expectation):
     """Test processing of the "process_surfaces" parameter."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_05")
-    data_dir = os.path.join(tmpdir, "data")
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_05')
+    data_dir = os.path.join(tmpdir, 'data')
     os.makedirs(data_dir, exist_ok=True)
-    out_dir = os.path.join(tmpdir, "out")
+    out_dir = os.path.join(tmpdir, 'out')
     os.makedirs(out_dir, exist_ok=True)
 
     # Parameters for hbcd mode
     base_args = [
         data_dir,
         out_dir,
-        "participant",
-        "--mode",
+        'participant',
+        '--mode',
         mode,
-        "--motion-filter-type",
-        "lp",
-        "--band-stop-min",
-        "10",
-        "--file-format",
-        "cifti",
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--file-format',
+        'cifti',
     ]
-    if process_surfaces not in ("auto", None):
-        base_args += ["--warp-surfaces-native2std", process_surfaces]
+    if process_surfaces not in ('auto', None):
+        base_args += ['--warp-surfaces-native2std', process_surfaces]
     elif process_surfaces is None:
-        base_args += ["--warp-surfaces-native2std"]
+        base_args += ['--warp-surfaces-native2std']
 
     parser_obj = parser._build_parser()
     opts = parser_obj.parse_args(args=base_args, namespace=None)
-    if process_surfaces == "auto":
-        assert opts.process_surfaces == "auto"
+    if process_surfaces == 'auto':
+        assert opts.process_surfaces == 'auto'
 
     opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser_obj)
 
@@ -636,49 +797,273 @@ def test_build_parser_05(tmp_path_factory, mode, process_surfaces, expectation):
 
 
 @pytest.mark.parametrize(
-    "mode,file_format,expectation",
+    ('mode', 'file_format', 'expectation'),
     [
-        ("linc", "auto", "cifti"),
-        ("abcd", "auto", "cifti"),
-        ("hbcd", "auto", "cifti"),
-        ("linc", "nifti", "nifti"),
-        ("abcd", "nifti", "nifti"),
-        ("hbcd", "nifti", "nifti"),
-        ("linc", "cifti", "cifti"),
-        ("abcd", "cifti", "cifti"),
-        ("hbcd", "cifti", "cifti"),
+        ('linc', 'auto', 'cifti'),
+        ('abcd', 'auto', 'cifti'),
+        ('hbcd', 'auto', 'cifti'),
+        ('linc', 'nifti', 'nifti'),
+        ('abcd', 'nifti', 'nifti'),
+        ('hbcd', 'nifti', 'nifti'),
+        ('linc', 'cifti', 'cifti'),
+        ('abcd', 'cifti', 'cifti'),
+        ('hbcd', 'cifti', 'cifti'),
     ],
 )
 def test_build_parser_06(tmp_path_factory, mode, file_format, expectation):
     """Test processing of the "file_format" parameter."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_06")
-    data_dir = os.path.join(tmpdir, "data")
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_06')
+    data_dir = os.path.join(tmpdir, 'data')
     os.makedirs(data_dir, exist_ok=True)
-    out_dir = os.path.join(tmpdir, "out")
+    out_dir = os.path.join(tmpdir, 'out')
     os.makedirs(out_dir, exist_ok=True)
 
     # Parameters for hbcd mode
     base_args = [
         data_dir,
         out_dir,
-        "participant",
-        "--mode",
+        'participant',
+        '--mode',
         mode,
-        "--motion-filter-type",
-        "lp",
-        "--band-stop-min",
-        "10",
-        "--warp-surfaces-native2std",
-        "n",
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--warp-surfaces-native2std',
+        'n',
     ]
-    if file_format != "auto":
-        base_args += ["--file-format", file_format]
+    if file_format != 'auto':
+        base_args += ['--file-format', file_format]
 
     parser_obj = parser._build_parser()
     opts = parser_obj.parse_args(args=base_args, namespace=None)
-    if file_format == "auto":
-        assert opts.file_format == "auto"
+    if file_format == 'auto':
+        assert opts.file_format == 'auto'
 
     opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser_obj)
 
     assert opts.file_format == expectation
+
+
+def test_parse_args_01(tmp_path_factory):
+    """Test parser._build_parser with nibabies input type and one-to-all mapping."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_01')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        str(bids_dir),
+        str(out_dir),
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+        '--work-dir',
+        str(tmpdir / 'work'),
+    ]
+    parser.parse_args(args=base_args, namespace=None)
+
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [['01', '', ['V02', 'V03', 'V04']]]
+    _reset_config()
+
+
+def test_parse_args_02(tmp_path_factory):
+    """Test parser._build_parser with nibabies input type and one-to-one mapping."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_02')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        str(bids_dir),
+        str(out_dir),
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+        '--work-dir',
+        str(tmpdir / 'work'),
+    ]
+    parser.parse_args(args=base_args, namespace=None)
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [
+        ['01', 'V02', ['V02']],
+        ['01', 'V03', ['V03']],
+        ['01', 'V04', ['V04']],
+    ]
+    _reset_config()
+
+
+def test_parse_args_03(tmp_path_factory):
+    """Test parser._build_parser with nibabies input type and one-anat-session mapping."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_anat_session.yml')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_03')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        str(bids_dir),
+        str(out_dir),
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+        '--work-dir',
+        str(tmpdir / 'work'),
+    ]
+    parser.parse_args(args=base_args, namespace=None)
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [['01', 'V02', ['V02', 'V03', 'V04']]]
+    _reset_config()
+
+
+def test_parse_args_04(tmp_path_factory):
+    """Test parser._build_parser with a participant-level T1w and session-level T2ws.
+
+    The participant-level anatomical data should be used for all sessions,
+    even though some sessions have their own T2w images.
+    See https://github.com/PennLINC/xcp_d/issues/1637.
+    """
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_session_t2w.yml')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_04')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        str(bids_dir),
+        str(out_dir),
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+        '--work-dir',
+        str(tmpdir / 'work'),
+    ]
+    parser.parse_args(args=base_args, namespace=None)
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [['01', '', ['V02', 'V03', 'V04']]]
+    _reset_config()
+
+
+def test_validate_parameters_skip_alff(base_opts, base_parser):
+    """Test parser._validate_parameters with --skip alff option."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['alff']
+    opts.bandpass_filter = True
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert 'alff' in opts.skip_outputs
+
+
+def test_validate_parameters_skip_reho(base_opts, base_parser):
+    """Test parser._validate_parameters with --skip reho option."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['reho']
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert 'reho' in opts.skip_outputs
+
+
+def test_validate_parameters_skip_parcellation(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters with --skip parcellation option."""
+    caplog.set_level(logging.INFO)
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['parcellation']
+    opts.atlases = ['Glasser', 'Gordon']
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.atlases == []
+    assert 'Skipping parcellation as requested' in caplog.text
+
+
+def test_validate_parameters_skip_connectivity(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters with --skip connectivity option."""
+    caplog.set_level(logging.INFO)
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['connectivity']
+    opts.atlases = ['Glasser']
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.atlases == ['Glasser']  # Atlases preserved for time series extraction
+    assert opts.correlation_lengths == []  # correlation_lengths set to empty
+    assert 'Skipping connectivity as requested' in caplog.text
+
+
+def test_validate_parameters_skip_multiple(base_opts, base_parser):
+    """Test parser._validate_parameters with multiple --skip options."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['alff', 'reho', 'connectivity']
+    opts.atlases = ['Glasser']
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert 'alff' in opts.skip_outputs
+    assert 'reho' in opts.skip_outputs
+    assert 'connectivity' in opts.skip_outputs
+    assert opts.atlases == ['Glasser']  # Atlases preserved for time series extraction
+    assert opts.correlation_lengths == []  # correlation_lengths set to empty
+
+
+def test_validate_parameters_skip_empty_list(base_opts, base_parser):
+    """Test parser._validate_parameters with empty skip_outputs list."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = []
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.skip_outputs == []
+    assert opts.atlases == ['Glasser']  # Should not be modified
+
+
+def test_validate_parameters_skip_parcellation_no_atlases(base_opts, base_parser):
+    """Test parser._validate_parameters with --skip parcellation when no atlases set."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['parcellation']
+    opts.atlases = []
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.atlases == []
+    # Should not log anything since atlases is already empty
