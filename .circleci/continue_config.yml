@@ -452,7 +452,14 @@ jobs:
           cpus: << parameters.cpus >>
 
   unit_tests:
+    # Run as two parallel jobs (see the run_tests workflow) so neither is
+    # longer than ds001419_cifti: the test_workflows_*.py files take about
+    # half of the suite's runtime, and every other test file the other half.
     <<: *machine_defaults
+    parameters:
+      group:
+        type: enum
+        enum: [workflows, other]
     steps:
       - checkout:
           path: /tmp/src/xcp_d
@@ -465,13 +472,18 @@ jobs:
             fi
       - restore_build_and_data
       - run:
-          name: Run pytest on tests directory
+          name: Run pytest on tests directory (<< parameters.group >>)
           no_output_timeout: 1h
           command: |
+            if [[ "<< parameters.group >>" == "workflows" ]]; then
+              SELECT_TESTS=(-o "python_files=test_workflows_*.py")
+            else
+              SELECT_TESTS=(--ignore-glob="*/test_workflows_*.py")
+            fi
             mkdir -p /tmp/out /tmp/work /tmp/coverage
             docker run --rm=false \
               -e CIRCLE_CPUS=4 \
-              -e COVERAGE_FILE=/coverage/.coverage.unit_tests \
+              -e COVERAGE_FILE=/coverage/.coverage.unit_tests_<< parameters.group >> \
               -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
               -v /tmp/data:/data \
               -v /tmp/out:/out \
@@ -480,14 +492,15 @@ jobs:
               -w /tmp/src/xcp_d \
               --entrypoint pytest \
               pennlinc/xcp_d:test \
-              --strict-markers --strict-config --durations=0 \
+              --strict-markers --strict-config --durations=25 \
+              "${SELECT_TESTS[@]}" \
               --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
               --data_dir=/data --output_dir=/out --working_dir=/work \
               xcp_d
       - persist_to_workspace:
           root: /tmp/coverage
           paths:
-            - .coverage.unit_tests
+            - .coverage.unit_tests_<< parameters.group >>
       - store_artifacts:
           path: /tmp/out
 
@@ -569,6 +582,10 @@ workflows:
           filters: *default_filters
 
       - unit_tests:
+          name: unit_tests_<< matrix.group >>
+          matrix:
+            parameters:
+              group: [workflows, other]
           requires:
             - image_prep
             - get_data
@@ -584,7 +601,8 @@ workflows:
             - fmriprep_without_freesurfer
             - fmriprep_without_freesurfer_with_main
             - nibabies
-            - unit_tests
+            - unit_tests_workflows
+            - unit_tests_other
           filters: *default_filters
 
   deploy:
