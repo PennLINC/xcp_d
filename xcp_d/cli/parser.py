@@ -1070,29 +1070,26 @@ def parse_args(args=None, namespace=None):
             suffix=['bold'],
         )
 
-        # Participant-level (session-less) anatomical data are shared across sessions
-        participant_anats = config.execution.layout.get(
-            subject=subject_id,
-            session=Query.NONE,
-            suffix=['T1w', 'T2w'],
-            extension=['.nii.gz', '.nii'],
-        )
-
         # If there are no sessions, there is only one option:
         if not func_sessions:
             processing_groups.append([subject_id, '', []])
-        elif participant_anats:
-            # Use the participant-level anatomical data for all functional sessions,
-            # even if some sessions also have session-level anatomical data.
-            processing_groups.append([subject_id, '', func_sessions])
         else:
+            # Participant-level (session-less) anatomical data are shared across sessions
+            participant_anats = config.execution.layout.get(
+                subject=subject_id,
+                session=Query.NONE,
+                suffix=['T1w', 'T2w'],
+                extension=['.nii.gz', '.nii'],
+            )
             anat_sessions = config.execution.layout.get_sessions(
                 subject=subject_id,
                 session=session_filters or Query.OPTIONAL,
                 suffix=['T1w', 'T2w'],
                 extension=['.nii.gz', '.nii'],
             )
-            if not anat_sessions:
+            if participant_anats or not anat_sessions:
+                # Use the participant-level anatomical data for all functional sessions,
+                # even if some sessions also have session-level anatomical data.
                 processing_groups.append([subject_id, '', func_sessions])
             else:
                 func_only = sorted(set(func_sessions) - set(anat_sessions))
