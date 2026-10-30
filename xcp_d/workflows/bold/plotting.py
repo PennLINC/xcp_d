@@ -262,6 +262,9 @@ def init_qc_report_wf(
         ])  # fmt:skip
 
     if config.workflow.linc_qc:
+        # Measured peak memory is about 2.5x the BOLD size for NIfTI data and 5x for CIFTI data,
+        # mostly from computing DVARS. Both include ~10% headroom.
+        linc_qc_mem_gb = (2.8 if config.workflow.file_format == 'nifti' else 5.5) * mem_gb['bold']
         make_linc_qc = pe.Node(
             LINCQC(
                 TR=TR,
@@ -269,7 +272,7 @@ def init_qc_report_wf(
                 template_mask=nlin2009casym_brain_mask,
             ),
             name='make_linc_qc',
-            mem_gb=2 * mem_gb['bold'],
+            mem_gb=linc_qc_mem_gb,
         )
         workflow.connect([
             (inputnode, make_linc_qc, [

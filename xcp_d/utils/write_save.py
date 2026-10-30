@@ -33,18 +33,18 @@ def read_ndata(datafile, maskfile=None):
     Outputs
     -------
     data : (SxT) :obj:`numpy.ndarray`
-        Vertices or voxels by timepoints.
+        Vertices or voxels by timepoints, as float32.
     """
     # read cifti series
     cifti_extensions = ['.dtseries.nii', '.dlabel.nii', '.ptseries.nii', '.dscalar.nii']
     if any(datafile.endswith(ext) for ext in cifti_extensions):
-        data = nb.load(datafile).get_fdata()
+        data = nb.load(datafile).get_fdata(dtype=np.float32)
 
     # or nifti data, mask is required
     elif datafile.endswith('.nii.gz'):
         if maskfile is None:
             raise ValueError('Input `maskfile` must be provided if `datafile` is a nifti.')
-        data = masking.apply_mask(datafile, maskfile)
+        data = masking.apply_mask(datafile, maskfile, dtype=np.float32)
 
     else:
         raise ValueError(f'Unknown extension for {datafile}')
@@ -106,6 +106,8 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     Notes
     -----
     This function currently only works for NIfTIs and .dtseries.nii and .dscalar.nii CIFTIs.
+
+    The data are always written as float32.
     """
     if data_matrix.ndim not in (1, 2):
         raise ValueError(f'Input data must be a 1-2D array, not {data_matrix.ndim}.')
@@ -127,7 +129,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         raise ValueError(f'Unknown extension for {template}')
 
     # transpose from SxT to TxS
-    data_matrix = data_matrix.T
+    data_matrix = data_matrix.T.astype(np.float32, copy=False)
 
     if file_format == 'cifti':
         # write cifti series
@@ -178,10 +180,11 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         # Modify the intent code
         target_intent = cifti_intents[out_extension]
         img.nifti_header.set_intent(target_intent)
+        img.nifti_header.set_data_dtype(np.float32)
 
     else:
         # write nifti series
-        img = masking.unmask(data_matrix.astype(np.float32), mask)
+        img = masking.unmask(data_matrix, mask)
         # we'll override the default TR (1) in the header
         pixdim = list(img.header.get_zooms())
         pixdim[3] = TR
@@ -286,7 +289,10 @@ def read_gii(surf_gii):
     bold_data = nb.load(surf_gii)  # load the gifti
     gifti_data = bold_data.agg_data()  # aggregate the data
     if not hasattr(gifti_data, '__shape__'):  # if it doesn't have 'shape', reshape
-        gifti_data = np.zeros((len(bold_data.darrays[0].data), len(bold_data.darrays)))
+        gifti_data = np.zeros(
+            (len(bold_data.darrays[0].data), len(bold_data.darrays)),
+            dtype=np.float32,
+        )
         for arr in range(len(bold_data.darrays)):
             gifti_data[:, arr] = bold_data.darrays[arr].data
     return gifti_data

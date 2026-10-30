@@ -75,14 +75,14 @@ class NiftiParcellate(SimpleInterface):
         full_parcel_mapper = {v: k for k, v in enumerate(node_labels_df['index'].tolist())}
         masker_lut = node_labels_df.copy()
         masker_lut = masker_lut[['index', 'name']]
-        atlas_values = np.unique(atlas_img.get_fdata())
+        atlas_values = np.unique(atlas_img.get_fdata(dtype=np.float32))
         atlas_values = atlas_values[atlas_values != 0]
         atlas_values = atlas_values.astype(int)
         masker_lut = masker_lut.loc[masker_lut['index'].isin(atlas_values)].reset_index(drop=True)
 
         # Before anything, we need to measure coverage
         atlas_img_bin = nb.Nifti1Image(
-            (atlas_img.get_fdata() > 0).astype(np.uint8),
+            (atlas_img.get_fdata(dtype=np.float32) > 0).astype(np.uint8),
             atlas_img.affine,
             atlas_img.header,
         )
@@ -156,6 +156,7 @@ class NiftiParcellate(SimpleInterface):
             standardize=False,
             resampling_target=None,  # they should be in the same space/resolution already
             keep_masked_labels=True,
+            dtype=np.float32,
         )
 
         # Use nilearn to parcellate the file
@@ -249,8 +250,11 @@ class _TSVConnectOutputSpec(TraitedSpec):
 
 
 def correlate_timeseries(timeseries, temporal_mask):
-    """Correlate timeseries stored in a TSV file."""
-    timeseries_df = pd.read_table(timeseries)
+    """Correlate timeseries stored in a TSV file.
+
+    The time series are read, and the correlations are returned, as float32.
+    """
+    timeseries_df = pd.read_table(timeseries, dtype=np.float32)
     correlations_exact = {}
     if isdefined(temporal_mask):
         censoring_df = pd.read_table(temporal_mask)
@@ -267,11 +271,11 @@ def correlate_timeseries(timeseries, temporal_mask):
         exact_columns = [c for c in censoring_df.columns if c.startswith('exact_')]
         for exact_column in exact_columns:
             exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
-            exact_correlations_df = exact_timeseries_df.corr()
+            exact_correlations_df = exact_timeseries_df.corr().astype(np.float32)
             correlations_exact[exact_column] = exact_correlations_df
 
     # Create correlation matrix from low-motion volumes only
-    correlations_df = timeseries_df.corr()
+    correlations_df = timeseries_df.corr().astype(np.float32)
 
     return correlations_df, correlations_exact
 
@@ -597,14 +601,18 @@ class CiftiToTSV(SimpleInterface):
             ax1 = img.header.get_axis(1)
             ax0_labels = ax0.name
             ax1_labels = ax1.name
-            df = pd.DataFrame(columns=ax1_labels, index=ax0_labels, data=img.get_fdata())
+            df = pd.DataFrame(
+                columns=ax1_labels,
+                index=ax0_labels,
+                data=img.get_fdata(dtype=np.float32),
+            )
             check_axes = [0, 1]
         else:
             # Second axis is the parcels
             ax1 = img.header.get_axis(1)
             if not isinstance(ax1, nb.cifti2.ParcelsAxis):
                 raise TypeError(f'Expected ParcelsAxis, got {type(ax1)}')
-            df = pd.DataFrame(columns=ax1.name, data=img.get_fdata())
+            df = pd.DataFrame(columns=ax1.name, data=img.get_fdata(dtype=np.float32))
             check_axes = [1]
 
         # Check that all node labels in the CIFTI are present in the TSV, and vice versa.
@@ -712,8 +720,8 @@ class CiftiMask(SimpleInterface):
                 f'{in_file} ({in_img.shape}) vs {mask} ({mask_img.shape})'
             )
 
-        in_data = in_img.get_fdata()
-        mask_data = mask_img.get_fdata()[0, :]
+        in_data = in_img.get_fdata(dtype=np.float32)
+        mask_data = mask_img.get_fdata(dtype=np.float32)[0, :]
         mask_data = mask_data.astype(bool)
         in_data[:, ~mask_data] = np.nan
 
@@ -751,7 +759,7 @@ class CiftiVertexMask(SimpleInterface):
         data_file = self.inputs.in_file
 
         data_img = nb.load(data_file)
-        data_arr = data_img.get_fdata()
+        data_arr = data_img.get_fdata(dtype=np.float32)
 
         # Flag vertices where the time series is all zeros or NaNs
         bad_vertices_idx = np.where(
