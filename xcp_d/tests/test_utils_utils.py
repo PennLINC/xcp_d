@@ -1227,3 +1227,122 @@ def test_correlate_timeseries_xdf_empty_feature():
 
     assert np.isnan(out['r'][2, 2])
     assert np.all(np.diag(out['r'])[:2] == 1)
+
+
+@pytest.mark.parametrize(
+    ('method', 'methodparam'),
+    [('truncate', 5), ('tukey', ''), ('tukey', 7)],
+)
+def test_correlate_timeseries_xdf_regularization(method, methodparam):
+    """Check the non-adaptive regularization methods."""
+    arr, temporal_mask = _make_xdf_data()
+    retained = ~temporal_mask.astype(bool)
+    expected_r = np.corrcoef(arr[:, retained])
+    arr[:, ~retained] = np.nan
+
+    out = utils.correlate_timeseries_xdf(
+        arr,
+        temporal_mask,
+        method=method,
+        methodparam=methodparam,
+    )
+    # Regularization only affects the variance, not the correlations
+    np.testing.assert_allclose(out['r'], expected_r, atol=1e-10)
+    offdiag = ~np.eye(3, dtype=bool)
+    assert np.all(out['var_r'][offdiag] > 0)
+    np.testing.assert_allclose(out['var_r'], out['var_r'].T)
+    np.testing.assert_allclose(
+        out['var_z'][offdiag],
+        (out['var_r'] / (1 - out['r'] ** 2) ** 2)[offdiag],
+    )
+
+
+@pytest.mark.parametrize(
+    ('kwargs', 'match'),
+    [
+        ({'method': 'fake'}, 'must be either "tukey" or "truncate"'),
+        ({'methodparam': 'fake'}, 'must be "adaptive" or an integer'),
+        ({'methodparam': 2.5}, 'should be either str or int'),
+    ],
+)
+def test_correlate_timeseries_xdf_invalid_regularization(kwargs, match):
+    """Check that invalid regularization parameters raise errors."""
+    arr, temporal_mask = _make_xdf_data()
+    with pytest.raises(ValueError, match=match):
+        utils.correlate_timeseries_xdf(arr, temporal_mask, **kwargs)
+
+
+def test_correlate_timeseries_xdf_limit_variance():
+    """Check that variances below the white-noise variance are raised to it.
+
+    Pairs with opposite-sign autocorrelation have a smaller variance than white noise.
+    """
+    rng = np.random.default_rng(0)
+    eps = rng.normal(size=(3, 60))
+    arr = np.zeros_like(eps)
+    arr[:, 0] = eps[:, 0]
+    for t in range(1, 60):
+        arr[:, t] = np.array([0.7, -0.7, 0.7]) * arr[:, t - 1] + eps[:, t]
+
+    temporal_mask = np.zeros(60, dtype=int)
+    unlimited = utils.correlate_timeseries_xdf(arr.copy(), temporal_mask, limit_variance=False)
+    limited = utils.correlate_timeseries_xdf(arr.copy(), temporal_mask, limit_variance=True)
+
+    offdiag = ~np.eye(3, dtype=bool)
+    below = (unlimited['var_r'] < unlimited['varlimit']) & offdiag
+    assert below.any()
+    np.testing.assert_allclose(limited['var_r'][below], limited['varlimit'][below])
+    np.testing.assert_allclose(
+        limited['var_r'][offdiag & ~below],
+        unlimited['var_r'][offdiag & ~below],
+    )
+
+
+def test_correlate_timeseries_invalid_mask(tmp_path):
+    """Check that correlate_timeseries rejects mismatched temporal masks."""
+    arr, temporal_mask = _make_xdf_data()
+    timeseries = tmp_path / 'timeseries.tsv'
+    pd.DataFrame(arr.T, columns=['a', 'b', 'c']).to_csv(timeseries, sep='\t', index=False)
+
+    with pytest.raises(ValueError, match='must be 1D'):
+        utils.correlate_timeseries(str(timeseries), temporal_mask[:, None])
+
+    with pytest.raises(ValueError, match='same number of rows'):
+        utils.correlate_timeseries(str(timeseries), temporal_mask[:-1])
+
+
+def test_taper_helpers():
+    """Check tukeytaperme, curbtaperme, and shrinkme on small inputs."""
+    ac = np.linspace(1, 0.1, 10)
+
+    # curbtaperme keeps the first M lags
+    np.testing.assert_array_equal(
+        utils.curbtaperme(ac, 3),
+        np.concatenate((ac[:3], np.zeros(7))),
+    )
+
+    # tukeytaperme weights lag k (k < M) by (1 + cos(pi * k / M)) / 2
+    expected = np.zeros(10)
+    expected[:3] = ac[:3] * (1 + np.cos(np.arange(1, 4) * np.pi / 4)) / 2
+    np.testing.assert_allclose(utils.tukeytaperme(ac, 10, 4), expected)
+    ac_2d = np.vstack((ac, 2 * ac))
+    np.testing.assert_allclose(
+        utils.tukeytaperme(ac_2d, 10, 4),
+        np.vstack((expected, 2 * expected)),
+    )
+    np.testing.assert_allclose(
+        utils.tukeytaperme(np.stack((ac_2d, ac_2d)), 10, 4),
+        np.stack((np.vstack((expected, 2 * expected)),) * 2),
+    )
+    with pytest.raises(ValueError, match='something wrong'):
+        utils.tukeytaperme(ac, 11, 4)
+
+    # shrinkme cuts each row at its first lag inside +/- 1.96 / sqrt(T)
+    ac_rows = np.array([[1, 0.5, 0.1, 0.05], [0.9, 0.8, 0.6, 0.01]])
+    masked, breakpoints = utils.shrinkme(ac_rows, 4)
+    np.testing.assert_array_equal(masked, [[1, 0, 0, 0], [0, 0, 0, 0]])
+    np.testing.assert_array_equal(breakpoints, [1, 0])
+    # Input with lags along the first axis is transposed
+    masked_t, breakpoints_t = utils.shrinkme(ac_rows.T, 4)
+    np.testing.assert_array_equal(masked_t, masked)
+    np.testing.assert_array_equal(breakpoints_t, breakpoints)
