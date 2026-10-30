@@ -420,6 +420,36 @@ def test_collect_data_longitudinal_one_to_all(tmp_path_factory, caplog):
     assert 'T1w found, but no T2w. Enabling T1w-only processing.' in caplog.text
 
 
+def test_collect_data_longitudinal_session_t2w(tmp_path_factory, caplog):
+    """Test that XCP-D uses the participant-level T1w when some sessions have T2ws.
+
+    See https://github.com/PennLINC/xcp_d/issues/1637.
+    """
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_session_t2w.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_data_longitudinal_session_t2w') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    subj_data = xbids.collect_data(
+        layout=layout,
+        input_type='nibabies',
+        participant_label='01',
+        bids_filters=None,
+        file_format='cifti',
+        anat_session=Query.NONE,
+        func_sessions=['V02', 'V03', 'V04'],
+    )
+    assert subj_data['t1w'] is not None
+    assert 'ses-' not in os.path.basename(subj_data['t1w'])
+    assert subj_data['t2w'] is None
+    assert subj_data['anat_brainmask'] is not None
+    assert 'T1w found, but no T2w. Enabling T1w-only processing.' in caplog.text
+
+
 def test_collect_data_longitudinal_one_to_one(tmp_path_factory, caplog):
     """Test that XCP-D works on a longitudinal dataset with one anat for each session."""
     skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
