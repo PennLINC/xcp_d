@@ -18,11 +18,22 @@ def _load_confounds_spec(name: str) -> dict:
     return yaml.safe_load(conf_path.read_text())
 
 
-def _build_layout_from_skeleton(tmp_path_factory, skeleton_relpath: str) -> BIDSLayout:
-    """Generate a temporary BIDS directory from a skeleton and return a BIDSLayout."""
+def _build_layout_from_skeleton(
+    tmp_path_factory,
+    skeleton_relpath: str,
+    remove_files: list[str] | None = None,
+) -> BIDSLayout:
+    """Generate a temporary BIDS directory from a skeleton and return a BIDSLayout.
+
+    Files in ``remove_files`` (paths relative to the BIDS directory) are deleted
+    before the layout is indexed.
+    """
     bids_dir = tmp_path_factory.mktemp(Path(skeleton_relpath).stem) / 'bids'
     skeleton = load_data(f'tests/skeletons/{skeleton_relpath}')
     generate_bids_skeleton(str(bids_dir), str(skeleton))
+    for remove_file in remove_files or []:
+        (bids_dir / remove_file).unlink()
+
     xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
     layout = BIDSLayout(bids_dir, validate=False, config=['bids', 'derivatives', xcp_d_config])
     return layout
@@ -88,6 +99,82 @@ def test_collect_confounds_mixed_acq_runs(tmp_path_factory):
             assert 'acq-3echo' in conf_base
         else:
             assert 'acq-3echo' not in conf_base
+
+
+def test_collect_confounds_mixed_part_runs(tmp_path_factory):
+    """Two runs: one without part, one with part-mag; confounds should match entities.
+
+    part is not one of the run-identifying entities, so the first query finds both confounds
+    files and the entities the BOLD file lacks are set to Query.NONE in a second query.
+    """
+    layout = _build_layout_from_skeleton(tmp_path_factory, 'confounds_part_mixed.yml')
+    confounds_spec = _load_confounds_spec('36P')
+
+    bold_files = sorted(_get_bold_preproc_files(layout))
+    assert len(bold_files) == 2
+
+    for bf in bold_files:
+        confounds = xbids.collect_confounds(
+            bold_file=bf,
+            preproc_dataset=layout,
+            derivatives_datasets=None,
+            confound_spec=confounds_spec,
+        )
+        conf_base = os.path.basename(confounds['preproc_confounds']['file'])
+        bold_base = os.path.basename(bf)
+        if 'part-mag' in bold_base:
+            assert 'part-mag' in conf_base
+        else:
+            assert 'part-mag' not in conf_base
+
+
+def test_collect_confounds_sibling_runs(tmp_path_factory):
+    """Each run gets its own confounds, not those of a sibling run with an extra entity.
+
+    Regression test for https://github.com/PennLINC/xcp_d/issues/1647.
+    """
+    layout = _build_layout_from_skeleton(tmp_path_factory, 'sibling_runs.yml')
+    confounds_spec = _load_confounds_spec('36P')
+
+    bold_files = layout.get(return_type='file', suffix='bold', extension='.dtseries.nii')
+    assert len(bold_files) == 12
+
+    for bf in bold_files:
+        confounds = xbids.collect_confounds(
+            bold_file=bf,
+            preproc_dataset=layout,
+            derivatives_datasets=None,
+            confound_spec=confounds_spec,
+        )
+        conf_base = os.path.basename(confounds['preproc_confounds']['file'])
+        bold_prefix = os.path.basename(bf).split('_space-')[0]
+        assert conf_base == f'{bold_prefix}_desc-confounds_timeseries.tsv'
+
+
+@pytest.mark.parametrize(
+    'run',
+    ['task-rest_run-01', 'task-sst', 'task-mid', 'task-gng', 'task-nback', 'task-faces'],
+)
+def test_collect_confounds_sibling_runs_missing_file(tmp_path_factory, run):
+    """A run missing its own confounds raises an error instead of using a sibling run's file.
+
+    Each run lacks an entity (e.g., acq) that its sibling run in the skeleton has.
+    Regression test for https://github.com/PennLINC/xcp_d/issues/1647.
+    """
+    prefix = f'sub-01/ses-1/func/sub-01_ses-1_{run}'
+    layout = _build_layout_from_skeleton(
+        tmp_path_factory,
+        'sibling_runs.yml',
+        remove_files=[f'{prefix}_desc-confounds_timeseries.tsv'],
+    )
+    confounds_spec = _load_confounds_spec('36P')
+    with pytest.raises(FileNotFoundError, match='Could not find confound file'):
+        xbids.collect_confounds(
+            bold_file=layout.get_file(f'{prefix}_space-fsLR_den-91k_bold.dtseries.nii').path,
+            preproc_dataset=layout,
+            derivatives_datasets=None,
+            confound_spec=confounds_spec,
+        )
 
 
 def test_collect_confounds_missing_dataset_raises(tmp_path_factory):
