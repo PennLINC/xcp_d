@@ -1035,9 +1035,9 @@ def correlate_timeseries_xdf(
         A dictionary containing the following keys:
         -   "r": IxI array of correlation coefficients.
         -   "z": IxI array of z-transformed correlation coefficients.
-        -   "r_var": IxI array of variance of correlation coefficient between corresponding
+        -   "var_r": IxI array of variance of correlation coefficient between corresponding
             elements, with the diagonal set to 0.
-        -   "z_var": IxI array of variance of z-transformed correlation coefficient between
+        -   "var_z": IxI array of variance of z-transformed correlation coefficient between
             corresponding elements, with the diagonal set to 0.
         -   "varlimit": Theoretical variance under x & y are i.i.d; (1-rho^2)^2.
         -   "varlimit_idx": Index of (i,j) edges of which their variance exceeded the theoretical
@@ -1046,15 +1046,22 @@ def correlate_timeseries_xdf(
     Notes
     -----
     Per :footcite:t:`afyouni2019effective`, method="truncate" + methodparam="adaptive" works best.
+
+    This implements scrubbing-aware xDF, following Christina Chen's reference implementation
+    (https://github.com/christinachen94/scrubbing-aware-xDF).
+    Lagged auto- and cross-correlations are averaged over pairs of retained volumes,
+    adaptive truncation compares the autocorrelations (from lag 1) against
+    N(0, 1 / (T - 1)) and truncates the cross-correlations at the same lag,
+    and the variance is computed with the lag-sum form of the xDF formula,
+    weighting each lag by the number of retained pairs at that lag.
     """
     from itertools import combinations
 
     import scipy.signal as ss
-    from scipy.linalg import toeplitz
 
     n_features, n_samples = arr.shape
     time_idx = np.arange(temporal_mask.size)
-    scrubbed_frames = time_idx[temporal_mask == 0]
+    scrubbed_frames = time_idx[np.asarray(temporal_mask).astype(bool)]
     n_retained_samples = n_samples - scrubbed_frames.size
 
     arr = arr - np.nanmean(arr, axis=1)[:, None]
@@ -1082,6 +1089,8 @@ def correlate_timeseries_xdf(
         )
         / norms
     )
+    # Drop lag 0, so autocorrelations and cross-correlations both start at lag 1
+    ac = ac[:, 1:]
 
     # Calculate cross-correlation
     xc = np.zeros((n_features, n_features, 2 * n_samples - 1))
@@ -1124,13 +1133,13 @@ def correlate_timeseries_xdf(
 
             LOGGER.info('AC regularization: adaptive truncation')
 
-            ac, bp = shrinkme(ac, n_samples)
+            ac, bp = shrinkme(ac, n_samples - 1)
 
-            for i in np.arange(n_features):
-                for j in np.arange(n_features):
-                    maxBP = np.max([bp[i], bp[j]])
-                    xc_p[i, j, :] = curbtaperme(ac=xc_p[i, j, :], M=maxBP)
-                    xc_n[i, j, :] = curbtaperme(ac=xc_n[i, j, :], M=maxBP)
+            # Truncate each pair's cross-correlations at the larger of the two breakpoints
+            max_bp = np.maximum(bp[:, None], bp[None, :])
+            xc_mask = np.arange(n_samples - 1)[None, None, :] < max_bp[:, :, None]
+            xc_p = xc_p * xc_mask
+            xc_n = xc_n * xc_mask
 
         elif isinstance(methodparam, int):  # Non-adaptive truncation
             LOGGER.info(f'AC regularization: non-adaptive truncation on M = {methodparam}')
@@ -1143,38 +1152,20 @@ def correlate_timeseries_xdf(
     else:
         raise ValueError('Method parameter must be either "tukey" or "truncate".')
 
-    # Estimate variance (big formula)
+    # Estimate variance (big formula), in its lag-sum form.
+    # Each lag is weighted by the number of pairs of retained volumes at that lag.
+    weights = np.array(n_pairs[1:])
     var_hat_rho = np.zeros((n_features, n_features))
-
-    for i, j in zip(triu_idx_x, triu_idx_y, strict=False):
-        r = rho[i, j]
-
-        Sigx = toeplitz(ac[i, :])
-        Sigy = toeplitz(ac[j, :])
-
-        Sigx = np.delete(Sigx, scrubbed_frames, axis=0)
-        Sigx = np.delete(Sigx, scrubbed_frames, axis=1)
-        Sigy = np.delete(Sigy, scrubbed_frames, axis=0)
-        Sigy = np.delete(Sigy, scrubbed_frames, axis=1)
-
-        Sigxy = np.triu(toeplitz(np.insert(xc_p[i, j, :], 0, r)), k=1) + np.tril(
-            toeplitz(np.insert(xc_n[i, j, :], 0, r))
-        )
-        Sigxy = np.delete(Sigxy, scrubbed_frames, axis=0)
-        Sigxy = np.delete(Sigxy, scrubbed_frames, axis=1)
-        Sigyx = np.transpose(Sigxy)
-
-        var_hat_rho[i, j] = (
-            (r**2 / 2) * np.trace(Sigx @ Sigx)
-            + (r**2 / 2) * np.trace(Sigy @ Sigy)
-            + r**2 * np.trace(Sigyx @ Sigxy)
-            + np.trace(Sigxy @ Sigxy)
-            + np.trace(Sigx @ Sigy)
-            - 2 * r * np.trace(Sigx @ Sigxy)
-            - 2 * r * np.trace(Sigy @ Sigyx)
+    for i in range(n_features):
+        r = rho[i, :]
+        ac_i = ac[i, None, :]
+        xc_sum = xc_p[i] + xc_n[i]
+        var_hat_rho[i, :] = (
+            n_retained_samples * (1 - r**2) ** 2
+            + r**2 * np.sum(weights * (ac_i**2 + ac**2 + xc_p[i] ** 2 + xc_n[i] ** 2), axis=1)
+            - 2 * r * np.sum(weights * ((ac_i + ac) * xc_sum), axis=1)
+            + 2 * np.sum(weights * (ac_i * ac + xc_p[i] * xc_n[i]), axis=1)
         ) / n_retained_samples**2
-
-    var_hat_rho = var_hat_rho + np.transpose(var_hat_rho)
 
     # Truncate to theoretical variance
     varlimit = (1 - rho**2) ** 2 / n_retained_samples

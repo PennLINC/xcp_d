@@ -1104,3 +1104,108 @@ def test_get_col():
     # Should return the first hash variant when no exact match
     result = utils.get_col(hash_df, 'signal')
     assert result.tolist() == [1, 2, 3]
+
+
+def _make_xdf_data():
+    """Create deterministic, autocorrelated, correlated time series and a temporal mask."""
+    n_samples = 60
+    t = np.arange(n_samples)
+    shared = np.sin(0.21 * t) + 0.5 * np.cos(0.47 * t)
+    arr = np.vstack(
+        [
+            shared + np.sin(0.13 * t + 0.4) + 0.3 * np.cos(1.7 * t),
+            0.6 * shared + np.cos(0.31 * t + 1.1) + 0.3 * np.sin(2.3 * t),
+            -0.4 * shared + np.sin(0.09 * t + 2.0) + 0.3 * np.cos(2.9 * t + 0.5),
+        ]
+    )
+    temporal_mask = np.zeros(n_samples, dtype=int)
+    temporal_mask[[3, 4, 5, 17, 30, 31, 44, 58]] = 1
+    return arr, temporal_mask
+
+
+def test_correlate_timeseries_xdf_matches_reference():
+    """Compare correlate_timeseries_xdf to the reference scrubbing-aware xDF implementation.
+
+    The expected values were generated with ``xDF_scrub`` from
+    https://github.com/christinachen94/scrubbing-aware-xDF (commit 09bb6f7),
+    with outlier volumes set to NaN.
+    """
+    arr, temporal_mask = _make_xdf_data()
+    arr[:, temporal_mask.astype(bool)] = np.nan
+
+    out = utils.correlate_timeseries_xdf(arr, temporal_mask)
+
+    expected_r = np.array(
+        [
+            [1.0, 0.470859512948, 0.224860871449],
+            [0.470859512948, 1.0, -0.306915286868],
+            [0.224860871449, -0.306915286868, 1.0],
+        ]
+    )
+    expected_var_r = np.array(
+        [
+            [0.0, 0.054624129583, 0.093668117418],
+            [0.054624129583, 0.0, 0.067665755678],
+            [0.093668117418, 0.067665755678, 0.0],
+        ]
+    )
+    expected_var_z = np.array(
+        [
+            [0.0, 0.09017790816, 0.103910383714],
+            [0.09017790816, 0.0, 0.082471030349],
+            [0.103910383714, 0.082471030349, 0.0],
+        ]
+    )
+    np.testing.assert_allclose(out['r'], expected_r, atol=1e-10)
+    np.testing.assert_allclose(out['var_r'], expected_var_r, atol=1e-10)
+    np.testing.assert_allclose(out['var_z'], expected_var_z, atol=1e-10)
+    offdiag = ~np.eye(3, dtype=bool)
+    np.testing.assert_allclose(out['z'][offdiag], np.arctanh(expected_r[offdiag]))
+
+
+@pytest.mark.parametrize('censor', [True, False])
+def test_correlate_timeseries_xdf_matches_corrcoef(censor):
+    """Check that the correlations match np.corrcoef on the retained volumes."""
+    arr, temporal_mask = _make_xdf_data()
+    if not censor:
+        temporal_mask[:] = 0
+
+    retained = ~temporal_mask.astype(bool)
+    expected_r = np.corrcoef(arr[:, retained])
+    arr[:, ~retained] = np.nan
+
+    out = utils.correlate_timeseries_xdf(arr, temporal_mask)
+    for key in ['r', 'z', 'var_r', 'var_z']:
+        assert not np.any(np.isnan(out[key])), key
+
+    np.testing.assert_allclose(out['r'], expected_r, atol=1e-10)
+    # Autocorrelated data should have larger variance than white noise
+    offdiag = ~np.eye(3, dtype=bool)
+    white_noise_var = (1 - expected_r**2) ** 2 / retained.sum()
+    assert np.all(out['var_r'][offdiag] > white_noise_var[offdiag])
+
+
+def test_correlate_timeseries_censored_and_uncensored(tmp_path):
+    """Check that censored and uncensored time series TSVs give the same results."""
+    arr, temporal_mask = _make_xdf_data()
+    retained = ~temporal_mask.astype(bool)
+    columns = ['a', 'b', 'c']
+
+    uncensored_file = tmp_path / 'uncensored.tsv'
+    censored_file = tmp_path / 'censored.tsv'
+    pd.DataFrame(arr.T, columns=columns).to_csv(uncensored_file, sep='\t', index=False)
+    pd.DataFrame(arr[:, retained].T, columns=columns).to_csv(
+        censored_file,
+        sep='\t',
+        index=False,
+    )
+
+    uncensored = utils.correlate_timeseries(str(uncensored_file), temporal_mask)
+    censored = utils.correlate_timeseries(str(censored_file), temporal_mask)
+    expected_r = np.corrcoef(arr[:, retained])
+    for key in ['r', 'z', 'var_r', 'var_z']:
+        assert list(uncensored[key].index) == columns
+        assert list(uncensored[key].columns) == columns
+        np.testing.assert_allclose(uncensored[key].to_numpy(), censored[key].to_numpy())
+
+    np.testing.assert_allclose(uncensored['r'].to_numpy(), expected_r, atol=1e-10)
