@@ -947,6 +947,43 @@ def test_parse_args_03(tmp_path_factory):
     _reset_config()
 
 
+def test_parse_args_04(tmp_path_factory):
+    """Test parser._build_parser with a participant-level T1w and session-level T2ws.
+
+    The participant-level anatomical data should be used for all sessions,
+    even though some sessions have their own T2w images.
+    See https://github.com/PennLINC/xcp_d/issues/1637.
+    """
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_session_t2w.yml')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_04')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        str(bids_dir),
+        str(out_dir),
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+        '--work-dir',
+        str(tmpdir / 'work'),
+    ]
+    parser.parse_args(args=base_args, namespace=None)
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [['01', '', ['V02', 'V03', 'V04']]]
+    _reset_config()
+
+
 def test_validate_parameters_skip_alff(base_opts, base_parser):
     """Test parser._validate_parameters with --skip alff option."""
     opts = deepcopy(base_opts)
