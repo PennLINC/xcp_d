@@ -495,6 +495,77 @@ def test_denoise_with_nilearn_voxelwise_matches_joint_regression(num_threads):
     assert np.allclose(denoised_arr, expected_arr)
 
 
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_interpolate_chunks_match_one_spline(dtype):
+    """Test that interpolating in chunks of voxels matches one spline over all voxels."""
+    from scipy.interpolate import CubicSpline
+
+    n_volumes, TR = 100, 2
+    # Enough voxels for several chunks, with a partial chunk at the end
+    n_voxels = 3 * ((2**20) // n_volumes) + 7
+    rng = np.random.default_rng(0)
+    arr = rng.standard_normal((n_volumes, n_voxels)).astype(dtype)
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[[0, 1, 30, 31, 32, 60, 98, 99]] = False
+
+    frame_times = np.arange(n_volumes) * TR
+    expected = arr.copy()
+    spline = CubicSpline(frame_times[sample_mask], arr[sample_mask, :], extrapolate=True)
+    expected[~sample_mask, :] = spline(frame_times)[~sample_mask, :]
+    # Leading and trailing outliers take the closest low-motion volume's values
+    expected[:2, :] = expected[2, :]
+    expected[98:, :] = expected[97, :]
+
+    interpolated = utils._interpolate(arr=arr, sample_mask=sample_mask, TR=TR)
+    assert interpolated is arr
+    assert interpolated.dtype == dtype
+    assert np.allclose(interpolated, expected, rtol=1e-6 if dtype == np.float32 else 1e-12)
+
+
+def test_estimate_denoise_mem_gb(tmp_path):
+    """Check the denoising memory estimate against its phases for a small NIfTI run."""
+    import nibabel as nb
+
+    shape, n_volumes = (100, 100, 100), 100
+    mask_arr = np.zeros(shape, dtype=np.uint8)
+    mask_arr[40:60, 40:60, 40:60] = 1
+    mask_file = str(tmp_path / 'mask.nii.gz')
+    nb.Nifti1Image(mask_arr, np.eye(4)).to_filename(mask_file)
+
+    # Only the header of the BOLD file is read, so write the header alone
+    header = nb.Nifti1Header()
+    header.set_data_shape((*shape, n_volumes))
+    header.set_data_dtype(np.float32)
+    bold_file = str(tmp_path / 'bold.nii')
+    with open(bold_file, 'wb') as fobj:
+        header.write_to(fobj)
+
+    gib = 1024**3
+    data_gib = 20**3 * n_volumes * 4 / gib
+    grid_gib = 100**3 * n_volumes * 4 / gib
+
+    # With only global confounds in one process, writing the float64 output is the peak
+    estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file, mask_file=mask_file)
+    assert np.isclose(estimate, 0.25 + 2.3 * grid_gib + data_gib + 0.25)
+
+    # Three voxel-wise confounds in one process: loading the four images is the peak
+    estimate = utils._estimate_denoise_mem_gb(
+        bold_file=bold_file,
+        mask_file=mask_file,
+        n_voxelwise_confounds=3,
+    )
+    assert np.isclose(estimate, 0.25 + 2.3 * grid_gib + 4 * data_gib)
+
+    # With eight processes, denoising is the peak
+    estimate = utils._estimate_denoise_mem_gb(
+        bold_file=bold_file,
+        mask_file=mask_file,
+        n_voxelwise_confounds=3,
+        n_procs=8,
+    )
+    assert np.isclose(estimate, 0.25 + 13 * data_gib + 0.3 * 8)
+
+
 def test_limit_blas_threads():
     """Test that the denoising workers' initializer limits BLAS to one thread."""
     import multiprocessing
