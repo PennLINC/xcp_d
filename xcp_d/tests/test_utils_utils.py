@@ -522,6 +522,102 @@ def test_interpolate_chunks_match_one_spline(dtype):
     assert np.allclose(interpolated, expected, rtol=1e-6 if dtype == np.float32 else 1e-12)
 
 
+def _naive_lombscargle(y, sample_mask, TR, oversampling_factor=4):
+    """Interpolate one time series with explicit per-frequency sums, for comparison."""
+    n_volumes = y.size
+    times = np.arange(n_volumes) * TR
+    low_motion_times = times[sample_mask]
+    design = np.column_stack([np.ones(n_volumes), times])
+    trend = design @ np.linalg.lstsq(design[sample_mask], y[sample_mask], rcond=None)[0]
+    residuals = (y - trend)[sample_mask]
+
+    span = low_motion_times[-1] - low_motion_times[0]
+    n_frequencies = (oversampling_factor * low_motion_times.size) // 2
+    reconstructed = np.zeros(n_volumes)
+    for i_freq in range(1, n_frequencies + 1):
+        omega = 2 * np.pi * i_freq / (span * oversampling_factor)
+        tau = np.arctan2(
+            np.sum(np.sin(2 * omega * low_motion_times)),
+            np.sum(np.cos(2 * omega * low_motion_times)),
+        ) / (2 * omega)
+        cos_term = np.cos(omega * (low_motion_times - tau))
+        sin_term = np.sin(omega * (low_motion_times - tau))
+        cos_coef = np.sum(residuals * cos_term) / np.sum(cos_term**2)
+        sin_coef = np.sum(residuals * sin_term) / np.sum(sin_term**2)
+        reconstructed += cos_coef * np.cos(omega * (times - tau))
+        reconstructed += sin_coef * np.sin(omega * (times - tau))
+
+    reconstructed *= residuals.std() / reconstructed.std()
+    out = y.copy()
+    out[~sample_mask] = (reconstructed + trend)[~sample_mask]
+    return out
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_interpolate_lombscargle_matches_naive(dtype):
+    """Test the vectorized Lomb-Scargle interpolation against explicit per-frequency sums."""
+    n_volumes, TR = 120, 1.5
+    # Enough voxels for several chunks, with a partial chunk at the end
+    n_voxels = 2 * ((2**20) // n_volumes) + 3
+    rng = np.random.default_rng(0)
+    arr = (rng.standard_normal((n_volumes, n_voxels)).cumsum(axis=0) + 1000).astype(dtype)
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[[0, 1, 30, 31, 32, 60, 119]] = False
+    original = arr.copy()
+
+    interpolated = utils._interpolate_lombscargle(arr=arr, sample_mask=sample_mask, TR=TR)
+    assert interpolated is arr
+    assert interpolated.dtype == dtype
+    # Low-motion volumes are untouched
+    assert np.array_equal(interpolated[sample_mask, :], original[sample_mask, :])
+
+    for i_voxel in [0, n_voxels // 2, n_voxels - 1]:
+        expected = _naive_lombscargle(
+            original[:, i_voxel].astype(np.float64),
+            sample_mask,
+            TR,
+        )
+        assert np.allclose(
+            interpolated[:, i_voxel],
+            expected,
+            rtol=1e-5 if dtype == np.float32 else 1e-10,
+        )
+
+
+def test_interpolate_lombscargle_trend_and_constant():
+    """Test that linear trends are kept and constant voxels stay constant."""
+    n_volumes, TR = 80, 2
+    times = np.arange(n_volumes) * TR
+    rng = np.random.default_rng(1)
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[[0, 20, 21, 22, 50, 79]] = False
+    noise = rng.standard_normal(n_volumes)
+    arr = np.column_stack(
+        [
+            np.full(n_volumes, 1000.0),  # constant
+            np.zeros(n_volumes),  # all zeros
+            5 + 0.3 * times,  # pure linear trend
+            noise,
+            1000 + 50 * noise,  # shifted and scaled copy of the noise voxel
+        ]
+    )
+    interpolated = utils._interpolate_lombscargle(arr=arr.copy(), sample_mask=sample_mask, TR=TR)
+    assert np.all(np.isfinite(interpolated))
+    assert np.allclose(interpolated[:, 0], 1000)
+    assert np.allclose(interpolated[:, 1], 0)
+    assert np.allclose(interpolated[:, 2], arr[:, 2])
+    # The method is equivariant to shifting and scaling the data
+    assert np.allclose(interpolated[:, 4], 1000 + 50 * interpolated[:, 3])
+
+
+def test_interpolate_lombscargle_too_few_volumes():
+    """Test that too few low-motion volumes raise an error."""
+    sample_mask = np.zeros(10, dtype=bool)
+    sample_mask[[3, 6]] = True
+    with pytest.raises(ValueError, match='At least three low-motion volumes'):
+        utils._interpolate_lombscargle(arr=np.ones((10, 2)), sample_mask=sample_mask, TR=2)
+
+
 def test_estimate_denoise_mem_gb(tmp_path):
     """Check the denoising memory estimate against its phases for a small NIfTI run."""
     import nibabel as nb

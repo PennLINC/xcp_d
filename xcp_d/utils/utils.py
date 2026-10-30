@@ -813,6 +813,122 @@ def _interpolate(*, arr, sample_mask, TR):
     return interpolated_arr
 
 
+def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
+    """Replace high-motion volumes with values from a least squares spectral reconstruction.
+
+    Each voxel's low-motion volumes are linearly detrended, decomposed into sinusoids with the
+    Lomb-Scargle least squares spectral analysis method, and the sinusoids are summed at the
+    high-motion volumes' times.
+    The reconstruction is rescaled to the standard deviation of the low-motion data,
+    and the linear trend is added back.
+
+    Parameters
+    ----------
+    arr : :obj:`numpy.ndarray` of shape (T, S)
+        The data to interpolate.
+    sample_mask : :obj:`numpy.ndarray` of shape (T,)
+        The sample mask. True for low-motion volumes, False for high-motion volumes.
+    TR : float
+        The repetition time.
+    oversampling_factor : int
+        The frequency grid's oversampling factor. Default is 4.
+
+    Returns
+    -------
+    interpolated_arr : :obj:`numpy.ndarray` of shape (T, S)
+        The interpolated data.
+        This is ``arr``, modified in place.
+
+    Notes
+    -----
+    This implements the method used by :footcite:t:`power_fd_dvars`,
+    which is based on :footcite:t:`mathias2004algorithms`,
+    following Anish Mitra's MATLAB function ``getTransform``.
+    There are two differences from ``getTransform``:
+
+    1.  The data are detrended before the decomposition, and the trend is added back afterwards.
+        Power et al. applied the method to residuals from nuisance regression,
+        but XCP-D interpolates before detrending,
+        and sinusoids can't represent a large mean.
+    2.  The sinusoids are reconstructed with the same per-frequency time offsets (tau) that were
+        used to estimate them.
+        ``getTransform`` drops the offsets in the reconstruction, which shifts each
+        frequency's phase, so the reconstruction doesn't match the data.
+
+    The frequency grid runs from ``1 / (span * oversampling_factor)`` to the average Nyquist
+    frequency of the low-motion volumes (``n_low_motion / (2 * span)``),
+    in steps of ``1 / (span * oversampling_factor)``,
+    where ``span`` is the time between the first and last low-motion volumes
+    :footcite:p:`press1989fast`.
+
+    The reconstruction is linear in the data, apart from the rescaling,
+    so it is computed as one (T, C) matrix applied to the (C, S) low-motion data,
+    in chunks of voxels.
+
+    References
+    ----------
+    .. footbibliography::
+    """
+    n_volumes, n_voxels = arr.shape
+    frame_times = np.arange(n_volumes) * TR
+    low_motion_times = frame_times[sample_mask]
+    n_low_motion = low_motion_times.size
+    if n_low_motion < 3:
+        raise ValueError('At least three low-motion volumes are needed for interpolation.')
+
+    time_span = low_motion_times[-1] - low_motion_times[0]
+    frequency_step = 1 / (time_span * oversampling_factor)
+    n_frequencies = (oversampling_factor * n_low_motion) // 2
+    angular_frequencies = 2 * np.pi * frequency_step * np.arange(1, n_frequencies + 1)
+
+    # Per-frequency time offsets that make the sine and cosine terms orthogonal
+    double_phases = 2 * np.outer(angular_frequencies, low_motion_times)
+    tau = np.arctan2(
+        np.sin(double_phases).sum(axis=1),
+        np.cos(double_phases).sum(axis=1),
+    ) / (2 * angular_frequencies)
+    del double_phases
+
+    # Projections of the data onto each frequency's cosine and sine terms, of shape (F, C)
+    phases = angular_frequencies[:, None] * (low_motion_times[None, :] - tau[:, None])
+    cos_terms, sin_terms = np.cos(phases), np.sin(phases)
+    cos_terms /= np.sum(cos_terms**2, axis=1, keepdims=True)
+    sin_terms /= np.sum(sin_terms**2, axis=1, keepdims=True)
+
+    # The sinusoids at every volume, of shape (T, F)
+    phases = (frame_times[:, None] - tau[None, :]) * angular_frequencies[None, :]
+    reconstruction_matrix = np.cos(phases) @ cos_terms + np.sin(phases) @ sin_terms
+    del phases, cos_terms, sin_terms
+
+    # Linear trend, fit to the low-motion volumes
+    trend_design = np.column_stack([np.ones(n_volumes), frame_times - frame_times.mean()])
+    trend_pinv = np.linalg.pinv(trend_design[sample_mask, :])
+
+    # About 8 MiB of float64 values per (T, chunk) array
+    chunk_size = max(1, (2**20) // n_volumes)
+    for start in range(0, n_voxels, chunk_size):
+        voxels = slice(start, start + chunk_size)
+        low_motion_data = arr[sample_mask, voxels].astype(np.float64)
+        trend = trend_design @ (trend_pinv @ low_motion_data)
+        residuals = low_motion_data - trend[sample_mask, :]
+
+        reconstructed = reconstruction_matrix @ residuals
+        # Rescale the reconstruction to the standard deviation of the low-motion residuals.
+        # Voxels with constant residuals get no sinusoidal component.
+        reconstructed_std = np.std(reconstructed, axis=0)
+        residual_std = np.std(residuals, axis=0)
+        scale = np.divide(
+            residual_std,
+            reconstructed_std,
+            out=np.zeros_like(residual_std),
+            where=reconstructed_std > 0,
+        )
+        reconstructed = reconstructed[~sample_mask, :] * scale + trend[~sample_mask, :]
+        arr[~sample_mask, voxels] = reconstructed
+
+    return arr
+
+
 def _select_first(lst):
     """Select the first element in a list."""
     return lst[0]
