@@ -142,12 +142,11 @@ def init_brainsprite_figures_wf(
     for image_type in image_types:
         inputnode_anat_name = f'{image_type.lower()}w'
 
-        # Modify template scene file with file paths
+        # Plot each sagittal slice with the surface contours for the BrainSprite viewer
         plot_slices = pe.Node(
-            PlotSlicesForBrainSprite(n_procs=config.nipype.omp_nthreads),
+            PlotSlicesForBrainSprite(),
             name=f'plot_slices_{image_type}',
             mem_gb=mem_gb['volume'],
-            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, plot_slices, [(inputnode_anat_name, 'nifti')]),
