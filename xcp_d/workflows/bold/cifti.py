@@ -11,6 +11,7 @@ from num2words import num2words
 from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import _estimate_denoise_mem_gb
 from xcp_d.workflows.bold.connectivity import init_functional_connectivity_cifti_wf
 from xcp_d.workflows.bold.metrics import init_alff_wf, init_reho_cifti_wf
 from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
@@ -19,6 +20,7 @@ from xcp_d.workflows.bold.plotting import (
     init_qc_report_wf,
 )
 from xcp_d.workflows.bold.postprocessing import (
+    _count_voxelwise_confounds,
     init_denoise_bold_wf,
     init_despike_wf,
     init_prepare_confounds_wf,
@@ -243,7 +245,12 @@ the following post-processing was performed.
         ]),
     ])  # fmt:skip
 
-    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb=mem_gb)
+    denoise_mem_gb = _estimate_denoise_mem_gb(
+        bold_file=bold_file,
+        n_voxelwise_confounds=_count_voxelwise_confounds(),
+        n_procs=config.nipype.omp_nthreads,
+    )
+    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb={**mem_gb, 'denoise': denoise_mem_gb})
 
     workflow.connect([
         (prepare_confounds_wf, denoise_bold_wf, [
