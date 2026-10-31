@@ -612,12 +612,17 @@ def test_interpolate_lombscargle_trend_and_constant():
     assert np.allclose(interpolated[:, 4], 1000 + 50 * interpolated[:, 3])
 
 
-def test_interpolate_lombscargle_too_few_volumes():
-    """Test that too few low-motion volumes raise an error."""
+def test_interpolate_lombscargle_too_few_volumes(caplog):
+    """Test that too few low-motion volumes fall back to linear interpolation."""
     sample_mask = np.zeros(10, dtype=bool)
     sample_mask[[3, 6]] = True
-    with pytest.raises(ValueError, match='At least three low-motion volumes'):
-        utils._interpolate_lombscargle(arr=np.ones((10, 2)), sample_mask=sample_mask, TR=2)
+    arr = np.random.default_rng(0).standard_normal((10, 2))
+    expected = utils._interpolate_linear(arr=arr.copy(), sample_mask=sample_mask, TR=2)
+
+    interpolated = utils._interpolate_lombscargle(arr=arr, sample_mask=sample_mask, TR=2)
+    assert interpolated is arr
+    assert np.allclose(interpolated, expected)
+    assert 'Linear interpolation will be used instead' in caplog.text
 
 
 @pytest.mark.parametrize(

@@ -923,6 +923,8 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
     where ``span`` is the time between the first and last low-motion volumes
     :footcite:p:`press1989fast`.
 
+    With fewer than three low-motion volumes, the data are linearly interpolated instead.
+
     A cosine or sine term that is numerically zero at every low-motion volume is dropped.
     This happens to the sine term at the Nyquist frequency when the low-motion volumes are evenly
     spaced (e.g., when only volumes at the beginning or end of the run are censored).
@@ -942,7 +944,11 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
     low_motion_times = frame_times[sample_mask]
     n_low_motion = low_motion_times.size
     if n_low_motion < 3:
-        raise ValueError('At least three low-motion volumes are needed for interpolation.')
+        LOGGER.warning(
+            f'Only {n_low_motion} low-motion volume(s) remain, but spectral interpolation needs '
+            'at least three. Linear interpolation will be used instead.'
+        )
+        return _interpolate_linear(arr=arr, sample_mask=sample_mask, TR=TR)
 
     time_span = low_motion_times[-1] - low_motion_times[0]
     frequency_step = 1 / (time_span * oversampling_factor)
