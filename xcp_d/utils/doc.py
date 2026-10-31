@@ -366,7 +366,7 @@ docdict['denoised_interpolated_bold'] = """
 denoised_interpolated_bold : :obj:`str`
     Path to the censored, denoised, interpolated, and filtered BOLD file.
     This file is the result of denoising the censored preprocessed BOLD data,
-    followed by cubic spline interpolation and band-pass filtering.
+    followed by interpolation and band-pass filtering.
 
     This output should not be used for analysis. It is primarily for DCAN QC plots.
 """
@@ -375,7 +375,7 @@ docdict['censored_denoised_bold'] = """
 censored_denoised_bold : :obj:`str`
     Path to the censored, denoised, interpolated, filtered, and re-censored BOLD file.
     This file is the result of denoising the censored preprocessed BOLD data,
-    followed by cubic spline interpolation, band-pass filtering, and re-censoring.
+    followed by interpolation, band-pass filtering, and re-censoring.
 
     This output is the primary derivative for analysis.
 """
@@ -384,7 +384,7 @@ docdict['smoothed_denoised_bold'] = """
 smoothed_denoised_bold : :obj:`str`
     Path to the censored, denoised, interpolated, filtered, re-censored, and smoothed BOLD file.
     This file is the result of denoising the censored preprocessed BOLD data,
-    followed by cubic spline interpolation, band-pass filtering, re-censoring, and spatial
+    followed by interpolation, band-pass filtering, re-censoring, and spatial
     smoothing.
 """
 

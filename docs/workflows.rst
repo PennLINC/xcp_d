@@ -839,10 +839,30 @@ such as `biceps <https://biceps-cmdln.readthedocs.io/en/latest/>`_.
 Interpolation
 -------------
 
-An interpolated version of the BOLD data is created by filling in the high-motion outlier volumes
-with cubic spline interpolated data, as implemented in ``nilearn``.
-Any outlier volumes at the beginning or end of the run are replaced with the closest non-outlier
-volume's data, in order to avoid extrapolation by the interpolation function.
+An interpolated version of the BOLD data is created by filling in the high-motion outlier volumes.
+The method is chosen with ``--interpolation``:
+
+``spline`` (default)
+   Cubic spline interpolation, as implemented in ``nilearn``.
+   Any outlier volumes at the beginning or end of the run are replaced with the closest
+   non-outlier volume's data, in order to avoid extrapolation by the interpolation function.
+
+``linear``
+   Each outlier volume is a weighted average of the closest non-outlier volumes before and after
+   it.
+   Any outlier volumes at the beginning or end of the run are replaced with the closest
+   non-outlier volume's data.
+
+``spectral``
+   A Lomb-Scargle least squares spectral reconstruction, as in :footcite:t:`power_fd_dvars`
+   (based on :footcite:t:`mathias2004algorithms`).
+   Each time series' non-outlier volumes are linearly detrended and decomposed into sinusoids,
+   at frequencies up to the average Nyquist frequency of the non-outlier volumes
+   :footcite:p:`press1989fast`.
+   The sinusoids are summed at the outlier volumes, rescaled to the standard deviation of the
+   non-outlier data, and added back to the linear trend.
+   Because the sinusoids nearly cancel at the outlier volumes, the filled values stay close to the
+   linear trend, with little of the signal's variance.
 
 The same interpolation is applied to the confounds.
 

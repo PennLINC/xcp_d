@@ -604,11 +604,12 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
     bandpass_filter = config.workflow.bandpass_filter
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
+    interpolation = config.workflow.interpolation or 'spline'
 
     config.loggers.workflow.debug(
         f'Workflow parameters: fd_thresh={fd_thresh}, low_pass={low_pass}, high_pass={high_pass}, '
         f'bpf_order={bpf_order}, bandpass_filter={bandpass_filter}, smoothing={smoothing}, '
-        f'file_format={file_format}'
+        f'file_format={file_format}, interpolation={interpolation}'
     )
 
     # Build the workflow description that details the denoising steps
@@ -618,13 +619,31 @@ Nuisance regressors were regressed from the BOLD data using a denoising method b
 approach.
 """
     # Describe interpolation of high-motion volumes if applicable
-    if fd_thresh > 0:
+    if fd_thresh > 0 and interpolation == 'spline':
         workflow.__desc__ += (
             'Any volumes censored earlier in the workflow were first cubic spline interpolated in '
             'the BOLD data. '
             'Outlier volumes at the beginning or end of the time series were replaced with the '
             "closest low-motion volume's values, "
             'as cubic spline interpolation can produce extreme extrapolations. '
+        )
+    elif fd_thresh > 0 and interpolation == 'linear':
+        workflow.__desc__ += (
+            'Any volumes censored earlier in the workflow were first linearly interpolated in '
+            'the BOLD data, from the closest low-motion volumes before and after them. '
+            'Outlier volumes at the beginning or end of the time series were replaced with the '
+            "closest low-motion volume's values. "
+        )
+    elif fd_thresh > 0 and interpolation == 'spectral':
+        workflow.__desc__ += (
+            'Any volumes censored earlier in the workflow were first interpolated in the BOLD '
+            'data with a least squares spectral reconstruction '
+            '[@power_fd_dvars;@mathias2004algorithms]. '
+            "Each time series' low-motion volumes were linearly detrended and decomposed into "
+            'sinusoids with the Lomb-Scargle method, using frequencies up to the average '
+            'Nyquist frequency of the low-motion volumes [@press1989fast]. '
+            'The sinusoids were summed at the censored volumes, rescaled to the standard '
+            'deviation of the low-motion data, and added to the linear trend. '
         )
 
     # Describe bandpass (or high-/low-pass) filtering if enabled
@@ -713,6 +732,7 @@ approach.
             high_pass=high_pass,
             filter_order=bpf_order,
             bandpass_filter=bandpass_filter,
+            interpolation=interpolation,
             num_threads=config.nipype.omp_nthreads,
         ),
         name='regress_and_filter_bold',

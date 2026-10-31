@@ -362,10 +362,17 @@ def denoise_with_nilearn(
     filter_order,
     TR,
     num_threads,
+    interpolation='spline',
 ):
     """A wrapper to call _denoise_with_nilearn using multiprocessing"""
     if num_threads < 1:
         raise Exception('num_threads must be a positive integer')
+
+    if interpolation not in INTERPOLATION_METHODS:
+        raise ValueError(
+            f'Unknown interpolation method "{interpolation}". '
+            f'Must be one of {sorted(INTERPOLATION_METHODS)}.'
+        )
 
     # An empty list of voxelwise confounds is the same as no voxelwise confounds
     if voxelwise_confounds is not None and len(voxelwise_confounds) == 0:
@@ -394,6 +401,7 @@ def denoise_with_nilearn(
                 high_pass,
                 filter_order,
                 TR,
+                interpolation,
             )
 
     # Split the bold data into chunks of voxels to be processed in parallel
@@ -421,6 +429,7 @@ def denoise_with_nilearn(
             high_pass,
             filter_order,
             TR,
+            interpolation,
         )
         for preprocessed_bold_chunk, voxelwise_confounds_chunk in zip(
             preprocessed_bold_chunks,
@@ -456,6 +465,7 @@ def _denoise_with_nilearn(
     high_pass,
     filter_order,
     TR,
+    interpolation='spline',
 ):
     """Denoise an array with Nilearn.
 
@@ -493,6 +503,9 @@ def _denoise_with_nilearn(
     filter_order : :obj:`int`
         Filter order.
     %(TR)s
+    interpolation : {"spline", "linear", "spectral"}
+        The method used to interpolate high-motion volumes. Default is "spline".
+        See :data:`INTERPOLATION_METHODS`.
 
     Returns
     -------
@@ -545,14 +558,15 @@ def _denoise_with_nilearn(
 
     if censor_and_interpolate:
         # Replace high-motion volumes in the BOLD data and confounds with interpolated values.
-        preprocessed_bold = _interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
+        interpolate = INTERPOLATION_METHODS[interpolation]
+        preprocessed_bold = interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
         if detrend_and_denoise:
             if have_confounds:
-                confounds_arr = _interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
+                confounds_arr = interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
 
             if have_voxelwise_confounds:
                 voxelwise_confounds = [
-                    _interpolate(arr=arr, sample_mask=sample_mask, TR=TR)
+                    interpolate(arr=arr, sample_mask=sample_mask, TR=TR)
                     for arr in voxelwise_confounds
                 ]
 
@@ -813,6 +827,53 @@ def _interpolate(*, arr, sample_mask, TR):
     return interpolated_arr
 
 
+def _interpolate_linear(*, arr, sample_mask, TR):
+    """Replace high-motion volumes with linearly interpolated values.
+
+    Each high-motion volume is a weighted average of the closest low-motion volumes before and
+    after it.
+    High-motion volumes at the beginning or end of the run are set to the closest low-motion
+    volume's data.
+
+    Parameters
+    ----------
+    arr : :obj:`numpy.ndarray` of shape (T, S)
+        The data to interpolate.
+    sample_mask : :obj:`numpy.ndarray` of shape (T,)
+        The sample mask. True for low-motion volumes, False for high-motion volumes.
+    TR : float
+        The repetition time.
+        Unused, since the volumes are evenly spaced, but accepted for consistency with the other
+        interpolation functions.
+
+    Returns
+    -------
+    interpolated_arr : :obj:`numpy.ndarray` of shape (T, S)
+        The interpolated data.
+        This is ``arr``, modified in place.
+    """
+    low_motion_idx = np.flatnonzero(sample_mask)
+    high_motion_idx = np.flatnonzero(~sample_mask)
+    if low_motion_idx.size == 0:
+        raise ValueError('At least one low-motion volume is needed for interpolation.')
+
+    # The closest low-motion volumes before and after each high-motion volume.
+    # Volumes before the first (or after the last) low-motion volume use it on both sides.
+    after = np.searchsorted(low_motion_idx, high_motion_idx)
+    before_idx = low_motion_idx[np.clip(after - 1, 0, low_motion_idx.size - 1)]
+    after_idx = low_motion_idx[np.clip(after, 0, low_motion_idx.size - 1)]
+    distance = after_idx - before_idx
+    weights = np.divide(
+        high_motion_idx - before_idx,
+        distance,
+        out=np.zeros(high_motion_idx.size),
+        where=distance > 0,
+    )[:, None]
+
+    arr[high_motion_idx, :] = (1 - weights) * arr[before_idx, :] + weights * arr[after_idx, :]
+    return arr
+
+
 def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
     """Replace high-motion volumes with values from a least squares spectral reconstruction.
 
@@ -927,6 +988,14 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
         arr[~sample_mask, voxels] = reconstructed
 
     return arr
+
+
+INTERPOLATION_METHODS = {
+    'spline': _interpolate,
+    'linear': _interpolate_linear,
+    'spectral': _interpolate_lombscargle,
+}
+"""The functions that interpolate high-motion volumes, keyed by the ``--interpolation`` value."""
 
 
 def _select_first(lst):

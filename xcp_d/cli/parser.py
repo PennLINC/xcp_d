@@ -512,6 +512,25 @@ The default is 240 (4 minutes).
 """,
     )
     g_censor.add_argument(
+        '--interpolation',
+        dest='interpolation',
+        default='spline',
+        action='store',
+        choices=['spline', 'linear', 'spectral'],
+        help=(
+            'The method used to interpolate high-motion volumes before filtering and '
+            'denoising. '
+            "'spline' uses cubic spline interpolation. "
+            "'linear' uses linear interpolation between the closest low-motion volumes. "
+            "'spectral' uses a Lomb-Scargle least squares spectral reconstruction, "
+            'as in Power et al. (2014). '
+            "With 'spline' and 'linear', high-motion volumes at the beginning or end of the run "
+            "are set to the closest low-motion volume's values. "
+            'This parameter has no effect if censoring is disabled. '
+            "The default is 'spline'."
+        ),
+    )
+    g_censor.add_argument(
         '--output-type',
         dest='output_type',
         default='auto',

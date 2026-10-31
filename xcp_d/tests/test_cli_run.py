@@ -599,6 +599,28 @@ def test_build_parser_01(tmp_path_factory):
     assert opts.correlation_lengths == ['all', '300.0', '480.0']
 
 
+def test_build_parser_interpolation(tmp_path_factory):
+    """Test the --interpolation choices and default."""
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_interpolation')
+    data_dir = os.path.join(tmpdir, 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    out_dir = os.path.join(tmpdir, 'out')
+    os.makedirs(out_dir, exist_ok=True)
+
+    base_args = [data_dir, out_dir, 'participant', '--mode', 'linc']
+    parser_obj = parser._build_parser()
+
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    assert opts.interpolation == 'spline'
+
+    for method in ['spline', 'linear', 'spectral']:
+        opts = parser_obj.parse_args(args=[*base_args, '--interpolation', method], namespace=None)
+        assert opts.interpolation == method
+
+    with pytest.raises(SystemExit):
+        parser_obj.parse_args(args=[*base_args, '--interpolation', 'cubic'], namespace=None)
+
+
 def test_build_parser_02(tmp_path_factory):
     """Test parser._build_parser with hbcd mode."""
     tmpdir = tmp_path_factory.mktemp('test_build_parser_02')
