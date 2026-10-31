@@ -939,6 +939,521 @@ def is_number(s):
         return False
 
 
+def correlate_timeseries(timeseries, temporal_mask):
+    """Correlate timeseries stored in a TSV file.
+
+    Parameters
+    ----------
+    timeseries : :obj:`str`
+        Path to the TSV file containing the timeseries.
+        The time series may be censored or not.
+    temporal_mask : :obj:`numpy.ndarray` of shape (T,)
+        Temporal mask to apply to the time series.
+        Outliers are set to 1, non-outliers are set to 0.
+        T = number of samples/data points/volumes
+
+    Returns
+    -------
+    correlations_dict : :obj:`dict`
+        The output of :func:`correlate_timeseries_xdf`.
+        The "r", "z", "var_r", and "var_z" entries are :obj:`pandas.DataFrame` objects,
+        with the node names from the TSV file's columns as both the index and the columns.
+
+    Raises
+    ------
+    ValueError
+        If ``temporal_mask`` is not 1D, or if the number of rows in the time series matches
+        neither the length of ``temporal_mask`` nor its number of non-outlier volumes.
+
+    Notes
+    -----
+    If the time series has one row per volume, the outlier volumes are set to NaN.
+    If it has one row per non-outlier volume (i.e., it was already censored),
+    it is placed back into a full-length array, with NaNs at the outlier volumes.
+    Either way, the full-length array and the temporal mask are passed to
+    :func:`correlate_timeseries_xdf`, so the outlier volumes are excluded from the correlations
+    while the time between the remaining volumes is preserved.
+    """
+    import pandas as pd
+
+    timeseries_df = pd.read_table(timeseries)
+    n_nodes = timeseries_df.shape[1]
+    n_data_vols = timeseries_df.shape[0]
+    n_mask_vols = temporal_mask.shape[0]
+    n_outliers = temporal_mask.sum()
+    n_uncensored_vols = n_mask_vols - n_outliers
+
+    if temporal_mask.ndim != 1:
+        raise ValueError('temporal_mask must be 1D.')
+    elif n_data_vols not in (n_uncensored_vols, n_mask_vols):
+        raise ValueError(
+            f'Time series ({n_data_vols}) must have the same number of rows ({n_mask_vols}) or '
+            f'uncensored volumes ({n_uncensored_vols}) as mask.'
+        )
+    elif n_data_vols == n_mask_vols:
+        # The time series is not censored.
+        arr = timeseries_df.values.T
+        # Fill outliers (1s in the temporal mask) with NaNs
+        arr[:, temporal_mask.astype(bool)] = np.nan
+    else:
+        # The time series is censored.
+        arr = np.full((n_nodes, n_mask_vols), np.nan)
+        # Fill non-outliers (0s in the temporal mask) with the time series
+        arr[:, ~temporal_mask.astype(bool)] = timeseries_df.values.T
+
+    node_names = timeseries_df.columns.values
+    correlations_dict = correlate_timeseries_xdf(
+        arr=arr,
+        temporal_mask=temporal_mask,
+    )
+    output_to_check = ['r', 'z', 'var_r', 'var_z']
+    for output in output_to_check:
+        if output in correlations_dict.keys():
+            correlations_dict[output] = pd.DataFrame(
+                correlations_dict[output],
+                index=node_names,
+                columns=node_names,
+            )
+
+    return correlations_dict
+
+
+def correlate_timeseries_xdf(
+    arr,
+    temporal_mask,
+    method='truncate',
+    methodparam='adaptive',
+    limit_variance=True,
+):
+    """Correlate timeseries and calculate variance and dof measures using the xDF method.
+
+    Parameters
+    ----------
+    arr : :obj:`numpy.ndarray` of shape (V, T)
+        Uncensored time series array to correlate with xDF.
+        Censored volumes are set to NaN.
+        V = number of features/regions/voxels
+        T = number of samples/data points/volumes
+    temporal_mask : :obj:`numpy.ndarray` of shape (T,)
+        Temporal mask to apply to the time series.
+        Outliers are set to 1, non-outliers are set to 0.
+        T = number of samples/data points/volumes
+    method : {"tukey", "truncate"}, optional
+        The method for estimating autocorrelation.
+        Default = "truncate".
+    methodparam : :obj:`str`, :obj:`int`, or :obj:`float`, optional
+        If ``method`` is "truncate", ``methodparam`` must be "adaptive" or an integer.
+        If ``method`` is "tukey", ``methodparam`` must be an empty string ("") or a number.
+        Default = "adaptive".
+    limit_variance : :obj:`bool`, optional
+        If an estimate is lower than the theoretical variance of a white noise then it increases
+        the estimate up to ``(1-rho^2)^2/n_cols``.
+        To disable this "curbing", set limit_variance to False.
+        Default = True.
+
+    Returns
+    -------
+    out : :obj:`dict`
+        A dictionary containing the following keys:
+        -   "r": IxI array of correlation coefficients.
+        -   "z": IxI array of z-transformed correlation coefficients.
+        -   "var_r": IxI array of variance of correlation coefficient between corresponding
+            elements, with the diagonal set to 0.
+        -   "var_z": IxI array of variance of z-transformed correlation coefficient between
+            corresponding elements, with the diagonal set to 0.
+        -   "varlimit": Theoretical variance under x & y are i.i.d;
+            (1-rho^2)^2 / (number of retained volumes).
+        -   "varlimit_idx": Index of (i,j) edges of which their variance exceeded the theoretical
+            variance.
+
+    Notes
+    -----
+    Per :footcite:t:`afyouni2019effective`, method="truncate" + methodparam="adaptive" works best.
+
+    This implements scrubbing-aware xDF, following Christina Chen's reference implementation
+    (https://github.com/christinachen94/scrubbing-aware-xDF).
+    Lagged auto- and cross-correlations are averaged over pairs of retained volumes,
+    adaptive truncation compares the autocorrelations (from lag 1) against
+    N(0, 1 / (T - 1)) and truncates the cross-correlations at the same lag,
+    and the variance is computed with the lag-sum form of the xDF formula,
+    weighting each lag by the number of retained pairs at that lag.
+
+    Censored volumes are left out of every sum,
+    so the correlation at lag k is the sum over pairs of retained volumes k apart,
+    divided by ``k + |A_k|``, where ``|A_k|`` is the number of such pairs
+    (the denominator used by R's ``acf``).
+    The variance and its white-noise floor use the number of retained volumes in place of T.
+
+    Changes from the scrubbing-aware xDF code (``xDF_scrub``) that this function was adapted
+    from:
+
+    -   Censored volumes are taken from ``temporal_mask`` instead of being inferred from NaNs
+        in ``arr``.
+    -   Lag 0 is dropped from the autocorrelations before regularization,
+        so the autocorrelations and cross-correlations are indexed by the same lags.
+        Previously, the Tukey taper and fixed truncation (``methodparam`` as an integer)
+        applied the window to the autocorrelations one lag earlier than to the
+        cross-correlations, and adaptive truncation tested lag 0 along with the others.
+    -   Adaptive truncation uses the bound ``1.96 / sqrt(T - 1)`` instead of
+        ``1.96 / sqrt(T)``, and each pair's cross-correlations are cut at the same lag as
+        the larger of the two autocorrelation breakpoints, instead of one lag later.
+    -   The variance is computed with the lag-sum form of the xDF formula,
+        with each lag weighted by ``|A_k|``, instead of from traces of Toeplitz matrices with
+        the censored rows and columns removed.
+        It is computed one row of the matrix at a time, rather than one edge at a time.
+    -   The lagged auto- and cross-correlations are computed from a single FFT of all of the
+        time series, and the cross-correlations are computed one row at a time,
+        so memory scales with V * T rather than V^2 * T.
+        The number of retained pairs at each lag is computed by correlating the
+        retained-volume indicator with itself, rather than by listing every pair.
+    -   Features with no retained data have NaN, rather than 1, on the diagonal of ``r``.
+    -   The corrected and uncorrected z-scores and p-values are not returned.
+
+    References
+    ----------
+    .. footbibliography::
+    """
+    import scipy.fft as sp_fft
+
+    n_features, n_samples = arr.shape
+    time_idx = np.arange(temporal_mask.size)
+    scrubbed_frames = time_idx[np.asarray(temporal_mask).astype(bool)]
+    n_retained_samples = n_samples - scrubbed_frames.size
+
+    arr = arr - np.nanmean(arr, axis=1)[:, None]
+    norms = np.nanmean(arr**2, axis=1)[:, None]
+
+    # Mask NaNs with 0s for summation
+    if n_retained_samples < n_samples:
+        arr[:, scrubbed_frames] = 0
+
+    # Calculate denominator according to acf in R:
+    # the number of pairs of retained volumes at each lag, plus the lag
+    retained = np.ones(n_samples)
+    retained[scrubbed_frames] = 0
+    n_pairs = np.round(np.correlate(retained, retained, mode='full')[n_samples - 1 :])
+    n_denom = n_pairs + np.arange(n_samples)
+    lag_denom = n_denom[1:]
+
+    # Lagged correlations are computed from one FFT of all of the time series.
+    # Cross-correlations are computed one row at a time below, so the full
+    # (V, V, lags) array is never held in memory.
+    n_fft = sp_fft.next_fast_len(2 * n_samples - 1)
+    arr_fft = sp_fft.rfft(arr, n=n_fft, axis=1)
+    lags = np.arange(1, n_samples)
+
+    # Calculate autocorrelation, starting at lag 1
+    ac = sp_fft.irfft(np.abs(arr_fft) ** 2, n=n_fft, axis=1)[:, lags] / lag_denom / norms
+
+    # Extract lag-0 correlations
+    rho = (arr @ arr.T) / n_retained_samples / np.sqrt(norms * norms.T)
+    np.fill_diagonal(rho, 1)
+    # Features without data (e.g., parcels with low coverage) get NaNs on the diagonal too
+    empty_features = np.isnan(norms[:, 0])
+    rho[empty_features, empty_features] = np.nan
+
+    def _cross_correlations(i_feature):
+        """Get the cross-correlations between one feature and all features, from lag 1.
+
+        The diagonal (the feature with itself) is set to zero.
+        """
+        xc_full = sp_fft.irfft(arr_fft[i_feature] * np.conj(arr_fft), n=n_fft, axis=1)
+        scale = np.sqrt(norms[i_feature] * norms) * lag_denom
+        xc_pos = xc_full[:, lags] / scale
+        xc_neg = xc_full[:, n_fft - lags] / scale
+        xc_pos[i_feature] = 0
+        xc_neg[i_feature] = 0
+        return xc_pos, xc_neg
+
+    # Regularize!
+    if method.lower() == 'tukey':
+        if methodparam == '':
+            M = np.sqrt(n_samples)
+        else:
+            M = methodparam
+
+        LOGGER.info(f'AC regularization: Tukey tapering of M = {int(np.round(M))}')
+
+        ac = tukeytaperme(ac, n_samples - 1, M)
+
+        def _regularize(xc_lagged, i_feature):
+            return tukeytaperme(xc_lagged, n_samples - 1, M)
+
+    elif method.lower() == 'truncate':
+        if isinstance(methodparam, str):  # Adaptive truncation
+            if methodparam.lower() != 'adaptive':
+                raise ValueError('methodparam for truncation must be "adaptive" or an integer')
+
+            LOGGER.info('AC regularization: adaptive truncation')
+
+            ac, bp = shrinkme(ac, n_samples - 1)
+
+            def _regularize(xc_lagged, i_feature):
+                # Truncate each pair's cross-correlations at the larger of the two breakpoints
+                max_bp = np.maximum(bp[i_feature], bp)
+                return xc_lagged * (np.arange(n_samples - 1)[None, :] < max_bp[:, None])
+
+        elif isinstance(methodparam, int):  # Non-adaptive truncation
+            LOGGER.info(f'AC regularization: non-adaptive truncation on M = {methodparam}')
+            ac = curbtaperme(ac=ac, M=methodparam)
+
+            def _regularize(xc_lagged, i_feature):
+                return curbtaperme(ac=xc_lagged, M=methodparam)
+
+        else:
+            raise ValueError('methodparam for truncation method should be either str or int')
+    else:
+        raise ValueError('Method parameter must be either "tukey" or "truncate".')
+
+    # Estimate variance (big formula), in its lag-sum form.
+    # Each lag is weighted by the number of pairs of retained volumes at that lag.
+    weights = n_pairs[1:]
+    var_hat_rho = np.zeros((n_features, n_features))
+    for i in range(n_features):
+        xc_p, xc_n = _cross_correlations(i)
+        xc_p = _regularize(xc_p, i)
+        xc_n = _regularize(xc_n, i)
+        r = rho[i, :]
+        ac_i = ac[i, None, :]
+        xc_sum = xc_p + xc_n
+        var_hat_rho[i, :] = (
+            n_retained_samples * (1 - r**2) ** 2
+            + r**2 * np.sum(weights * (ac_i**2 + ac**2 + xc_p**2 + xc_n**2), axis=1)
+            - 2 * r * np.sum(weights * ((ac_i + ac) * xc_sum), axis=1)
+            + 2 * np.sum(weights * (ac_i * ac + xc_p * xc_n), axis=1)
+        ) / n_retained_samples**2
+
+    # Truncate to theoretical variance
+    varlimit = (1 - rho**2) ** 2 / n_retained_samples
+
+    varlimit_idx = np.where(var_hat_rho < varlimit)
+    n_var_outliers = varlimit_idx[1].size / 2
+    if n_var_outliers > 0 and limit_variance:
+        LOGGER.info('Variance truncation is ON.')
+
+        # Assuming that the variance can *only* get larger in presence of autocorrelation.
+        var_hat_rho[varlimit_idx] = varlimit[varlimit_idx]
+
+        FGE = (n_features * (n_features - 1)) / 2
+        LOGGER.info(
+            f'{n_var_outliers} ({round((n_var_outliers / FGE) * 100, 3)}%) '
+            'edges had variance smaller than the textbook variance!'
+        )
+    else:
+        LOGGER.info('NO truncation to the theoretical variance.')
+
+    # Our turf--------------------------------
+    rf = np.arctanh(rho)
+    var_z = var_hat_rho / ((1 - rho**2) ** 2)
+
+    # Set diagonal to 0. I guess variance is not meaningful here?
+    np.fill_diagonal(var_hat_rho, 0)
+    np.fill_diagonal(var_z, 0)
+
+    out = {
+        'r': rho,
+        'z': rf,
+        'var_r': var_hat_rho,
+        'var_z': var_z,
+        'varlimit': varlimit,
+        'varlimit_idx': varlimit_idx,
+    }
+
+    return out
+
+
+def tukeytaperme(ac, T, M):
+    """Regularize lagged correlations with a Tukey taper.
+
+    Parameters
+    ----------
+    ac : :obj:`numpy.ndarray` of shape (L,), (V, L), or (V, V, L)
+        Lagged auto- or cross-correlations, starting at lag 1, with lags along the last axis.
+        A 2D array may also have shape (L, V).
+        V = number of features/regions/voxels
+        L = number of lags
+    T : :obj:`int`
+        The number of lags (L). Used to check the shape of ``ac``.
+    M : :obj:`int` or :obj:`float`
+        The width of the taper window, in lags. Rounded to the nearest integer.
+
+    Returns
+    -------
+    tt_ts : :obj:`numpy.ndarray`
+        The tapered correlations, with the same shape as ``ac``.
+        Lag k (for k < M) is multiplied by ``(1 + cos(pi * k / M)) / 2``,
+        and lags of M and above are set to zero.
+
+    Raises
+    ------
+    ValueError
+        If no dimension of ``ac`` has length ``T``.
+
+    Notes
+    -----
+    :footcite:t:`afyouni2019effective` use ``M = sqrt(T)`` as the default window width,
+    following Chatfield (2016).
+
+    Changes from the original xDF implementation:
+
+    -   A 2D input with lags along the first axis, shape (L, V), is now tapered along the lags
+        and returned with its original shape.
+        The original allocated the output before transposing the input,
+        so this case failed with a shape mismatch.
+
+    SA, Ox, 2018
+
+    References
+    ----------
+    .. footbibliography::
+    """
+    if T not in ac.shape:
+        raise ValueError('There is something wrong, mate!')
+
+    ac = ac.copy()
+
+    M = int(np.round(M))
+
+    tukeymultiplier = (1 + np.cos(np.arange(1, M) * np.pi / M)) / 2
+
+    # Put the lags on the last axis before allocating the output
+    transposed = ac.ndim == 2 and ac.shape[1] != T
+    if transposed:
+        ac = ac.T
+
+    tt_ts = np.zeros(ac.shape)
+
+    if ac.ndim == 2:
+        LOGGER.debug('The input is 2D.')
+        n_rows = ac.shape[0]
+        tt_ts[:, : M - 1] = np.tile(tukeymultiplier, [n_rows, 1]) * ac[:, : M - 1]
+
+        if transposed:
+            tt_ts = tt_ts.T
+
+    elif ac.ndim == 3:
+        LOGGER.debug('The input is 3D.')
+
+        n_rows = ac.shape[0]
+        tt_ts[:, :, : M - 1] = (
+            np.tile(
+                tukeymultiplier,
+                [n_rows, n_rows, 1],
+            )
+            * ac[:, :, : M - 1]
+        )
+
+    elif ac.ndim == 1:
+        LOGGER.debug('The input is 1D.')
+
+        tt_ts[: M - 1] = tukeymultiplier * ac[: M - 1]
+
+    return tt_ts
+
+
+def curbtaperme(ac, M):
+    """Truncate lagged correlations beyond a given lag, according to Anderson (1984).
+
+    Parameters
+    ----------
+    ac : :obj:`numpy.ndarray` of shape (L,), (V, L), or (V, V, L)
+        Lagged auto- or cross-correlations, starting at lag 1, with lags along the last axis.
+        V = number of features/regions/voxels
+        L = number of lags
+    M : :obj:`int` or :obj:`float`
+        The number of lags to keep. Rounded to the nearest integer.
+
+    Returns
+    -------
+    ct_ts : :obj:`numpy.ndarray`
+        The truncated correlations, with the same shape as ``ac``.
+        The first M lags are unchanged, and all later lags are set to zero.
+
+    Notes
+    -----
+    SA, Ox, 2018
+    """
+    ac = ac.copy()
+    M = int(np.round(M))
+    msk = np.zeros(np.shape(ac))
+    if ac.ndim == 2:
+        LOGGER.debug('The input is 2D.')
+        msk[:, :M] = 1
+
+    elif ac.ndim == 3:
+        LOGGER.debug('The input is 3D.')
+        msk[:, :, :M] = 1
+
+    elif ac.ndim == 1:
+        LOGGER.debug('The input is 1D.')
+        msk[:M] = 1
+
+    ct_ts = msk * ac
+
+    return ct_ts
+
+
+def shrinkme(ac, T):
+    """Truncate each autocorrelation function at the first lag inside the white-noise CI.
+
+    This is the adaptive truncation method from :footcite:t:`afyouni2019effective`.
+
+    Parameters
+    ----------
+    ac : :obj:`numpy.ndarray` of shape (V, T)
+        Autocorrelations, starting at lag 1, with one row per time series.
+        If the second dimension does not have length ``T``, ``ac`` is transposed.
+        V = number of features/regions/voxels
+    T : :obj:`int`
+        The number of lags. Also sets the 95% confidence interval for white noise,
+        ``+/- 1.96 / sqrt(T)``.
+
+    Returns
+    -------
+    masked_ac : :obj:`numpy.ndarray` of shape (V, T)
+        The autocorrelations, with the first lag whose absolute value falls inside the
+        confidence interval, and every later lag, set to zero.
+        Rows with no such lag are set entirely to zero.
+    BreakPoint : :obj:`numpy.ndarray` of shape (V,)
+        The number of lags kept for each time series
+        (zero for rows with no lag inside the confidence interval).
+        Use this to truncate the corresponding cross-correlations.
+
+    Notes
+    -----
+    SA, Ox, 2018
+
+    References
+    ----------
+    .. footbibliography::
+    """
+    ac = ac.copy()
+
+    if np.shape(ac)[1] != T:
+        ac = ac.T
+
+    bnd = (np.sqrt(2) * 1.3859) / np.sqrt(T)
+    # assumes normality for AC
+
+    n_rows = np.shape(ac)[0]
+    msk = np.zeros(np.shape(ac))
+    BreakPoint = np.zeros(n_rows)
+    for i in np.arange(n_rows):
+        # finds the break point -- intercept
+        TheFirstFalse = np.where(np.abs(ac[i, :]) < bnd)
+
+        # if you couldn't find a break point, then continue = the row will remain zero
+        if np.size(TheFirstFalse) == 0:
+            continue
+        else:
+            BreakPoint_tmp = TheFirstFalse[0][0]
+
+        msk[i, :BreakPoint_tmp] = 1
+        BreakPoint[i] = BreakPoint_tmp
+
+    return ac * msk, BreakPoint
+
+
 def get_col(df, col):
     """Get a column from a dataframe, with support for `_hash-<hash>` suffixes.
 

@@ -412,75 +412,85 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 )
                 workflow.connect([(ds_timeseries, make_correlations_dict, [('out_file', 'in1')])])
 
-                ds_correlations = pe.MapNode(
-                    DerivativesDataSink(
-                        # Be explicit with entities because the source file is the timeseries
-                        dismiss_entities=dismiss_hash(['desc']),
-                        statistic='pearsoncorrelation',
-                        suffix='relmat',
-                        extension='.tsv',
-                    ),
-                    name='ds_correlations',
-                    run_without_submitting=True,
-                    mem_gb=1,
-                    iterfield=['source_file', 'in_file', 'meta_dict'],
-                )
+            # Variance outputs are not written for concatenated data
+            concat_statistics = {'r': 'pearsoncorrelation', 'z': 'fisherz'}
+            concat_outputs = [
+                output
+                for output in config.workflow.correlation_outputs
+                if output in concat_statistics
+            ]
+            for output in concat_outputs:
+                statistic = concat_statistics[output]
+                if 'all' in config.workflow.correlation_lengths:
+                    ds_correlations = pe.MapNode(
+                        DerivativesDataSink(
+                            # Be explicit with entities because the source file is the timeseries
+                            dismiss_entities=dismiss_hash(['desc']),
+                            statistic=statistic,
+                            suffix='relmat',
+                            extension='.tsv',
+                        ),
+                        name=f'ds_correlations_{output}',
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        iterfield=['source_file', 'in_file', 'meta_dict'],
+                    )
 
-                workflow.connect([
-                    (filter_runs, ds_correlations, [
-                        (('timeseries', _combine_name), 'source_file'),
-                    ]),
-                    (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
-                    (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
-                ])  # fmt:skip
+                    workflow.connect([
+                        (filter_runs, ds_correlations, [
+                            (('timeseries', _combine_name), 'source_file'),
+                        ]),
+                        (correlate_timeseries, ds_correlations, [(output, 'in_file')]),
+                        (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
+                    ])  # fmt:skip
 
-            for i_exact_scan, exact_scan in enumerate(exact_scans):
-                select_exact_scan_files = pe.MapNode(
-                    niu.Select(index=i_exact_scan),
-                    name=f'select_exact_scan_files_{i_exact_scan}',
-                    iterfield=['inlist'],
-                )
-                workflow.connect([
-                    (correlate_timeseries, select_exact_scan_files, [
-                        ('correlations_exact', 'inlist'),
-                    ]),
-                ])  # fmt:skip
+                for i_exact_scan, exact_scan in enumerate(exact_scans):
+                    select_exact_scan_files = pe.MapNode(
+                        niu.Select(index=i_exact_scan),
+                        name=f'select_exact_scan_files_{i_exact_scan}_{output}',
+                        iterfield=['inlist'],
+                    )
+                    workflow.connect([
+                        (correlate_timeseries, select_exact_scan_files, [
+                            (f'{output}_exact', 'inlist'),
+                        ]),
+                    ])  # fmt:skip
 
-                add_hash_correlations_exact = pe.MapNode(
-                    AddHashToTSV(
-                        add_to_columns=True,
-                        add_to_rows=True,
-                    ),
-                    name=f'add_hash_correlations_exact_{i_exact_scan}',
-                    iterfield=['in_file'],
-                )
-                workflow.connect([
-                    (select_exact_scan_files, add_hash_correlations_exact, [
-                        ('out', 'in_file'),
-                    ]),
-                ])  # fmt:skip
+                    add_hash_correlations_exact = pe.MapNode(
+                        AddHashToTSV(
+                            add_to_columns=True,
+                            add_to_rows=True,
+                        ),
+                        name=f'add_hash_correlations_exact_{i_exact_scan}_{output}',
+                        iterfield=['in_file'],
+                    )
+                    workflow.connect([
+                        (select_exact_scan_files, add_hash_correlations_exact, [
+                            ('out', 'in_file'),
+                        ]),
+                    ])  # fmt:skip
 
-                ds_correlations_exact = pe.MapNode(
-                    DerivativesDataSink(
-                        dismiss_entities=dismiss_hash(['desc']),
-                        statistic='pearsoncorrelation',
-                        desc=f'{exact_scan}volumes',
-                        suffix='relmat',
-                        extension='.tsv',
-                    ),
-                    name=f'ds_correlations_exact_{i_exact_scan}',
-                    run_without_submitting=True,
-                    mem_gb=1,
-                    iterfield=['source_file', 'in_file'],
-                )
-                workflow.connect([
-                    (filter_runs, ds_correlations_exact, [
-                        (('timeseries', _combine_name), 'source_file'),
-                    ]),
-                    (add_hash_correlations_exact, ds_correlations_exact, [
-                        ('out_file', 'in_file'),
-                    ]),
-                ])  # fmt:skip
+                    ds_correlations_exact = pe.MapNode(
+                        DerivativesDataSink(
+                            dismiss_entities=dismiss_hash(['desc']),
+                            statistic=statistic,
+                            desc=f'{exact_scan}volumes',
+                            suffix='relmat',
+                            extension='.tsv',
+                        ),
+                        name=f'ds_correlations_exact_{i_exact_scan}_{output}',
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        iterfield=['source_file', 'in_file'],
+                    )
+                    workflow.connect([
+                        (filter_runs, ds_correlations_exact, [
+                            (('timeseries', _combine_name), 'source_file'),
+                        ]),
+                        (add_hash_correlations_exact, ds_correlations_exact, [
+                            ('out_file', 'in_file'),
+                        ]),
+                    ])  # fmt:skip
 
         if file_format == 'cifti':
             cifti_ts_src = pe.MapNode(

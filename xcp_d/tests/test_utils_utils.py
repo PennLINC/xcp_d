@@ -1104,3 +1104,250 @@ def test_get_col():
     # Should return the first hash variant when no exact match
     result = utils.get_col(hash_df, 'signal')
     assert result.tolist() == [1, 2, 3]
+
+
+def _make_xdf_data():
+    """Create deterministic, autocorrelated, correlated time series and a temporal mask."""
+    n_samples = 60
+    t = np.arange(n_samples)
+    shared = np.sin(0.21 * t) + 0.5 * np.cos(0.47 * t)
+    arr = np.vstack(
+        [
+            shared + np.sin(0.13 * t + 0.4) + 0.3 * np.cos(1.7 * t),
+            0.6 * shared + np.cos(0.31 * t + 1.1) + 0.3 * np.sin(2.3 * t),
+            -0.4 * shared + np.sin(0.09 * t + 2.0) + 0.3 * np.cos(2.9 * t + 0.5),
+        ]
+    )
+    temporal_mask = np.zeros(n_samples, dtype=int)
+    temporal_mask[[3, 4, 5, 17, 30, 31, 44, 58]] = 1
+    return arr, temporal_mask
+
+
+def test_correlate_timeseries_xdf_matches_reference():
+    """Compare correlate_timeseries_xdf to the reference scrubbing-aware xDF implementation.
+
+    The expected values were generated with ``xDF_scrub`` from
+    https://github.com/christinachen94/scrubbing-aware-xDF (commit 09bb6f7),
+    with outlier volumes set to NaN.
+    """
+    arr, temporal_mask = _make_xdf_data()
+    arr[:, temporal_mask.astype(bool)] = np.nan
+
+    out = utils.correlate_timeseries_xdf(arr, temporal_mask)
+
+    expected_r = np.array(
+        [
+            [1.0, 0.470859512948, 0.224860871449],
+            [0.470859512948, 1.0, -0.306915286868],
+            [0.224860871449, -0.306915286868, 1.0],
+        ]
+    )
+    expected_var_r = np.array(
+        [
+            [0.0, 0.054624129583, 0.093668117418],
+            [0.054624129583, 0.0, 0.067665755678],
+            [0.093668117418, 0.067665755678, 0.0],
+        ]
+    )
+    expected_var_z = np.array(
+        [
+            [0.0, 0.09017790816, 0.103910383714],
+            [0.09017790816, 0.0, 0.082471030349],
+            [0.103910383714, 0.082471030349, 0.0],
+        ]
+    )
+    np.testing.assert_allclose(out['r'], expected_r, atol=1e-10)
+    np.testing.assert_allclose(out['var_r'], expected_var_r, atol=1e-10)
+    np.testing.assert_allclose(out['var_z'], expected_var_z, atol=1e-10)
+    offdiag = ~np.eye(3, dtype=bool)
+    np.testing.assert_allclose(out['z'][offdiag], np.arctanh(expected_r[offdiag]))
+
+
+@pytest.mark.parametrize('censor', [True, False])
+def test_correlate_timeseries_xdf_matches_corrcoef(censor):
+    """Check that the correlations match np.corrcoef on the retained volumes."""
+    arr, temporal_mask = _make_xdf_data()
+    if not censor:
+        temporal_mask[:] = 0
+
+    retained = ~temporal_mask.astype(bool)
+    expected_r = np.corrcoef(arr[:, retained])
+    arr[:, ~retained] = np.nan
+
+    out = utils.correlate_timeseries_xdf(arr, temporal_mask)
+    for key in ['r', 'z', 'var_r', 'var_z']:
+        assert not np.any(np.isnan(out[key])), key
+
+    np.testing.assert_allclose(out['r'], expected_r, atol=1e-10)
+    # Autocorrelated data should have larger variance than white noise
+    offdiag = ~np.eye(3, dtype=bool)
+    white_noise_var = (1 - expected_r**2) ** 2 / retained.sum()
+    assert np.all(out['var_r'][offdiag] > white_noise_var[offdiag])
+
+
+def test_correlate_timeseries_censored_and_uncensored(tmp_path):
+    """Check that censored and uncensored time series TSVs give the same results."""
+    arr, temporal_mask = _make_xdf_data()
+    retained = ~temporal_mask.astype(bool)
+    columns = ['a', 'b', 'c']
+
+    uncensored_file = tmp_path / 'uncensored.tsv'
+    censored_file = tmp_path / 'censored.tsv'
+    pd.DataFrame(arr.T, columns=columns).to_csv(uncensored_file, sep='\t', index=False)
+    pd.DataFrame(arr[:, retained].T, columns=columns).to_csv(
+        censored_file,
+        sep='\t',
+        index=False,
+    )
+
+    uncensored = utils.correlate_timeseries(str(uncensored_file), temporal_mask)
+    censored = utils.correlate_timeseries(str(censored_file), temporal_mask)
+    expected_r = np.corrcoef(arr[:, retained])
+    for key in ['r', 'z', 'var_r', 'var_z']:
+        assert list(uncensored[key].index) == columns
+        assert list(uncensored[key].columns) == columns
+        np.testing.assert_allclose(uncensored[key].to_numpy(), censored[key].to_numpy())
+
+    np.testing.assert_allclose(uncensored['r'].to_numpy(), expected_r, atol=1e-10)
+
+
+def test_correlate_timeseries_xdf_empty_feature():
+    """Check that a feature without data gets NaNs, including on the diagonal."""
+    arr, temporal_mask = _make_xdf_data()
+    arr[:, temporal_mask.astype(bool)] = np.nan
+    expected = utils.correlate_timeseries_xdf(arr[:2].copy(), temporal_mask)
+
+    arr = np.vstack([arr[:2], np.full((1, arr.shape[1]), np.nan)])
+    out = utils.correlate_timeseries_xdf(arr, temporal_mask)
+
+    for key in ['r', 'z', 'var_r', 'var_z']:
+        assert np.all(np.isnan(out[key][2, :2])), key
+        assert np.all(np.isnan(out[key][:2, 2])), key
+        np.testing.assert_allclose(out[key][:2, :2], expected[key])
+
+    assert np.isnan(out['r'][2, 2])
+    assert np.all(np.diag(out['r'])[:2] == 1)
+
+
+@pytest.mark.parametrize(
+    ('method', 'methodparam'),
+    [('truncate', 5), ('tukey', ''), ('tukey', 7)],
+)
+def test_correlate_timeseries_xdf_regularization(method, methodparam):
+    """Check the non-adaptive regularization methods."""
+    arr, temporal_mask = _make_xdf_data()
+    retained = ~temporal_mask.astype(bool)
+    expected_r = np.corrcoef(arr[:, retained])
+    arr[:, ~retained] = np.nan
+
+    out = utils.correlate_timeseries_xdf(
+        arr,
+        temporal_mask,
+        method=method,
+        methodparam=methodparam,
+    )
+    # Regularization only affects the variance, not the correlations
+    np.testing.assert_allclose(out['r'], expected_r, atol=1e-10)
+    offdiag = ~np.eye(3, dtype=bool)
+    assert np.all(out['var_r'][offdiag] > 0)
+    np.testing.assert_allclose(out['var_r'], out['var_r'].T)
+    np.testing.assert_allclose(
+        out['var_z'][offdiag],
+        (out['var_r'] / (1 - out['r'] ** 2) ** 2)[offdiag],
+    )
+
+
+@pytest.mark.parametrize(
+    ('kwargs', 'match'),
+    [
+        ({'method': 'fake'}, 'must be either "tukey" or "truncate"'),
+        ({'methodparam': 'fake'}, 'must be "adaptive" or an integer'),
+        ({'methodparam': 2.5}, 'should be either str or int'),
+    ],
+)
+def test_correlate_timeseries_xdf_invalid_regularization(kwargs, match):
+    """Check that invalid regularization parameters raise errors."""
+    arr, temporal_mask = _make_xdf_data()
+    with pytest.raises(ValueError, match=match):
+        utils.correlate_timeseries_xdf(arr, temporal_mask, **kwargs)
+
+
+def test_correlate_timeseries_xdf_limit_variance():
+    """Check that variances below the white-noise variance are raised to it.
+
+    Pairs with opposite-sign autocorrelation have a smaller variance than white noise.
+    """
+    rng = np.random.default_rng(0)
+    eps = rng.normal(size=(3, 60))
+    arr = np.zeros_like(eps)
+    arr[:, 0] = eps[:, 0]
+    for t in range(1, 60):
+        arr[:, t] = np.array([0.7, -0.7, 0.7]) * arr[:, t - 1] + eps[:, t]
+
+    temporal_mask = np.zeros(60, dtype=int)
+    unlimited = utils.correlate_timeseries_xdf(arr.copy(), temporal_mask, limit_variance=False)
+    limited = utils.correlate_timeseries_xdf(arr.copy(), temporal_mask, limit_variance=True)
+
+    offdiag = ~np.eye(3, dtype=bool)
+    below = (unlimited['var_r'] < unlimited['varlimit']) & offdiag
+    assert below.any()
+    np.testing.assert_allclose(limited['var_r'][below], limited['varlimit'][below])
+    np.testing.assert_allclose(
+        limited['var_r'][offdiag & ~below],
+        unlimited['var_r'][offdiag & ~below],
+    )
+
+
+def test_correlate_timeseries_invalid_mask(tmp_path):
+    """Check that correlate_timeseries rejects mismatched temporal masks."""
+    arr, temporal_mask = _make_xdf_data()
+    timeseries = tmp_path / 'timeseries.tsv'
+    pd.DataFrame(arr.T, columns=['a', 'b', 'c']).to_csv(timeseries, sep='\t', index=False)
+
+    with pytest.raises(ValueError, match='must be 1D'):
+        utils.correlate_timeseries(str(timeseries), temporal_mask[:, None])
+
+    with pytest.raises(ValueError, match='same number of rows'):
+        utils.correlate_timeseries(str(timeseries), temporal_mask[:-1])
+
+
+def test_taper_helpers():
+    """Check tukeytaperme, curbtaperme, and shrinkme on small inputs."""
+    ac = np.linspace(1, 0.1, 10)
+
+    # curbtaperme keeps the first M lags
+    np.testing.assert_array_equal(
+        utils.curbtaperme(ac, 3),
+        np.concatenate((ac[:3], np.zeros(7))),
+    )
+
+    # tukeytaperme weights lag k (k < M) by (1 + cos(pi * k / M)) / 2
+    expected = np.zeros(10)
+    expected[:3] = ac[:3] * (1 + np.cos(np.arange(1, 4) * np.pi / 4)) / 2
+    np.testing.assert_allclose(utils.tukeytaperme(ac, 10, 4), expected)
+    ac_2d = np.vstack((ac, 2 * ac))
+    np.testing.assert_allclose(
+        utils.tukeytaperme(ac_2d, 10, 4),
+        np.vstack((expected, 2 * expected)),
+    )
+    # 2D input with lags along the first axis is tapered along the lags and keeps its shape
+    np.testing.assert_allclose(
+        utils.tukeytaperme(ac_2d.T, 10, 4),
+        np.vstack((expected, 2 * expected)).T,
+    )
+    np.testing.assert_allclose(
+        utils.tukeytaperme(np.stack((ac_2d, ac_2d)), 10, 4),
+        np.stack((np.vstack((expected, 2 * expected)),) * 2),
+    )
+    with pytest.raises(ValueError, match='something wrong'):
+        utils.tukeytaperme(ac, 11, 4)
+
+    # shrinkme cuts each row at its first lag inside +/- 1.96 / sqrt(T)
+    ac_rows = np.array([[1, 0.5, 0.1, 0.05], [0.9, 0.8, 0.6, 0.01]])
+    masked, breakpoints = utils.shrinkme(ac_rows, 4)
+    np.testing.assert_array_equal(masked, [[1, 0, 0, 0], [0, 0, 0, 0]])
+    np.testing.assert_array_equal(breakpoints, [1, 0])
+    # Input with lags along the first axis is transposed
+    masked_t, breakpoints_t = utils.shrinkme(ac_rows.T, 4)
+    np.testing.assert_array_equal(masked_t, masked)
+    np.testing.assert_array_equal(breakpoints_t, breakpoints)

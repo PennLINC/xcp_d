@@ -55,7 +55,7 @@ def init_functional_connectivity_nifti_wf(
     ------
     %(name_source)s
     denoised_bold
-        clean bold after filtered out nuisscance and filtering
+        clean bold after regressing out nuisance variables and filtering
     %(temporal_mask)s
     alff
     reho
@@ -108,7 +108,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             fields=[
                 'coverage',
                 'timeseries',
-                'correlations',
+                'correlations_r',
+                'correlations_z',
+                'correlations_var_r',
+                'correlations_var_z',
                 'parcellated_alff',
                 'parcellated_reho',
             ],
@@ -146,7 +149,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (inputnode, functional_connectivity, [('temporal_mask', 'temporal_mask')]),
             (parcellate_data, functional_connectivity, [('timeseries', 'timeseries')]),
             (functional_connectivity, outputnode, [
-                ('correlations', 'correlations'),
+                ('r', 'correlations_r'),
+                ('z', 'correlations_z'),
+                ('var_r', 'correlations_var_r'),
+                ('var_z', 'correlations_var_z'),
             ]),
         ])  # fmt:skip
 
@@ -160,7 +166,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 ('atlases', 'atlases'),
                 ('atlas_labels_files', 'atlas_tsvs'),
             ]),
-            (functional_connectivity, connectivity_plot, [('correlations', 'correlations_tsv')]),
+            (functional_connectivity, connectivity_plot, [('r', 'correlations_tsv')]),
         ])  # fmt:skip
 
         ds_report_connectivity_plot = pe.Node(
@@ -276,10 +282,8 @@ def init_functional_connectivity_cifti_wf(
     parcellated_reho
     parcellated_alff
     """
-    from xcp_d.interfaces.censoring import Censor
-    from xcp_d.interfaces.connectivity import CiftiToTSV, ConnectPlot
+    from xcp_d.interfaces.connectivity import ConnectPlot, TSVConnect, TSVToPconn
     from xcp_d.interfaces.plotting import PlotCiftiParcellation
-    from xcp_d.interfaces.workbench import CiftiCorrelation
 
     workflow = Workflow(name=name)
 
@@ -319,10 +323,16 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             fields=[
                 'coverage_ciftis',
                 'timeseries_ciftis',
-                'correlation_ciftis',
                 'coverage',
                 'timeseries',
-                'correlations',
+                'correlations_r',
+                'correlations_z',
+                'correlations_var_r',
+                'correlations_var_z',
+                'correlations_r_cifti',
+                'correlations_z_cifti',
+                'correlations_var_r_cifti',
+                'correlations_var_z_cifti',
                 'parcellated_alff',
                 'parcellated_reho',
             ],
@@ -385,58 +395,44 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-    # Reduce the CIFTI before calculating correlations
-    parcellated_bold_buffer = pe.MapNode(
-        niu.IdentityInterface(fields=['parcellated_cifti']),
-        name='parcellated_bold_buffer',
-        iterfield=['parcellated_cifti'],
-    )
-    if config.workflow.output_interpolated:
-        # If we want interpolated time series, the parcellated CIFTI will have interpolated values,
-        # but the correlation matrices should only include low-motion volumes.
-        remove_outliers = pe.MapNode(
-            Censor(column='denoising'),
-            name='remove_outliers',
-            iterfield=['in_file'],
+    if config.workflow.output_run_wise_correlations or not has_multiple_runs:
+        # Calculate the correlation matrix from the parcellated tsv files
+        functional_connectivity = pe.MapNode(
+            TSVConnect(),
+            name='functional_connectivity',
+            iterfield=['timeseries'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
-            (inputnode, remove_outliers, [('temporal_mask', 'temporal_mask')]),
-            (parcellate_bold_wf, remove_outliers, [('outputnode.parcellated_cifti', 'in_file')]),
-            (remove_outliers, parcellated_bold_buffer, [('out_file', 'parcellated_cifti')]),
-        ])  # fmt:skip
-    else:
-        workflow.connect([
-            (parcellate_bold_wf, parcellated_bold_buffer, [
-                ('outputnode.parcellated_cifti', 'parcellated_cifti'),
+            (inputnode, functional_connectivity, [('temporal_mask', 'temporal_mask')]),
+            (parcellate_bold_wf, functional_connectivity, [
+                ('outputnode.parcellated_tsv', 'timeseries'),
+            ]),
+            (functional_connectivity, outputnode, [
+                ('r', 'correlations_r'),
+                ('z', 'correlations_z'),
+                ('var_r', 'correlations_var_r'),
+                ('var_z', 'correlations_var_z'),
             ]),
         ])  # fmt:skip
 
-    if config.workflow.output_run_wise_correlations or not has_multiple_runs:
-        # Correlate the parcellated data
-        correlate_bold = pe.MapNode(
-            CiftiCorrelation(
-                num_threads=config.nipype.omp_nthreads,
-            ),
-            name='correlate_bold',
-            iterfield=['in_file'],
-            n_procs=config.nipype.omp_nthreads,
-        )
-        workflow.connect([
-            (parcellated_bold_buffer, correlate_bold, [('parcellated_cifti', 'in_file')]),
-            (correlate_bold, outputnode, [('out_file', 'correlation_ciftis')]),
-        ])  # fmt:skip
-
-        # Convert correlation pconn file to TSV
-        dconn_to_tsv = pe.MapNode(
-            CiftiToTSV(),
-            name='dconn_to_tsv',
-            iterfield=['in_file', 'atlas_labels'],
-        )
-        workflow.connect([
-            (inputnode, dconn_to_tsv, [('atlas_labels_files', 'atlas_labels')]),
-            (correlate_bold, dconn_to_tsv, [('out_file', 'in_file')]),
-            (dconn_to_tsv, outputnode, [('out_file', 'correlations')]),
-        ])  # fmt:skip
+        # Convert the requested correlation outputs to pconn ciftis
+        for file_to_pconn in config.workflow.correlation_outputs:
+            convert_tsv_to_pconn = pe.MapNode(
+                TSVToPconn(),
+                name=f'convert_tsv_to_pconn_{file_to_pconn}',
+                iterfield=['in_file', 'source_cifti', 'atlas_labels'],
+            )
+            workflow.connect([
+                (inputnode, convert_tsv_to_pconn, [('atlas_labels_files', 'atlas_labels')]),
+                (parcellate_bold_wf, convert_tsv_to_pconn, [
+                    ('outputnode.parcellated_cifti', 'source_cifti'),
+                ]),
+                (functional_connectivity, convert_tsv_to_pconn, [(file_to_pconn, 'in_file')]),
+                (convert_tsv_to_pconn, outputnode, [
+                    ('out_file', f'correlations_{file_to_pconn}_cifti'),
+                ]),
+            ])  # fmt:skip
 
         # Plot up to four connectivity matrices
         connectivity_plot = pe.Node(
@@ -449,7 +445,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 ('atlases', 'atlases'),
                 ('atlas_labels_files', 'atlas_tsvs'),
             ]),
-            (dconn_to_tsv, connectivity_plot, [('out_file', 'correlations_tsv')]),
+            (functional_connectivity, connectivity_plot, [('r', 'correlations_tsv')]),
         ])  # fmt:skip
 
         ds_report_connectivity = pe.Node(

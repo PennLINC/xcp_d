@@ -416,10 +416,16 @@ the following post-processing was performed.
             (connectivity_wf, postproc_derivatives_wf, [
                 ('outputnode.coverage_ciftis', 'inputnode.coverage_ciftis'),
                 ('outputnode.timeseries_ciftis', 'inputnode.timeseries_ciftis'),
-                ('outputnode.correlation_ciftis', 'inputnode.correlation_ciftis'),
                 ('outputnode.coverage', 'inputnode.coverage'),
                 ('outputnode.timeseries', 'inputnode.timeseries'),
-                ('outputnode.correlations', 'inputnode.correlations'),
+                ('outputnode.correlations_r', 'inputnode.correlations_r'),
+                ('outputnode.correlations_z', 'inputnode.correlations_z'),
+                ('outputnode.correlations_var_r', 'inputnode.correlations_var_r'),
+                ('outputnode.correlations_var_z', 'inputnode.correlations_var_z'),
+                ('outputnode.correlations_r_cifti', 'inputnode.correlations_r_cifti'),
+                ('outputnode.correlations_z_cifti', 'inputnode.correlations_z_cifti'),
+                ('outputnode.correlations_var_r_cifti', 'inputnode.correlations_var_r_cifti'),
+                ('outputnode.correlations_var_z_cifti', 'inputnode.correlations_var_z_cifti'),
             ]),
         ])  # fmt:skip
 
