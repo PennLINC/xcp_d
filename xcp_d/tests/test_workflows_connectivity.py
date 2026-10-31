@@ -7,6 +7,7 @@ from pathlib import Path
 import nibabel as nb
 import numpy as np
 import pandas as pd
+import pytest
 from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d import config
@@ -428,3 +429,41 @@ def test_init_concatenate_data_wf_exact_scans(tmp_path):
         )
         node_names = [node.name for node in wf_without._graph.nodes()]
         assert 'random_censor' not in node_names
+
+
+@pytest.mark.parametrize('output_interpolated', [True, False])
+def test_init_concatenate_data_wf_cifti_censoring(output_interpolated):
+    """Test that concatenated CIFTI correlations only use low-motion volumes.
+
+    The concatenated parcellated CIFTI is interpolated when output_interpolated is True,
+    so it must be censored before both the full and the exact-scan correlations.
+    Otherwise it is already censored, and censoring it again would fail.
+    """
+    from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
+
+    with mock_config():
+        config.workflow.correlation_lengths = ['all', '300']
+        config.workflow.combine_runs = True
+        config.workflow.fd_thresh = 0.3
+        config.workflow.file_format = 'cifti'
+        config.workflow.output_interpolated = output_interpolated
+        config.execution.atlases = ['Glasser']
+
+        wf = init_concatenate_data_wf(
+            TR=2.0,
+            head_radius=50,
+            exact_scans=[150],
+            mem_gb={'bold': 1.0, 'volume': 0.01},
+        )
+        nodes = {node.name: node for node in wf._graph.nodes()}
+
+        assert ('censor_cifti_ts' in nodes) == output_interpolated
+        assert 'censor_cifti_ts_for_exact' not in nodes
+
+        buffer = nodes['censored_cifti_ts_buffer']
+        expected_source = nodes['censor_cifti_ts' if output_interpolated else 'ds_cifti_ts']
+        assert expected_source in wf._graph.predecessors(buffer)
+        assert list(wf._graph.predecessors(nodes['correlate_cifti_ts'])) == [buffer]
+        reduce_edge = wf._graph.get_edge_data(buffer, nodes['reduce_bold_150volumes'])
+        assert reduce_edge['connect'] == [('timeseries_cifti', 'in_file')]
+        assert nodes['ds_cifti_ts'] not in wf._graph.predecessors(nodes['reduce_bold_150volumes'])

@@ -516,6 +516,31 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 (cifti_ts_src, ds_cifti_ts, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
 
+            # Reduce the concatenated CIFTI before calculating correlations
+            censored_cifti_ts_buffer = pe.MapNode(
+                niu.IdentityInterface(fields=['timeseries_cifti']),
+                name='censored_cifti_ts_buffer',
+                iterfield=['timeseries_cifti'],
+            )
+            if config.workflow.correlation_lengths and config.workflow.output_interpolated:
+                # If we want interpolated time series, the concatenated parcellated CIFTI will
+                # have interpolated values, but the correlation matrices should only include
+                # low-motion volumes.
+                censor_cifti_ts = pe.MapNode(
+                    Censor(column='denoising'),
+                    name='censor_cifti_ts',
+                    iterfield=['in_file'],
+                )
+                workflow.connect([
+                    (concatenate_inputs, censor_cifti_ts, [('temporal_mask', 'temporal_mask')]),
+                    (ds_cifti_ts, censor_cifti_ts, [('out_file', 'in_file')]),
+                    (censor_cifti_ts, censored_cifti_ts_buffer, [('out_file', 'timeseries_cifti')]),
+                ])  # fmt:skip
+            else:
+                workflow.connect([
+                    (ds_cifti_ts, censored_cifti_ts_buffer, [('out_file', 'timeseries_cifti')]),
+                ])  # fmt:skip
+
             if 'all' in config.workflow.correlation_lengths:
                 correlate_cifti_ts_src = pe.MapNode(
                     BIDSURI(
@@ -540,7 +565,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                     n_procs=config.nipype.omp_nthreads,
                 )
                 workflow.connect([
-                    (ds_cifti_ts, correlate_cifti_ts, [('out_file', 'in_file')]),
+                    (censored_cifti_ts_buffer, correlate_cifti_ts, [
+                        ('timeseries_cifti', 'in_file'),
+                    ]),
                 ])  # fmt:skip
 
                 ds_cifti_correlations = pe.MapNode(
@@ -617,21 +644,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 ])  # fmt:skip
 
             if exact_scans:
-                # The concatenated parcellated timeseries may be interpolated (e.g., in abcd
-                # mode) and therefore include FD-censored volumes. Censor those volumes before
-                # exact-scan subsetting so that the exact_N column row count matches the image.
-                censor_cifti_ts_for_exact = pe.MapNode(
-                    Censor(column='denoising'),
-                    name='censor_cifti_ts_for_exact',
-                    iterfield=['in_file'],
-                )
-                workflow.connect([
-                    (concatenate_inputs, censor_cifti_ts_for_exact, [
-                        ('temporal_mask', 'temporal_mask'),
-                    ]),
-                    (ds_cifti_ts, censor_cifti_ts_for_exact, [('out_file', 'in_file')]),
-                ])  # fmt:skip
-
+                # The exact-scan subsetting expects the high-motion volumes to have been removed
+                # already, so that the exact_N column row count matches the image.
                 for i_exact_scan, exact_scan in enumerate(exact_scans):
                     reduce_exact_bold = pe.MapNode(
                         Censor(column=f'exact_{exact_scan}'),
@@ -642,8 +656,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                         (temporal_mask_src, reduce_exact_bold, [
                             (temporal_mask_out, 'temporal_mask'),
                         ]),
-                        (censor_cifti_ts_for_exact, reduce_exact_bold, [
-                            ('out_file', 'in_file'),
+                        (censored_cifti_ts_buffer, reduce_exact_bold, [
+                            ('timeseries_cifti', 'in_file'),
                         ]),
                     ])  # fmt:skip
 
