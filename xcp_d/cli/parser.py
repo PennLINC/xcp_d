@@ -512,6 +512,25 @@ The default is 240 (4 minutes).
 """,
     )
     g_censor.add_argument(
+        '--interpolation',
+        dest='interpolation',
+        default='spline',
+        action='store',
+        choices=['spline', 'linear', 'spectral'],
+        help=(
+            'The method used to interpolate high-motion volumes before filtering and '
+            'denoising. '
+            "'spline' uses cubic spline interpolation. "
+            "'linear' uses linear interpolation between the closest low-motion volumes. "
+            "'spectral' uses a Lomb-Scargle least squares spectral reconstruction, "
+            'as in Power et al. (2014). '
+            "With 'spline' and 'linear', high-motion volumes at the beginning or end of the run "
+            "are set to the closest low-motion volume's values. "
+            'This parameter has no effect if censoring is disabled. '
+            "The default is 'spline'."
+        ),
+    )
+    g_censor.add_argument(
         '--output-type',
         dest='output_type',
         default='auto',
@@ -1432,14 +1451,18 @@ def _validate_parameters(opts, build_log, parser):
         build_log.warning('Bandpass filtering is disabled. ALFF outputs will not be generated.')
 
     # Scrubbing parameters
-    if opts.fd_thresh <= 0 and (opts.min_time > 0 or opts.censor_between > 0):
-        ignored_params = '--min-time\n\t--censor-between'
+    if opts.fd_thresh <= 0 and (
+        opts.min_time > 0 or opts.censor_between > 0 or opts.interpolation != 'spline'
+    ):
+        ignored_params = '--min-time\n\t--censor-between\n\t--interpolation'
         build_log.warning(
             'Framewise displacement-based scrubbing is disabled. '
             f'The following parameters will have no effect:\n\t{ignored_params}'
         )
         opts.min_time = 0
         opts.censor_between = 0
+        # Reset to the default, so that the configuration hash doesn't depend on it
+        opts.interpolation = 'spline'
 
     opts.output_interpolated = True if opts.output_type == 'interpolated' else False
 
