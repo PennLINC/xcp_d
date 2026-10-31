@@ -517,29 +517,37 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ])  # fmt:skip
 
             # Reduce the concatenated CIFTI before calculating correlations
-            censored_cifti_ts_buffer = pe.MapNode(
-                niu.IdentityInterface(fields=['timeseries_cifti']),
-                name='censored_cifti_ts_buffer',
-                iterfield=['timeseries_cifti'],
-            )
-            if config.workflow.correlation_lengths and config.workflow.output_interpolated:
-                # If we want interpolated time series, the concatenated parcellated CIFTI will
-                # have interpolated values, but the correlation matrices should only include
-                # low-motion volumes.
-                censor_cifti_ts = pe.MapNode(
-                    Censor(column='denoising'),
-                    name='censor_cifti_ts',
-                    iterfield=['in_file'],
+            if 'all' in config.workflow.correlation_lengths or exact_scans:
+                censored_cifti_ts_buffer = pe.MapNode(
+                    niu.IdentityInterface(fields=['timeseries_cifti']),
+                    name='censored_cifti_ts_buffer',
+                    iterfield=['timeseries_cifti'],
                 )
-                workflow.connect([
-                    (concatenate_inputs, censor_cifti_ts, [('temporal_mask', 'temporal_mask')]),
-                    (ds_cifti_ts, censor_cifti_ts, [('out_file', 'in_file')]),
-                    (censor_cifti_ts, censored_cifti_ts_buffer, [('out_file', 'timeseries_cifti')]),
-                ])  # fmt:skip
-            else:
-                workflow.connect([
-                    (ds_cifti_ts, censored_cifti_ts_buffer, [('out_file', 'timeseries_cifti')]),
-                ])  # fmt:skip
+                if config.workflow.output_interpolated and fd_thresh > 0:
+                    # If we want interpolated time series, the concatenated parcellated CIFTI
+                    # will have interpolated values, but the correlation matrices should only
+                    # include low-motion volumes.
+                    # Without FD-based censoring, there is no temporal mask and nothing to remove.
+                    censor_cifti_ts = pe.MapNode(
+                        Censor(column='denoising'),
+                        name='censor_cifti_ts',
+                        iterfield=['in_file'],
+                    )
+                    workflow.connect([
+                        (concatenate_inputs, censor_cifti_ts, [
+                            ('temporal_mask', 'temporal_mask'),
+                        ]),
+                        (ds_cifti_ts, censor_cifti_ts, [('out_file', 'in_file')]),
+                        (censor_cifti_ts, censored_cifti_ts_buffer, [
+                            ('out_file', 'timeseries_cifti'),
+                        ]),
+                    ])  # fmt:skip
+                else:
+                    workflow.connect([
+                        (ds_cifti_ts, censored_cifti_ts_buffer, [
+                            ('out_file', 'timeseries_cifti'),
+                        ]),
+                    ])  # fmt:skip
 
             if 'all' in config.workflow.correlation_lengths:
                 correlate_cifti_ts_src = pe.MapNode(

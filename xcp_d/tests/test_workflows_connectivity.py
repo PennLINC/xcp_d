@@ -431,20 +431,24 @@ def test_init_concatenate_data_wf_exact_scans(tmp_path):
         assert 'random_censor' not in node_names
 
 
-@pytest.mark.parametrize('output_interpolated', [True, False])
-def test_init_concatenate_data_wf_cifti_censoring(output_interpolated):
+@pytest.mark.parametrize(
+    ('output_interpolated', 'fd_thresh'),
+    [(True, 0.3), (False, 0.3), (True, 0)],
+)
+def test_init_concatenate_data_wf_cifti_censoring(output_interpolated, fd_thresh):
     """Test that concatenated CIFTI correlations only use low-motion volumes.
 
     The concatenated parcellated CIFTI is interpolated when output_interpolated is True,
     so it must be censored before both the full and the exact-scan correlations.
     Otherwise it is already censored, and censoring it again would fail.
+    Without FD-based censoring, there is no temporal mask, so nothing is censored.
     """
     from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
 
     with mock_config():
         config.workflow.correlation_lengths = ['all', '300']
         config.workflow.combine_runs = True
-        config.workflow.fd_thresh = 0.3
+        config.workflow.fd_thresh = fd_thresh
         config.workflow.file_format = 'cifti'
         config.workflow.output_interpolated = output_interpolated
         config.execution.atlases = ['Glasser']
@@ -457,13 +461,40 @@ def test_init_concatenate_data_wf_cifti_censoring(output_interpolated):
         )
         nodes = {node.name: node for node in wf._graph.nodes()}
 
-        assert ('censor_cifti_ts' in nodes) == output_interpolated
+        censored = output_interpolated and fd_thresh > 0
+        assert ('censor_cifti_ts' in nodes) == censored
         assert 'censor_cifti_ts_for_exact' not in nodes
 
         buffer = nodes['censored_cifti_ts_buffer']
-        expected_source = nodes['censor_cifti_ts' if output_interpolated else 'ds_cifti_ts']
+        expected_source = nodes['censor_cifti_ts' if censored else 'ds_cifti_ts']
         assert expected_source in wf._graph.predecessors(buffer)
         assert list(wf._graph.predecessors(nodes['correlate_cifti_ts'])) == [buffer]
         reduce_edge = wf._graph.get_edge_data(buffer, nodes['reduce_bold_150volumes'])
         assert reduce_edge['connect'] == [('timeseries_cifti', 'in_file')]
         assert nodes['ds_cifti_ts'] not in wf._graph.predecessors(nodes['reduce_bold_150volumes'])
+
+
+def test_init_concatenate_data_wf_cifti_no_correlations():
+    """Test that no CIFTI censoring nodes are built when no correlations are requested."""
+    from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
+
+    with mock_config():
+        # A numeric length whose exact scan count was dropped, so nothing reads the CIFTI
+        config.workflow.correlation_lengths = ['300']
+        config.workflow.combine_runs = True
+        config.workflow.fd_thresh = 0.3
+        config.workflow.file_format = 'cifti'
+        config.workflow.output_interpolated = True
+        config.execution.atlases = ['Glasser']
+
+        wf = init_concatenate_data_wf(
+            TR=2.0,
+            head_radius=50,
+            exact_scans=[],
+            mem_gb={'bold': 1.0, 'volume': 0.01},
+        )
+        node_names = [node.name for node in wf._graph.nodes()]
+
+        assert 'ds_cifti_ts' in node_names
+        assert 'censored_cifti_ts_buffer' not in node_names
+        assert 'censor_cifti_ts' not in node_names
