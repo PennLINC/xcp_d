@@ -1101,6 +1101,11 @@ def correlate_timeseries_xdf(
         with each lag weighted by ``|A_k|``, instead of from traces of Toeplitz matrices with
         the censored rows and columns removed.
         It is computed one row of the matrix at a time, rather than one edge at a time.
+    -   The lagged auto- and cross-correlations are computed from a single FFT of all of the
+        time series, and the cross-correlations are computed one row at a time,
+        so memory scales with V * T rather than V^2 * T.
+        The number of retained pairs at each lag is computed by correlating the
+        retained-volume indicator with itself, rather than by listing every pair.
     -   Features with no retained data have NaN, rather than 1, on the diagonal of ``r``.
     -   The corrected and uncorrected z-scores and p-values are not returned.
 
@@ -1108,9 +1113,7 @@ def correlate_timeseries_xdf(
     ----------
     .. footbibliography::
     """
-    from itertools import combinations
-
-    import scipy.signal as ss
+    import scipy.fft as sp_fft
 
     n_features, n_samples = arr.shape
     time_idx = np.arange(temporal_mask.size)
@@ -1124,50 +1127,43 @@ def correlate_timeseries_xdf(
     if n_retained_samples < n_samples:
         arr[:, scrubbed_frames] = 0
 
-    # Calculate denominator according to acf in R
-    list_pairs = list(combinations(np.setdiff1d(np.arange(n_samples), scrubbed_frames), 2))
-    n_pairs = [n_retained_samples] + list(
-        np.bincount([y - x for (x, y) in list_pairs], minlength=n_samples)[1:]
-    )
+    # Calculate denominator according to acf in R:
+    # the number of pairs of retained volumes at each lag, plus the lag
+    retained = np.ones(n_samples)
+    retained[scrubbed_frames] = 0
+    n_pairs = np.round(np.correlate(retained, retained, mode='full')[n_samples - 1 :])
     n_denom = n_pairs + np.arange(n_samples)
+    lag_denom = n_denom[1:]
 
-    # Calculate autocorrelation
-    ac = (
-        np.concatenate(
-            [
-                ss.correlate(arr[i, :], arr[i, :], method='fft')[None, -n_samples:] / n_denom
-                for i in np.arange(n_features)
-            ],
-            axis=0,
-        )
-        / norms
-    )
-    # Drop lag 0, so autocorrelations and cross-correlations both start at lag 1
-    ac = ac[:, 1:]
+    # Lagged correlations are computed from one FFT of all of the time series.
+    # Cross-correlations are computed one row at a time below, so the full
+    # (V, V, lags) array is never held in memory.
+    n_fft = sp_fft.next_fast_len(2 * n_samples - 1)
+    arr_fft = sp_fft.rfft(arr, n=n_fft, axis=1)
+    lags = np.arange(1, n_samples)
 
-    # Calculate cross-correlation
-    xc = np.zeros((n_features, n_features, 2 * n_samples - 1))
-    triu_idx_x = np.triu_indices(n_features, 1)[0]
-    triu_idx_y = np.triu_indices(n_features, 1)[1]
-
-    for i, j in zip(triu_idx_x, triu_idx_y, strict=False):
-        xc[i, j, :] = ss.correlate(arr[i, :], arr[j, :], method='fft') / (
-            np.sqrt(norms[i] * norms[j])
-            * np.concatenate((np.flip(np.delete(n_denom, 0)), n_denom))
-        )
-
-    xc = xc + np.transpose(xc, (1, 0, 2))
-
-    # Extract positive and negative cross-correlations
-    xc_p = xc[:, :, : (n_samples - 1)]
-    xc_p = np.flip(xc_p, axis=2)
-    xc_n = xc[:, :, -(n_samples - 1) :]
+    # Calculate autocorrelation, starting at lag 1
+    ac = sp_fft.irfft(np.abs(arr_fft) ** 2, n=n_fft, axis=1)[:, lags] / lag_denom / norms
 
     # Extract lag-0 correlations
-    rho = np.eye(n_features) + xc[:, :, n_samples - 1]
+    rho = (arr @ arr.T) / n_retained_samples / np.sqrt(norms * norms.T)
+    np.fill_diagonal(rho, 1)
     # Features without data (e.g., parcels with low coverage) get NaNs on the diagonal too
     empty_features = np.isnan(norms[:, 0])
     rho[empty_features, empty_features] = np.nan
+
+    def _cross_correlations(i_feature):
+        """Get the cross-correlations between one feature and all features, from lag 1.
+
+        The diagonal (the feature with itself) is set to zero.
+        """
+        xc_full = sp_fft.irfft(arr_fft[i_feature] * np.conj(arr_fft), n=n_fft, axis=1)
+        scale = np.sqrt(norms[i_feature] * norms) * lag_denom
+        xc_pos = xc_full[:, lags] / scale
+        xc_neg = xc_full[:, n_fft - lags] / scale
+        xc_pos[i_feature] = 0
+        xc_neg[i_feature] = 0
+        return xc_pos, xc_neg
 
     # Regularize!
     if method.lower() == 'tukey':
@@ -1179,8 +1175,9 @@ def correlate_timeseries_xdf(
         LOGGER.info(f'AC regularization: Tukey tapering of M = {int(np.round(M))}')
 
         ac = tukeytaperme(ac, n_samples - 1, M)
-        xc_p = tukeytaperme(xc_p, n_samples - 1, M)
-        xc_n = tukeytaperme(xc_n, n_samples - 1, M)
+
+        def _regularize(xc_lagged, i_feature):
+            return tukeytaperme(xc_lagged, n_samples - 1, M)
 
     elif method.lower() == 'truncate':
         if isinstance(methodparam, str):  # Adaptive truncation
@@ -1191,17 +1188,17 @@ def correlate_timeseries_xdf(
 
             ac, bp = shrinkme(ac, n_samples - 1)
 
-            # Truncate each pair's cross-correlations at the larger of the two breakpoints
-            max_bp = np.maximum(bp[:, None], bp[None, :])
-            xc_mask = np.arange(n_samples - 1)[None, None, :] < max_bp[:, :, None]
-            xc_p = xc_p * xc_mask
-            xc_n = xc_n * xc_mask
+            def _regularize(xc_lagged, i_feature):
+                # Truncate each pair's cross-correlations at the larger of the two breakpoints
+                max_bp = np.maximum(bp[i_feature], bp)
+                return xc_lagged * (np.arange(n_samples - 1)[None, :] < max_bp[:, None])
 
         elif isinstance(methodparam, int):  # Non-adaptive truncation
             LOGGER.info(f'AC regularization: non-adaptive truncation on M = {methodparam}')
             ac = curbtaperme(ac=ac, M=methodparam)
-            xc_p = curbtaperme(ac=xc_p, M=methodparam)
-            xc_n = curbtaperme(ac=xc_n, M=methodparam)
+
+            def _regularize(xc_lagged, i_feature):
+                return curbtaperme(ac=xc_lagged, M=methodparam)
 
         else:
             raise ValueError('methodparam for truncation method should be either str or int')
@@ -1210,17 +1207,20 @@ def correlate_timeseries_xdf(
 
     # Estimate variance (big formula), in its lag-sum form.
     # Each lag is weighted by the number of pairs of retained volumes at that lag.
-    weights = np.array(n_pairs[1:])
+    weights = n_pairs[1:]
     var_hat_rho = np.zeros((n_features, n_features))
     for i in range(n_features):
+        xc_p, xc_n = _cross_correlations(i)
+        xc_p = _regularize(xc_p, i)
+        xc_n = _regularize(xc_n, i)
         r = rho[i, :]
         ac_i = ac[i, None, :]
-        xc_sum = xc_p[i] + xc_n[i]
+        xc_sum = xc_p + xc_n
         var_hat_rho[i, :] = (
             n_retained_samples * (1 - r**2) ** 2
-            + r**2 * np.sum(weights * (ac_i**2 + ac**2 + xc_p[i] ** 2 + xc_n[i] ** 2), axis=1)
+            + r**2 * np.sum(weights * (ac_i**2 + ac**2 + xc_p**2 + xc_n**2), axis=1)
             - 2 * r * np.sum(weights * ((ac_i + ac) * xc_sum), axis=1)
-            + 2 * np.sum(weights * (ac_i * ac + xc_p[i] * xc_n[i]), axis=1)
+            + 2 * np.sum(weights * (ac_i * ac + xc_p * xc_n), axis=1)
         ) / n_retained_samples**2
 
     # Truncate to theoretical variance

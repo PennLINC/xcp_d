@@ -416,8 +416,8 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-        # Convert the parcellated tsv files to pconn ciftis
-        for file_to_pconn in ['r', 'z', 'var_r', 'var_z']:
+        # Convert the requested correlation outputs to pconn ciftis
+        for file_to_pconn in config.workflow.correlation_outputs:
             convert_tsv_to_pconn = pe.MapNode(
                 TSVToPconn(),
                 name=f'convert_tsv_to_pconn_{file_to_pconn}',
