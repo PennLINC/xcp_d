@@ -1451,14 +1451,18 @@ def _validate_parameters(opts, build_log, parser):
         build_log.warning('Bandpass filtering is disabled. ALFF outputs will not be generated.')
 
     # Scrubbing parameters
-    if opts.fd_thresh <= 0 and (opts.min_time > 0 or opts.censor_between > 0):
-        ignored_params = '--min-time\n\t--censor-between'
+    if opts.fd_thresh <= 0 and (
+        opts.min_time > 0 or opts.censor_between > 0 or opts.interpolation != 'spline'
+    ):
+        ignored_params = '--min-time\n\t--censor-between\n\t--interpolation'
         build_log.warning(
             'Framewise displacement-based scrubbing is disabled. '
             f'The following parameters will have no effect:\n\t{ignored_params}'
         )
         opts.min_time = 0
         opts.censor_between = 0
+        # Reset to the default, so that the configuration hash doesn't depend on it
+        opts.interpolation = 'spline'
 
     opts.output_interpolated = True if opts.output_type == 'interpolated' else False
 

@@ -642,8 +642,10 @@ approach.
             "Each time series' low-motion volumes were linearly detrended and decomposed into "
             'sinusoids with the Lomb-Scargle method, using frequencies up to the average '
             'Nyquist frequency of the low-motion volumes [@press1989fast]. '
-            'The sinusoids were summed at the censored volumes, rescaled to the standard '
-            'deviation of the low-motion data, and added to the linear trend. '
+            'The sinusoids were summed at every volume and rescaled so that the '
+            "reconstruction's standard deviation matched that of the detrended low-motion data, "
+            'and the censored volumes were set to the rescaled reconstruction plus the linear '
+            'trend. '
         )
 
     # Describe bandpass (or high-/low-pass) filtering if enabled

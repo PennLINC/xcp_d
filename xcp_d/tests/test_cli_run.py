@@ -44,6 +44,7 @@ def base_opts():
         'bandpass_filter': True,
         'fd_thresh': 'auto',
         'censor_between': 'auto',
+        'interpolation': 'spline',
         'min_time': 240,
         'motion_filter_type': None,
         'band_stop_min': None,
@@ -109,6 +110,31 @@ def test_validate_parameters_censor_between_retained(base_opts, base_parser):
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.censor_between == 5
+
+
+def test_validate_parameters_interpolation_disabled(base_opts, base_parser, caplog):
+    """Test that --interpolation is reset to the default when censoring is disabled."""
+    opts = deepcopy(base_opts)
+    opts.fd_thresh = 0
+    opts.min_time = 0
+    opts.interpolation = 'spectral'
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.interpolation == 'spline'
+    assert 'Framewise displacement-based scrubbing is disabled.' in caplog.text
+    assert '--interpolation' in caplog.text
+
+
+def test_validate_parameters_interpolation_retained(base_opts, base_parser):
+    """Test that an explicit --interpolation survives when censoring is enabled."""
+    opts = deepcopy(base_opts)
+    opts.fd_thresh = 0.3
+    opts.interpolation = 'spectral'
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.interpolation == 'spectral'
 
 
 def test_validate_parameters_03(base_opts, base_parser):

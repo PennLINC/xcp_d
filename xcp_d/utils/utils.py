@@ -880,7 +880,8 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
     Each voxel's low-motion volumes are linearly detrended, decomposed into sinusoids with the
     Lomb-Scargle least squares spectral analysis method, and the sinusoids are summed at the
     high-motion volumes' times.
-    The reconstruction is rescaled to the standard deviation of the low-motion data,
+    As in ``getTransform``, the reconstruction is rescaled so that its standard deviation across
+    all volumes matches the standard deviation of the detrended low-motion data,
     and the linear trend is added back.
 
     Parameters
@@ -922,9 +923,15 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
     where ``span`` is the time between the first and last low-motion volumes
     :footcite:p:`press1989fast`.
 
+    A cosine or sine term that is numerically zero at every low-motion volume is dropped.
+    This happens to the sine term at the Nyquist frequency when the low-motion volumes are evenly
+    spaced (e.g., when only volumes at the beginning or end of the run are censored).
+
     The reconstruction is linear in the data, apart from the rescaling,
     so it is computed as one (T, C) matrix applied to the (C, S) low-motion data,
     in chunks of voxels.
+    The matrix is built in blocks of frequencies, so the extra memory is about one (T, C)
+    float64 array.
 
     References
     ----------
@@ -942,24 +949,36 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
     n_frequencies = (oversampling_factor * n_low_motion) // 2
     angular_frequencies = 2 * np.pi * frequency_step * np.arange(1, n_frequencies + 1)
 
-    # Per-frequency time offsets that make the sine and cosine terms orthogonal
-    double_phases = 2 * np.outer(angular_frequencies, low_motion_times)
-    tau = np.arctan2(
-        np.sin(double_phases).sum(axis=1),
-        np.cos(double_phases).sum(axis=1),
-    ) / (2 * angular_frequencies)
-    del double_phases
+    # A cosine or sine term whose energy at the low-motion volumes is this small is treated as
+    # zero (e.g., the sine term at the Nyquist frequency of evenly spaced volumes).
+    # Its coefficient is undefined, and dividing by the energy would fit it to rounding error.
+    min_energy = n_low_motion * np.sqrt(np.finfo(np.float64).eps)
 
-    # Projections of the data onto each frequency's cosine and sine terms, of shape (F, C)
-    phases = angular_frequencies[:, None] * (low_motion_times[None, :] - tau[:, None])
-    cos_terms, sin_terms = np.cos(phases), np.sin(phases)
-    cos_terms /= np.sum(cos_terms**2, axis=1, keepdims=True)
-    sin_terms /= np.sum(sin_terms**2, axis=1, keepdims=True)
+    # The reconstruction matrix is the sum of every frequency's (T, C) contribution.
+    # It is built in blocks of frequencies, so the (block, T) and (block, C) arrays stay small.
+    reconstruction_matrix = np.zeros((n_volumes, n_low_motion))
+    block_size = max(1, (2**20) // max(n_volumes, n_low_motion))
+    for start in range(0, n_frequencies, block_size):
+        omegas = angular_frequencies[start : start + block_size]
 
-    # The sinusoids at every volume, of shape (T, F)
-    phases = (frame_times[:, None] - tau[None, :]) * angular_frequencies[None, :]
-    reconstruction_matrix = np.cos(phases) @ cos_terms + np.sin(phases) @ sin_terms
-    del phases, cos_terms, sin_terms
+        # Per-frequency time offsets that make the sine and cosine terms orthogonal
+        double_phases = 2 * np.outer(omegas, low_motion_times)
+        tau = np.arctan2(
+            np.sin(double_phases).sum(axis=1),
+            np.cos(double_phases).sum(axis=1),
+        ) / (2 * omegas)
+
+        # Projections of the data onto each frequency's cosine and sine terms, of shape (B, C)
+        phases = omegas[:, None] * (low_motion_times[None, :] - tau[:, None])
+        cos_terms, sin_terms = np.cos(phases), np.sin(phases)
+        for terms in (cos_terms, sin_terms):
+            energy = np.sum(terms**2, axis=1, keepdims=True)
+            terms /= np.where(energy > min_energy, energy, np.inf)
+
+        # The sinusoids at every volume, of shape (T, B)
+        phases = (frame_times[:, None] - tau[None, :]) * omegas[None, :]
+        reconstruction_matrix += np.cos(phases) @ cos_terms
+        reconstruction_matrix += np.sin(phases) @ sin_terms
 
     # Linear trend, fit to the low-motion volumes
     trend_design = np.column_stack([np.ones(n_volumes), frame_times - frame_times.mean()])
@@ -974,7 +993,8 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
         residuals = low_motion_data - trend[sample_mask, :]
 
         reconstructed = reconstruction_matrix @ residuals
-        # Rescale the reconstruction to the standard deviation of the low-motion residuals.
+        # Rescale the reconstruction, so its standard deviation across all volumes matches the
+        # low-motion residuals' standard deviation.
         # Voxels with constant residuals get no sinusoidal component.
         reconstructed_std = np.std(reconstructed, axis=0)
         residual_std = np.std(residuals, axis=0)
@@ -1049,6 +1069,7 @@ def _estimate_denoise_mem_gb(
     mask_file=None,
     n_voxelwise_confounds=0,
     n_procs=1,
+    interpolation='spline',
 ):
     """Estimate the peak memory of denoising one BOLD run with DenoiseNifti or DenoiseCifti.
 
@@ -1062,6 +1083,8 @@ def _estimate_denoise_mem_gb(
         The number of voxel-wise confound images.
     n_procs : :obj:`int`
         The number of processes the denoising node uses.
+    interpolation : {"spline", "linear", "spectral"}
+        The interpolation method. Default is "spline".
 
     Returns
     -------
@@ -1081,6 +1104,11 @@ def _estimate_denoise_mem_gb(
         plus 0.3 GiB per process.
     -   Writing: the full-grid output (float64 when there are no voxel-wise confounds,
         which costs about 2.3 times the float32 grid), the in-mask arrays, and 0.25 GiB.
+
+    Spectral interpolation adds its (T, C) float64 reconstruction matrix to the denoising phase
+    in every process, where C is the number of low-motion volumes.
+    C isn't known when the workflow is built, so T is used in its place, plus 64 MiB for the
+    blocks the matrix is built from.
 
     The coefficients were measured on MNI152NLin6Asym 2 mm NIfTI and fsLR 91k CIFTI data,
     with 0 to 3 voxel-wise confounds and 1 to 8 processes. A fixed 0.25 GiB covers the process.
@@ -1109,6 +1137,9 @@ def _estimate_denoise_mem_gb(
     else:
         n_working = 3.2 + 2 * max(n_voxelwise_confounds, 1) + (2.5 if upcast else 0)
         denoise_bytes = n_working * data_bytes
+
+    if interpolation == 'spectral':
+        denoise_bytes += n_procs * (n_volumes**2 * 8 + 64 * 1024**2)
 
     write_bytes = grid_bytes * (2.3 if upcast else 1) + n_arrays * data_bytes + 0.25 * gib
 

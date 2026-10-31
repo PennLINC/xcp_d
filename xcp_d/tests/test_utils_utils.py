@@ -533,6 +533,8 @@ def _naive_lombscargle(y, sample_mask, TR, oversampling_factor=4):
 
     span = low_motion_times[-1] - low_motion_times[0]
     n_frequencies = (oversampling_factor * low_motion_times.size) // 2
+    # Terms that are numerically zero at every low-motion volume have no coefficient
+    min_energy = low_motion_times.size * np.sqrt(np.finfo(np.float64).eps)
     reconstructed = np.zeros(n_volumes)
     for i_freq in range(1, n_frequencies + 1):
         omega = 2 * np.pi * i_freq / (span * oversampling_factor)
@@ -540,12 +542,12 @@ def _naive_lombscargle(y, sample_mask, TR, oversampling_factor=4):
             np.sum(np.sin(2 * omega * low_motion_times)),
             np.sum(np.cos(2 * omega * low_motion_times)),
         ) / (2 * omega)
-        cos_term = np.cos(omega * (low_motion_times - tau))
-        sin_term = np.sin(omega * (low_motion_times - tau))
-        cos_coef = np.sum(residuals * cos_term) / np.sum(cos_term**2)
-        sin_coef = np.sum(residuals * sin_term) / np.sum(sin_term**2)
-        reconstructed += cos_coef * np.cos(omega * (times - tau))
-        reconstructed += sin_coef * np.sin(omega * (times - tau))
+        for basis in (np.cos, np.sin):
+            term = basis(omega * (low_motion_times - tau))
+            energy = np.sum(term**2)
+            if energy > min_energy:
+                coef = np.sum(residuals * term) / energy
+                reconstructed += coef * basis(omega * (times - tau))
 
     reconstructed *= residuals.std() / reconstructed.std()
     out = y.copy()
@@ -616,6 +618,58 @@ def test_interpolate_lombscargle_too_few_volumes():
     sample_mask[[3, 6]] = True
     with pytest.raises(ValueError, match='At least three low-motion volumes'):
         utils._interpolate_lombscargle(arr=np.ones((10, 2)), sample_mask=sample_mask, TR=2)
+
+
+@pytest.mark.parametrize(
+    'censored',
+    [
+        [0, 1, 2, 197, 198, 199],  # edges only, so the low-motion volumes are evenly spaced
+        [100],  # one interior volume
+        [0, 50, 51, 52, 120, 199],  # several gaps
+    ],
+)
+def test_interpolate_lombscargle_tr_invariant(censored):
+    """Test that the spectral fills don't depend on the TR.
+
+    The frequency grid scales with 1 / TR, so the reconstruction is the same in units of volumes.
+    Evenly spaced low-motion volumes make the sine term at the Nyquist frequency zero at every
+    low-motion volume. Fitting that term would scale rounding error, which differs between TRs.
+    """
+    n_volumes = 200
+    rng = np.random.default_rng(0)
+    arr = rng.standard_normal((n_volumes, 20)).cumsum(axis=0) + rng.standard_normal(
+        (n_volumes, 20)
+    )
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[censored] = False
+
+    tr1 = utils._interpolate_lombscargle(arr=arr.copy(), sample_mask=sample_mask, TR=1.0)
+    tr2 = utils._interpolate_lombscargle(arr=arr.copy(), sample_mask=sample_mask, TR=2.37)
+    assert np.allclose(tr1, tr2, rtol=1e-7, atol=1e-9)
+
+
+def test_interpolate_lombscargle_memory():
+    """Test that the spectral reconstruction's extra memory is about one (T, C) array.
+
+    Building the (frequencies, C) and (T, frequencies) arrays at once would use about ten.
+    """
+    import tracemalloc
+
+    n_volumes = 3000
+    rng = np.random.default_rng(0)
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[rng.choice(n_volumes, n_volumes // 4, replace=False)] = False
+    arr = rng.standard_normal((n_volumes, 1))
+    matrix_bytes = n_volumes * int(sample_mask.sum()) * 8
+
+    tracemalloc.start()
+    try:
+        utils._interpolate_lombscargle(arr=arr, sample_mask=sample_mask, TR=1.0)
+        _, peak_bytes = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+
+    assert peak_bytes < 3 * matrix_bytes + 64 * 1024**2
 
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64])
@@ -810,6 +864,15 @@ def test_estimate_denoise_mem_gb_cifti(tmp_path):
     # With four processes and only global confounds, denoising is the peak
     estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file, n_procs=4)
     assert np.isclose(estimate, 0.25 + 6 * data_gib + 0.3 * 4)
+
+    # Spectral interpolation adds a (T, T) float64 matrix and 64 MiB per process
+    spectral_gib = (n_volumes**2 * 8 + 64 * 1024**2) / (1024**3)
+    estimate = utils._estimate_denoise_mem_gb(
+        bold_file=bold_file,
+        n_procs=4,
+        interpolation='spectral',
+    )
+    assert np.isclose(estimate, 0.25 + 6 * data_gib + 0.3 * 4 + 4 * spectral_gib)
 
 
 @pytest.mark.parametrize('have_confounds', [True, False])

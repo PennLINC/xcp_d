@@ -859,8 +859,13 @@ The method is chosen with ``--interpolation``:
    Each time series' non-outlier volumes are linearly detrended and decomposed into sinusoids,
    at frequencies up to the average Nyquist frequency of the non-outlier volumes
    :footcite:p:`press1989fast`.
-   The sinusoids are summed at the outlier volumes, rescaled to the standard deviation of the
-   non-outlier data, and added back to the linear trend.
+   The sinusoids are summed at every volume and rescaled, as in the original implementation,
+   so that the reconstruction's standard deviation matches that of the detrended non-outlier
+   data.
+   The outlier volumes are then set to the rescaled reconstruction plus the linear trend.
+   Sine or cosine terms that are numerically zero at every non-outlier volume
+   (e.g., the sine term at the Nyquist frequency when the non-outlier volumes are evenly spaced)
+   are dropped.
    Because the sinusoids nearly cancel at the outlier volumes, the filled values stay close to the
    linear trend, with little of the signal's variance.
 
