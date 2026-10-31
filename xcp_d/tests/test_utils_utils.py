@@ -1330,6 +1330,11 @@ def test_taper_helpers():
         utils.tukeytaperme(ac_2d, 10, 4),
         np.vstack((expected, 2 * expected)),
     )
+    # 2D input with lags along the first axis is tapered along the lags and keeps its shape
+    np.testing.assert_allclose(
+        utils.tukeytaperme(ac_2d.T, 10, 4),
+        np.vstack((expected, 2 * expected)).T,
+    )
     np.testing.assert_allclose(
         utils.tukeytaperme(np.stack((ac_2d, ac_2d)), 10, 4),
         np.stack((np.vstack((expected, 2 * expected)),) * 2),

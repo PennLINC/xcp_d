@@ -1061,7 +1061,8 @@ def correlate_timeseries_xdf(
             elements, with the diagonal set to 0.
         -   "var_z": IxI array of variance of z-transformed correlation coefficient between
             corresponding elements, with the diagonal set to 0.
-        -   "varlimit": Theoretical variance under x & y are i.i.d; (1-rho^2)^2.
+        -   "varlimit": Theoretical variance under x & y are i.i.d;
+            (1-rho^2)^2 / (number of retained volumes).
         -   "varlimit_idx": Index of (i,j) edges of which their variance exceeded the theoretical
             variance.
 
@@ -1076,6 +1077,32 @@ def correlate_timeseries_xdf(
     N(0, 1 / (T - 1)) and truncates the cross-correlations at the same lag,
     and the variance is computed with the lag-sum form of the xDF formula,
     weighting each lag by the number of retained pairs at that lag.
+
+    Censored volumes are left out of every sum,
+    so the correlation at lag k is the sum over pairs of retained volumes k apart,
+    divided by ``k + |A_k|``, where ``|A_k|`` is the number of such pairs
+    (the denominator used by R's ``acf``).
+    The variance and its white-noise floor use the number of retained volumes in place of T.
+
+    Changes from the scrubbing-aware xDF code (``xDF_scrub``) that this function was adapted
+    from:
+
+    -   Censored volumes are taken from ``temporal_mask`` instead of being inferred from NaNs
+        in ``arr``.
+    -   Lag 0 is dropped from the autocorrelations before regularization,
+        so the autocorrelations and cross-correlations are indexed by the same lags.
+        Previously, the Tukey taper and fixed truncation (``methodparam`` as an integer)
+        applied the window to the autocorrelations one lag earlier than to the
+        cross-correlations, and adaptive truncation tested lag 0 along with the others.
+    -   Adaptive truncation uses the bound ``1.96 / sqrt(T - 1)`` instead of
+        ``1.96 / sqrt(T)``, and each pair's cross-correlations are cut at the same lag as
+        the larger of the two autocorrelation breakpoints, instead of one lag later.
+    -   The variance is computed with the lag-sum form of the xDF formula,
+        with each lag weighted by ``|A_k|``, instead of from traces of Toeplitz matrices with
+        the censored rows and columns removed.
+        It is computed one row of the matrix at a time, rather than one edge at a time.
+    -   Features with no retained data have NaN, rather than 1, on the diagonal of ``r``.
+    -   The corrected and uncorrected z-scores and p-values are not returned.
 
     References
     ----------
@@ -1242,6 +1269,7 @@ def tukeytaperme(ac, T, M):
     ----------
     ac : :obj:`numpy.ndarray` of shape (L,), (V, L), or (V, V, L)
         Lagged auto- or cross-correlations, starting at lag 1, with lags along the last axis.
+        A 2D array may also have shape (L, V).
         V = number of features/regions/voxels
         L = number of lags
     T : :obj:`int`
@@ -1266,6 +1294,13 @@ def tukeytaperme(ac, T, M):
     :footcite:t:`afyouni2019effective` use ``M = sqrt(T)`` as the default window width,
     following Chatfield (2016).
 
+    Changes from the original xDF implementation:
+
+    -   A 2D input with lags along the first axis, shape (L, V), is now tapered along the lags
+        and returned with its original shape.
+        The original allocated the output before transposing the input,
+        so this case failed with a shape mismatch.
+
     SA, Ox, 2018
 
     References
@@ -1280,15 +1315,21 @@ def tukeytaperme(ac, T, M):
     M = int(np.round(M))
 
     tukeymultiplier = (1 + np.cos(np.arange(1, M) * np.pi / M)) / 2
+
+    # Put the lags on the last axis before allocating the output
+    transposed = ac.ndim == 2 and ac.shape[1] != T
+    if transposed:
+        ac = ac.T
+
     tt_ts = np.zeros(ac.shape)
 
     if ac.ndim == 2:
         LOGGER.debug('The input is 2D.')
-        if ac.shape[1] != T:
-            ac = ac.T
-
         n_rows = ac.shape[0]
         tt_ts[:, : M - 1] = np.tile(tukeymultiplier, [n_rows, 1]) * ac[:, : M - 1]
+
+        if transposed:
+            tt_ts = tt_ts.T
 
     elif ac.ndim == 3:
         LOGGER.debug('The input is 3D.')
