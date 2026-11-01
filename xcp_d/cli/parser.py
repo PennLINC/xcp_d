@@ -619,8 +619,7 @@ The default is 240 (4 minutes).
         metavar='{auto,FLOAT}',
         help=(
             'Coverage threshold to apply to parcels in each atlas. '
-            'Any parcels with lower coverage than the threshold will be replaced with NaNs, '
-            'while parcels with coverage equal to or above the threshold will be kept. '
+            'Any parcels with lower coverage than the threshold will be replaced with NaNs. '
             'Must be a value between zero and one, indicating proportion of the parcel.'
         ),
     )

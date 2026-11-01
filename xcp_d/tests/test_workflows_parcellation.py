@@ -23,12 +23,13 @@ def test_parcellate_cifti_wf_coverage_threshold(min_coverage):
     assert operator == '>='
     threshold = float(threshold)
 
-    # Workbench stores parcel coverage as a float32 fraction of covered vertices.
+    # Workbench stores parcel coverage as a float32 fraction of covered vertices,
+    # but evaluates the expression in float64.
     n_vertices = 1000
     n_covered = round(min_coverage * n_vertices)
-    coverage = np.float32(n_covered / n_vertices)
+    coverage = float(np.float32(n_covered / n_vertices))
     assert coverage >= threshold
 
     if n_covered > 0:
-        lower_coverage = np.float32((n_covered - 1) / n_vertices)
+        lower_coverage = float(np.float32((n_covered - 1) / n_vertices))
         assert lower_coverage < threshold
