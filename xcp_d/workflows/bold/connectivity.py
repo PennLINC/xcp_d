@@ -83,8 +83,8 @@ with *Nilearn's* *NiftiLabelsMasker* for the atlases.
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
-ignored (when the parcel had >{min_coverage * 100}% coverage)
-or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
+ignored (when the parcel had at least {min_coverage * 100}% coverage)
+or the whole parcel was set to NaN (when the parcel had less than {min_coverage * 100}% coverage).
 """
 
     inputnode = pe.Node(
@@ -296,8 +296,8 @@ Corresponding pair-wise functional connectivity between all regions was computed
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.
 In cases of partial coverage, uncovered vertices (values of all zeros or NaNs) were either
-ignored (when the parcel had >{min_coverage * 100}% coverage)
-or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
+ignored (when the parcel had at least {min_coverage * 100}% coverage)
+or the whole parcel was set to NaN (when the parcel had less than {min_coverage * 100}% coverage).
 """
 
     inputnode = pe.Node(

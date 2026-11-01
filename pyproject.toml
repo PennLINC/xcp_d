@@ -74,7 +74,7 @@ doc = [
 ]
 dev = [
     "pre-commit",
-    "ruff >= 0.15,< 0.17",
+    "ruff >= 0.15,< 0.18",
 ]
 tests = [
     "coverage",

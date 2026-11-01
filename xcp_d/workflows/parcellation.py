@@ -317,7 +317,12 @@ def init_parcellate_cifti_wf(
         Coverage TSV files. One for each atlas. Only output if `compute_mask` is True.
     """
     from xcp_d import config
-    from xcp_d.interfaces.connectivity import CiftiMask, CiftiToTSV, CiftiVertexMask
+    from xcp_d.interfaces.connectivity import (
+        COVERAGE_TOLERANCE,
+        CiftiMask,
+        CiftiToTSV,
+        CiftiVertexMask,
+    )
     from xcp_d.interfaces.workbench import CiftiMath, CiftiParcellateWorkbench
 
     workflow = Workflow(name=name)
@@ -426,7 +431,7 @@ def init_parcellate_cifti_wf(
     # It doesn't benefit from multiple cpus
     threshold_coverage = pe.MapNode(
         CiftiMath(
-            expression=f'data > {config.workflow.min_coverage}',
+            expression=f'data >= {config.workflow.min_coverage - COVERAGE_TOLERANCE}',
             num_threads=1,
         ),
         name='threshold_coverage',
