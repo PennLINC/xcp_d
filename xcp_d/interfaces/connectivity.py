@@ -26,6 +26,10 @@ from xcp_d.utils.write_save import write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 
+# Absolute tolerance for comparing float32 parcel coverage to the coverage threshold.
+# Distinct coverage values (k / n voxels or vertices) differ by at least 1 / n, far more than this.
+COVERAGE_TOLERANCE = 1e-6
+
 
 class _NiftiParcellateInputSpec(BaseInterfaceInputSpec):
     filtered_file = File(exists=True, mandatory=True, desc='filtered file')
@@ -63,7 +67,7 @@ class NiftiParcellate(SimpleInterface):
     def _run_interface(self, runtime):
         mask = self.inputs.mask
         atlas_img = nb.load(self.inputs.atlas)
-        min_coverage = self.inputs.min_coverage
+        min_coverage = self.inputs.min_coverage - COVERAGE_TOLERANCE
 
         node_labels_df = pd.read_table(self.inputs.atlas_labels)
         # The index tells us which row/column in the matrix the parcel is associated with.
