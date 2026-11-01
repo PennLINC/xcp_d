@@ -151,6 +151,51 @@ def test_nifti_parcellate_atlas_labels_mismatch(
     assert np.array_equal(coverage_df['coverage'].to_numpy(), np.array(expected_coverage))
 
 
+def test_nifti_parcellate_float32_coverage(tmp_path_factory, monkeypatch):
+    """Check that parcels with float32 coverage equal to min_coverage are kept."""
+    from nilearn.maskers import NiftiLabelsMasker
+
+    from xcp_d.interfaces import connectivity
+
+    class Float32Masker(NiftiLabelsMasker):
+        def fit_transform(self, *args, **kwargs):
+            return super().fit_transform(*args, **kwargs).astype(np.float32)
+
+    monkeypatch.setattr(connectivity, 'NiftiLabelsMasker', Float32Masker)
+
+    tmpdir = tmp_path_factory.mktemp('test_nifti_parcellate_float32_coverage')
+
+    # A 10-voxel parcel with 7 voxels in the mask, plus a fully covered parcel.
+    # In float32, 7 / 10 is 0.69999999, which is below the float64 value of 0.7.
+    assert float(np.float32(7) / np.float32(10)) < 0.7
+    arr = np.zeros((10, 2, 1))
+    arr[:, 0, 0] = 1
+    arr[:, 1, 0] = 2
+    atlas_img = nb.Nifti1Image(arr.astype(np.int32), np.eye(4))
+    mask = np.ones((10, 2, 1))
+    mask[7:, 0, 0] = 0
+    mask_img = nb.Nifti1Image(mask.astype(np.int32), np.eye(4))
+    lut = pd.DataFrame(columns=['index', 'name'], data=[[1, 'Region A'], [2, 'Region B']])
+
+    atlas_file = os.path.join(tmpdir, 'atlas.nii.gz')
+    atlas_img.to_filename(atlas_file)
+    mask_file = os.path.join(tmpdir, 'mask.nii.gz')
+    mask_img.to_filename(mask_file)
+    lut_file = os.path.join(tmpdir, 'lut.tsv')
+    lut.to_csv(lut_file, sep='\t', index=False)
+
+    parcellator = NiftiParcellate(
+        filtered_file=atlas_file,
+        mask=mask_file,
+        atlas=atlas_file,
+        atlas_labels=lut_file,
+        min_coverage=0.7,
+    )
+    results = parcellator.run(cwd=tmpdir)
+    timeseries_df = pd.read_table(results.outputs.timeseries)
+    assert np.array_equal(timeseries_df.to_numpy(), np.array([[1, 2]]))
+
+
 def test_correlate_timeseries_uses_denoising_column(tmp_path_factory):
     """correlate_timeseries drops every volume flagged by the denoising column."""
     import os
