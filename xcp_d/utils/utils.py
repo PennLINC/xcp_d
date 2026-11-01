@@ -371,6 +371,11 @@ def denoise_with_nilearn(
     if voxelwise_confounds is not None and len(voxelwise_confounds) == 0:
         voxelwise_confounds = None
 
+    # A confounds DataFrame without columns (e.g., from a confounds config with only voxelwise
+    # confounds, after their placeholder columns are dropped) is the same as no confounds
+    if confounds is not None and confounds.shape[1] == 0:
+        confounds = None
+
     if voxelwise_confounds is not None:
         for i_confound, voxelwise_arr in enumerate(voxelwise_confounds):
             if voxelwise_arr.shape != preprocessed_bold.shape:
