@@ -1023,12 +1023,15 @@ def test_validate_parameters_skip_connectivity(base_opts, base_parser, caplog):
     opts = deepcopy(base_opts)
     opts.skip_outputs = ['connectivity']
     opts.atlases = ['Glasser']
+    opts.output_run_wise_correlations = True
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.atlases == ['Glasser']  # Atlases preserved for time series extraction
     assert opts.correlation_lengths == []  # correlation_lengths set to empty
+    assert opts.output_run_wise_correlations is False
     assert 'Skipping connectivity as requested' in caplog.text
+    assert 'run-wise correlation matrices will not be written' in caplog.text
 
 
 def test_validate_parameters_skip_multiple(base_opts, base_parser):

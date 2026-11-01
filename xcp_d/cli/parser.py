@@ -1533,6 +1533,17 @@ def _validate_parameters(opts, build_log, parser):
             # while still performing parcellation
             opts.correlation_lengths = []
 
+        # Run-wise correlation matrices are connectivity outputs too
+        if 'connectivity' in opts.skip_outputs:
+            # In linc mode this is enabled by default, so it is not necessarily user-requested.
+            if opts.output_run_wise_correlations is True:
+                build_log.info(
+                    'Connectivity is skipped, so run-wise correlation matrices will not be '
+                    "written, even though '--output-run-wise-correlations' is enabled."
+                )
+
+            opts.output_run_wise_correlations = False
+
     # Some parameters are automatically set depending on the input type.
     if opts.input_type == 'ukb':
         if opts.file_format == 'cifti':

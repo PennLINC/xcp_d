@@ -135,7 +135,7 @@ or the whole parcel was set to NaN (when the parcel had less than {min_coverage 
         ]),
     ])  # fmt:skip
 
-    if config.workflow.output_run_wise_correlations or not has_multiple_runs:
+    if _compute_run_wise_correlations(has_multiple_runs):
         functional_connectivity = pe.MapNode(
             TSVConnect(),
             name='functional_connectivity',
@@ -385,33 +385,35 @@ or the whole parcel was set to NaN (when the parcel had less than {min_coverage 
             ]),
         ])  # fmt:skip
 
-    # Reduce the CIFTI before calculating correlations
-    parcellated_bold_buffer = pe.MapNode(
-        niu.IdentityInterface(fields=['parcellated_cifti']),
-        name='parcellated_bold_buffer',
-        iterfield=['parcellated_cifti'],
-    )
-    if config.workflow.output_interpolated:
-        # If we want interpolated time series, the parcellated CIFTI will have interpolated values,
-        # but the correlation matrices should only include low-motion volumes.
-        remove_outliers = pe.MapNode(
-            Censor(column='denoising'),
-            name='remove_outliers',
-            iterfield=['in_file'],
+    if _compute_run_wise_correlations(has_multiple_runs):
+        # Reduce the CIFTI before calculating correlations
+        parcellated_bold_buffer = pe.MapNode(
+            niu.IdentityInterface(fields=['parcellated_cifti']),
+            name='parcellated_bold_buffer',
+            iterfield=['parcellated_cifti'],
         )
-        workflow.connect([
-            (inputnode, remove_outliers, [('temporal_mask', 'temporal_mask')]),
-            (parcellate_bold_wf, remove_outliers, [('outputnode.parcellated_cifti', 'in_file')]),
-            (remove_outliers, parcellated_bold_buffer, [('out_file', 'parcellated_cifti')]),
-        ])  # fmt:skip
-    else:
-        workflow.connect([
-            (parcellate_bold_wf, parcellated_bold_buffer, [
-                ('outputnode.parcellated_cifti', 'parcellated_cifti'),
-            ]),
-        ])  # fmt:skip
+        if config.workflow.output_interpolated:
+            # If we want interpolated time series, the parcellated CIFTI will have interpolated
+            # values, but the correlation matrices should only include low-motion volumes.
+            remove_outliers = pe.MapNode(
+                Censor(column='denoising'),
+                name='remove_outliers',
+                iterfield=['in_file'],
+            )
+            workflow.connect([
+                (inputnode, remove_outliers, [('temporal_mask', 'temporal_mask')]),
+                (parcellate_bold_wf, remove_outliers, [
+                    ('outputnode.parcellated_cifti', 'in_file'),
+                ]),
+                (remove_outliers, parcellated_bold_buffer, [('out_file', 'parcellated_cifti')]),
+            ])  # fmt:skip
+        else:
+            workflow.connect([
+                (parcellate_bold_wf, parcellated_bold_buffer, [
+                    ('outputnode.parcellated_cifti', 'parcellated_cifti'),
+                ]),
+            ])  # fmt:skip
 
-    if config.workflow.output_run_wise_correlations or not has_multiple_runs:
         # Correlate the parcellated data
         correlate_bold = pe.MapNode(
             CiftiCorrelation(
@@ -569,3 +571,23 @@ or the whole parcel was set to NaN (when the parcel had less than {min_coverage 
             ])  # fmt:skip
 
     return workflow
+
+
+def _compute_run_wise_correlations(has_multiple_runs):
+    """Determine whether run-wise correlation matrices should be computed and written.
+
+    Parameters
+    ----------
+    has_multiple_runs : :obj:`bool`
+        Whether the run will be concatenated with other runs.
+
+    Returns
+    -------
+    :obj:`bool`
+        False if connectivity is skipped (``--skip connectivity``).
+        Otherwise, True if run-wise correlations are requested or there is only one run.
+    """
+    if 'connectivity' in config.workflow.skip_outputs:
+        return False
+
+    return bool(config.workflow.output_run_wise_correlations or not has_multiple_runs)
