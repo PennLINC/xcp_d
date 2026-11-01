@@ -65,7 +65,7 @@ def _make_hcp_skeleton(tmp_path, sub_id='01'):
     n_vols = _SHAPE_4D[-1]
     mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'
     (task_dir / 'Movement_Regressors.txt').write_text(mvreg)
-    (task_dir / 'Movement_AbsoluteRMS.txt').write_text(
+    (task_dir / 'Movement_RelativeRMS.txt').write_text(
         '\n'.join('0.5' for _ in range(n_vols)) + '\n'
     )
 
@@ -105,7 +105,7 @@ def _add_hcp_subject(in_dir, sub_id):
     n_vols = _SHAPE_4D[-1]
     mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'
     (task_dir / 'Movement_Regressors.txt').write_text(mvreg)
-    (task_dir / 'Movement_AbsoluteRMS.txt').write_text(
+    (task_dir / 'Movement_RelativeRMS.txt').write_text(
         '\n'.join('0.5' for _ in range(n_vols)) + '\n'
     )
     (task_dir / 'tfMRI_REST1_RL_Atlas_MSMAll.dtseries.nii').write_bytes(b'')
@@ -270,7 +270,7 @@ def test_convert_hcp_to_bids_single_subject_runs_even_when_dataset_description_e
     (task_dir / 'brainmask_fs.2.nii.gz').write_bytes(b'')
     (task_dir / 'brainmask_fs.2.0.nii.gz').write_bytes(b'')
     (task_dir / 'Movement_Regressors.txt').write_text('0 0 0 0 0 0\n')
-    (task_dir / 'Movement_AbsoluteRMS.txt').write_text('0\n')
+    (task_dir / 'Movement_RelativeRMS.txt').write_text('0\n')
     (task_dir / 'tfMRI_REST1_RL_Atlas_MSMAll.dtseries.nii').write_bytes(b'')
 
     out_dir = tmp_path / 'out'

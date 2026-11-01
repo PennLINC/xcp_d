@@ -243,8 +243,11 @@ def test_collect_hcp_confounds(tmp_path):
     # 4 time points, 6 motion columns (HCP order: trans x,y,z, rot x,y,z)
     mvreg = task_dir / 'Movement_Regressors.txt'
     mvreg.write_text('0.1 0.2 0.3 1 2 3\n0 0 0 0 0 0\n0 0 0 0 0 0\n0 0 0 0 0 0\n')
-    rmsd_file = task_dir / 'Movement_AbsoluteRMS.txt'
-    rmsd_file.write_text('0.5\n0.4\n0.3\n0.2\n')
+    # HCP writes 0 as a placeholder for the first volume's relative RMS.
+    rmsd_file = task_dir / 'Movement_RelativeRMS.txt'
+    rmsd_file.write_text('0\n0.4\n0.3\n0.2\n')
+    # Absolute RMS should be ignored.
+    (task_dir / 'Movement_AbsoluteRMS.txt').write_text('9\n9\n9\n9\n')
     bold_path = tmp_path / 'bold.nii.gz'
     mask_path = tmp_path / 'brainmask.nii.gz'
     csf_path = tmp_path / 'csf.nii.gz'
@@ -278,6 +281,8 @@ def test_collect_hcp_confounds(tmp_path):
     assert 'global_signal' in df.columns
     assert 'framewise_displacement' in df.columns
     assert len(df) == 4
+    # rmsd is relative RMS, with NaN for the first volume (as in fMRIPrep).
+    np.testing.assert_array_equal(df['rmsd'].to_numpy(), [np.nan, 0.4, 0.3, 0.2])
     with open(js) as f:
         meta = json.load(f)
     assert 'trans_x' in meta
@@ -308,8 +313,11 @@ def test_collect_ukbiobank_confounds(tmp_path):
     # FSL .par: 6 columns (rot_x, rot_y, rot_z, trans_x, trans_y, trans_z), one row per volume
     par_file = mc_dir / 'prefiltered_func_data_mcf.par'
     par_file.write_text('0.01 0.02 0.03 0.1 0.2 0.3\n0 0 0 0 0 0\n')
-    rms_file = mc_dir / 'prefiltered_func_data_mcf_abs.rms'
-    rms_file.write_text('0.5\n0.4\n')
+    # MCFLIRT's relative RMS has one row fewer than the number of volumes.
+    rms_file = mc_dir / 'prefiltered_func_data_mcf_rel.rms'
+    rms_file.write_text('0.4\n')
+    # Absolute RMS should be ignored.
+    (mc_dir / 'prefiltered_func_data_mcf_abs.rms').write_text('9\n9\n')
     out_dir = tmp_path / 'out'
     out_dir.mkdir()
     work_dir = tmp_path / 'work'
@@ -340,6 +348,8 @@ def test_collect_ukbiobank_confounds(tmp_path):
     assert 'global_signal' in df.columns
     assert 'rmsd' in df.columns
     assert len(df) == 2
+    # rmsd is relative RMS, with NaN prepended for the first volume (as in fMRIPrep).
+    np.testing.assert_array_equal(df['rmsd'].to_numpy(), [np.nan, 0.4])
 
 
 def test_collect_ukbiobank_confounds_raises_when_par_missing(tmp_path):

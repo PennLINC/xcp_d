@@ -135,7 +135,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
             ├── fMRI
             │   ├── rfMRI.ica
             │   │   ├── mc
-            │   │   │   ├── prefiltered_func_data_mcf_abs.rms
+            │   │   │   ├── prefiltered_func_data_mcf_rel.rms
             │   │   │   └── prefiltered_func_data_mcf.par
             │   │   ├── reg
             │   │   │   ├── example_func2standard.mat

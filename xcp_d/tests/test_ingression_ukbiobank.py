@@ -47,8 +47,9 @@ def _make_ukb_skeleton(tmp_path, sub_id, ses_id='01'):
     (ica / 'mc' / 'prefiltered_func_data_mcf.par').write_text(
         '\n'.join('0 0 0 0 0 0' for _ in range(4)) + '\n'
     )
-    (ica / 'mc' / 'prefiltered_func_data_mcf_abs.rms').write_text(
-        '\n'.join('0' for _ in range(4)) + '\n'
+    # MCFLIRT's relative RMS has one row fewer than the number of volumes.
+    (ica / 'mc' / 'prefiltered_func_data_mcf_rel.rms').write_text(
+        '\n'.join('0' for _ in range(3)) + '\n'
     )
     (ica / 'reg' / 'example_func2standard_warp.nii.gz').write_bytes(b'')
 
