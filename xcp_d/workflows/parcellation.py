@@ -18,6 +18,10 @@ from xcp_d.utils.utils import get_std2bold_xfms
 
 LOGGER = logging.getLogger('nipype.workflow')
 
+# Absolute tolerance for comparing float32 parcel coverage to the coverage threshold.
+# Distinct coverage values (k / n vertices) differ by at least 1 / n, which is far larger.
+COVERAGE_TOLERANCE = 1e-6
+
 
 @fill_doc
 def init_load_atlases_wf(name='load_atlases_wf'):
@@ -423,10 +427,13 @@ def init_parcellate_cifti_wf(
     ])  # fmt:skip
 
     # Threshold node coverage values based on coverage threshold.
+    # Parcels with coverage >= min_coverage are kept, matching the NIfTI workflow.
+    # Coverage is a float32 fraction (e.g., 7/10 is stored as 0.69999999),
+    # so a small tolerance keeps parcels whose coverage equals the threshold.
     # It doesn't benefit from multiple cpus
     threshold_coverage = pe.MapNode(
         CiftiMath(
-            expression=f'data > {config.workflow.min_coverage}',
+            expression=f'data >= {config.workflow.min_coverage - COVERAGE_TOLERANCE}',
             num_threads=1,
         ),
         name='threshold_coverage',

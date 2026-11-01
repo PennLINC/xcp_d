@@ -321,7 +321,8 @@ random_seed : :obj:`int` or None
 docdict['min_coverage'] = """
 min_coverage : :obj:`float`
     Coverage threshold to apply to parcels in each atlas.
-    Any parcels with lower coverage than the threshold will be replaced with NaNs.
+    Any parcels with lower coverage than the threshold will be replaced with NaNs,
+    while parcels with coverage equal to or above the threshold will be kept.
     Must be a value between zero and one.
     Default is 0.5.
 """
