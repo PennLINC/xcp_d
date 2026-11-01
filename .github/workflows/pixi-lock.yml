@@ -57,15 +57,17 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - name: Check latest commit for dependency edits
+      - name: Check pull request for dependency edits
         id: latest-commit
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          CHANGED_FILES="$(git diff-tree --no-commit-id --name-only -r HEAD -- pyproject.toml pixi.lock)"
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA"...HEAD -- pyproject.toml pixi.lock)"
           if [ -n "$CHANGED_FILES" ]; then
             echo "run_lockfile_update=true" >> "$GITHUB_OUTPUT"
           else
             echo "run_lockfile_update=false" >> "$GITHUB_OUTPUT"
-            echo "Latest commit did not touch pyproject.toml or pixi.lock; skipping lockfile update."
+            echo "Pull request did not touch pyproject.toml or pixi.lock; skipping lockfile update."
           fi
       - name: Set git identity
         if: ${{ steps.latest-commit.outputs.run_lockfile_update == 'true' }}
