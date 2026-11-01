@@ -26,6 +26,10 @@ from xcp_d.utils.write_save import write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
 
+# Absolute tolerance for comparing float32 parcel coverage to the coverage threshold.
+# Distinct coverage values (k / n voxels or vertices) differ by at least 1 / n, far more than this.
+COVERAGE_TOLERANCE = 1e-6
+
 
 class _NiftiParcellateInputSpec(BaseInterfaceInputSpec):
     filtered_file = File(exists=True, mandatory=True, desc='filtered file')
@@ -63,7 +67,7 @@ class NiftiParcellate(SimpleInterface):
     def _run_interface(self, runtime):
         mask = self.inputs.mask
         atlas_img = nb.load(self.inputs.atlas)
-        min_coverage = self.inputs.min_coverage
+        min_coverage = self.inputs.min_coverage - COVERAGE_TOLERANCE
 
         node_labels_df = pd.read_table(self.inputs.atlas_labels)
         # The index tells us which row/column in the matrix the parcel is associated with.
@@ -75,9 +79,23 @@ class NiftiParcellate(SimpleInterface):
         full_parcel_mapper = {v: k for k, v in enumerate(node_labels_df['index'].tolist())}
         masker_lut = node_labels_df.copy()
         masker_lut = masker_lut[['index', 'name']]
-        atlas_values = np.unique(atlas_img.get_fdata())
+        atlas_data = np.round(atlas_img.get_fdata()).astype(int)
+        atlas_values = np.unique(atlas_data)
         atlas_values = atlas_values[atlas_values != 0]
-        atlas_values = atlas_values.astype(int)
+
+        # nilearn extracts every nonzero value in the atlas image, regardless of the LUT,
+        # so values without a row in the labels file must be removed from the image.
+        unlabeled_values = np.setdiff1d(atlas_values, node_labels_df['index'].to_numpy())
+        if unlabeled_values.size:
+            LOGGER.warning(
+                f'{unlabeled_values.size} value(s) in the atlas image are not in the atlas '
+                f'labels file and will be ignored: {unlabeled_values.tolist()}'
+            )
+            atlas_data[np.isin(atlas_data, unlabeled_values)] = 0
+            atlas_values = np.setdiff1d(atlas_values, unlabeled_values)
+
+        atlas_img = nb.Nifti1Image(atlas_data, atlas_img.affine, atlas_img.header)
+        atlas_img.set_data_dtype(np.int32)
         masker_lut = masker_lut.loc[masker_lut['index'].isin(atlas_values)].reset_index(drop=True)
 
         # Before anything, we need to measure coverage
@@ -110,7 +128,7 @@ class NiftiParcellate(SimpleInterface):
         )
         n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
         n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
-        parcel_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
+        parcel_coverage = (n_voxels_in_masked_parcels / n_voxels_in_parcels).reshape(-1)
         coverage_thresholded = parcel_coverage < min_coverage
         del sum_masker_masked, sum_masker_unmasked, n_voxels_in_masked_parcels, n_voxels_in_parcels
         gc.collect()
@@ -180,30 +198,24 @@ class NiftiParcellate(SimpleInterface):
         # Apply the coverage mask
         timeseries_arr[:, coverage_thresholded] = np.nan
 
-        if n_found_nodes != n_nodes:  # parcels lost by warping/downsampling atlas
-            # Fill in any missing nodes in the timeseries array with NaNs.
-            new_timeseries_arr = np.full(
-                (timeseries_arr.shape[0], n_nodes),
-                fill_value=np.nan,
-                dtype=timeseries_arr.dtype,
-            )
-            for col_num, node_value in masker_parcel_mapper.items():
-                full_col_num = full_parcel_mapper[node_value]
-                new_timeseries_arr[:, full_col_num] = timeseries_arr[:, col_num]
+        # Place each extracted column in the labels file's order by its atlas value, not its
+        # position, so parcels lost by warping/downsampling the atlas don't shift later columns.
+        # Fill in any missing nodes with NaNs in the timeseries array and zeros in the coverage.
+        new_timeseries_arr = np.full(
+            (timeseries_arr.shape[0], n_nodes),
+            fill_value=np.nan,
+            dtype=timeseries_arr.dtype,
+        )
+        new_parcel_coverage = np.zeros(n_nodes, dtype=parcel_coverage.dtype)
+        for col_num, node_value in masker_parcel_mapper.items():
+            full_col_num = full_parcel_mapper[node_value]
+            new_timeseries_arr[:, full_col_num] = timeseries_arr[:, col_num]
+            new_parcel_coverage[full_col_num] = parcel_coverage[col_num]
 
-            timeseries_arr = new_timeseries_arr
-            del new_timeseries_arr
-            gc.collect()
-
-            # Fill in any missing nodes in the coverage array with zero.
-            new_parcel_coverage = np.zeros(n_nodes, dtype=parcel_coverage.dtype)
-            for col_num, node_value in masker_parcel_mapper.items():
-                full_col_num = full_parcel_mapper[node_value]
-                new_parcel_coverage[full_col_num] = parcel_coverage[col_num]
-
-            parcel_coverage = new_parcel_coverage
-            del new_parcel_coverage
-            gc.collect()
+        timeseries_arr = new_timeseries_arr
+        parcel_coverage = new_parcel_coverage
+        del new_timeseries_arr, new_parcel_coverage
+        gc.collect()
 
         # The time series file is tab-delimited, with node names included in the first row.
         self._results['timeseries'] = fname_presuffix(
