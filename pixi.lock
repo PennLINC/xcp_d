@@ -5893,8 +5893,8 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 26.2.1.dev7+g98ffa71e3
-  sha256: 61e58852b4f7cfcc98919503ab34da47602422ecce76931573b08185b99bb353
+  version: 26.3.1.dev10+g3ec2d3f4f
+  sha256: 055f480cb18ec901760d21d2407fdf14de92ad16ca68a9d6f6b8cc90616fa264
   requires_dist:
   - acres
   - beautifulsoup4
@@ -5939,7 +5939,7 @@ packages:
   - pytest-xdist ; extra == 'all'
   - python-levenshtein ; extra == 'all'
   - recommonmark ; extra == 'all'
-  - ruff>=0.15,<0.17 ; extra == 'all'
+  - ruff>=0.15,<0.18 ; extra == 'all'
   - sphinx-argparse!=0.5.0 ; extra == 'all'
   - sphinx-design ; extra == 'all'
   - sphinx-markdown-tables ; extra == 'all'
@@ -5949,7 +5949,7 @@ packages:
   - sphinxcontrib-bibtex ; extra == 'all'
   - svgutils ; extra == 'all'
   - pre-commit ; extra == 'dev'
-  - ruff>=0.15,<0.17 ; extra == 'dev'
+  - ruff>=0.15,<0.18 ; extra == 'dev'
   - doctest-ignore-unicode ; extra == 'doc'
   - pydot>=1.2.3 ; extra == 'doc'
   - pydotplus ; extra == 'doc'
@@ -5973,8 +5973,8 @@ packages:
   editable: true
 - pypi: ./
   name: xcp-d
-  version: 26.2.1.dev7+g98ffa71e3
-  sha256: 61e58852b4f7cfcc98919503ab34da47602422ecce76931573b08185b99bb353
+  version: 26.3.1.dev10+g3ec2d3f4f
+  sha256: 055f480cb18ec901760d21d2407fdf14de92ad16ca68a9d6f6b8cc90616fa264
   requires_dist:
   - acres
   - beautifulsoup4
@@ -6019,7 +6019,7 @@ packages:
   - pytest-xdist ; extra == 'all'
   - python-levenshtein ; extra == 'all'
   - recommonmark ; extra == 'all'
-  - ruff>=0.15,<0.17 ; extra == 'all'
+  - ruff>=0.15,<0.18 ; extra == 'all'
   - sphinx-argparse!=0.5.0 ; extra == 'all'
   - sphinx-design ; extra == 'all'
   - sphinx-markdown-tables ; extra == 'all'
@@ -6029,7 +6029,7 @@ packages:
   - sphinxcontrib-bibtex ; extra == 'all'
   - svgutils ; extra == 'all'
   - pre-commit ; extra == 'dev'
-  - ruff>=0.15,<0.17 ; extra == 'dev'
+  - ruff>=0.15,<0.18 ; extra == 'dev'
   - doctest-ignore-unicode ; extra == 'doc'
   - pydot>=1.2.3 ; extra == 'doc'
   - pydotplus ; extra == 'doc'
