@@ -11,6 +11,7 @@ from num2words import num2words
 from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import _estimate_denoise_mem_gb
 from xcp_d.workflows.bold.connectivity import init_functional_connectivity_nifti_wf
 from xcp_d.workflows.bold.metrics import init_alff_wf, init_reho_nifti_wf
 from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
@@ -19,6 +20,7 @@ from xcp_d.workflows.bold.plotting import (
     init_qc_report_wf,
 )
 from xcp_d.workflows.bold.postprocessing import (
+    _count_voxelwise_confounds,
     init_denoise_bold_wf,
     init_despike_wf,
     init_prepare_confounds_wf,
@@ -136,6 +138,7 @@ def init_postprocess_nifti_wf(
     motion_file
         After dummy scan removal.
     %(denoised_interpolated_bold)s
+    %(smoothed_denoised_bold)s
     %(boldref)s
     bold_mask
     %(timeseries)s
@@ -206,6 +209,7 @@ the following post-processing was performed.
                 'denoised_bold',
                 'denoised_interpolated_bold',
                 'censored_denoised_bold',
+                'smoothed_denoised_bold',
                 'boldref',
                 'bold_mask',
                 # if parcellation is performed
@@ -254,7 +258,13 @@ the following post-processing was performed.
         ]),
     ])  # fmt:skip
 
-    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb=mem_gb)
+    denoise_mem_gb = _estimate_denoise_mem_gb(
+        bold_file=bold_file,
+        mask_file=run_data['boldmask'],
+        n_voxelwise_confounds=_count_voxelwise_confounds(),
+        n_procs=config.nipype.omp_nthreads,
+    )
+    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb={**mem_gb, 'denoise': denoise_mem_gb})
 
     workflow.connect([
         (downcast_data, denoise_bold_wf, [('bold_mask', 'inputnode.mask')]),
@@ -375,6 +385,7 @@ the following post-processing was performed.
             ('outputnode.motion_file', 'motion_file'),
             ('outputnode.temporal_mask', 'temporal_mask'),
             ('outputnode.denoised_bold', 'denoised_bold'),
+            ('outputnode.smoothed_denoised_bold', 'smoothed_denoised_bold'),
             ('outputnode.timeseries', 'timeseries'),
         ]),
     ])  # fmt:skip

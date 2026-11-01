@@ -1,9 +1,17 @@
 """Tests for the xcp_d.utils.modified_data module."""
 
+import json
+
 import numpy as np
+import pandas as pd
 import pytest
 
-from xcp_d.utils.modified_data import censor_between_outliers
+from xcp_d.interfaces import censoring
+from xcp_d.utils.modified_data import (
+    calculate_exact_scans,
+    censor_between_outliers,
+    flag_bad_run,
+)
 
 
 def test_censor_between_outliers_zero_is_noop():
@@ -80,6 +88,149 @@ def test_censor_between_outliers_disjoint_and_shaped():
     assert np.all((result + outlier_mask) <= 1)
 
 
+def _write_motion_file(tmp_path, n_volumes, rng):
+    """Write a synthetic confounds file with random-walk motion and a few abrupt head shifts."""
+    columns = ['rot_x', 'rot_y', 'rot_z', 'trans_x', 'trans_y', 'trans_z']
+    steps = rng.normal(scale=0.03, size=(n_volumes, len(columns)))
+    # Abrupt shifts survive low-pass filtering, unlike single-volume spikes
+    shifts = rng.choice(np.arange(n_volumes), size=n_volumes // 10, replace=False)
+    steps[shifts, 3:] += rng.normal(scale=2, size=(shifts.size, 3))
+    data = np.cumsum(steps, axis=0)
+    data[:, :3] /= 50  # rotations in radians
+    confounds_df = pd.DataFrame(data, columns=columns)
+    confounds_df['rmsd'] = rng.random(n_volumes)
+
+    motion_file = tmp_path / 'desc-confounds_timeseries.tsv'
+    confounds_df.to_csv(motion_file, sep='\t', index=False)
+    motion_json = tmp_path / 'desc-confounds_timeseries.json'
+    motion_json.write_text(json.dumps({}))
+    return motion_file, motion_json
+
+
+@pytest.mark.parametrize(
+    ('motion_filter_type', 'band_stop_min', 'band_stop_max'),
+    [(None, None, None), ('lp', 6, None), ('notch', 12, 18)],
+)
+@pytest.mark.parametrize('censor_between', [0, 3])
+def test_flag_bad_run_matches_temporal_mask(
+    tmp_path,
+    motion_filter_type,
+    band_stop_min,
+    band_stop_max,
+    censor_between,
+):
+    """flag_bad_run counts the same low-motion volumes as the postprocessing workflow.
+
+    The workflow filters motion and computes FD on the full run (ProcessMotion),
+    drops dummy volumes (RemoveDummyVolumes),
+    and then flags short segments (ExpandTemporalMask).
+    """
+    rng = np.random.default_rng(42)
+    n_volumes, dummy_scans, TR, fd_thresh = 200, 10, 0.8, 0.2
+    motion_filter_order = 4 if motion_filter_type else None
+    motion_file, motion_json = _write_motion_file(tmp_path, n_volumes, rng)
+
+    results = censoring.ProcessMotion(
+        motion_file=str(motion_file),
+        motion_json=str(motion_json),
+        TR=TR,
+        fd_thresh=fd_thresh,
+        head_radius=50,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+    ).run(cwd=tmp_path)
+    outlier_mask = pd.read_table(results.outputs.temporal_mask)['framewise_displacement']
+    outlier_mask = outlier_mask.to_numpy()[dummy_scans:]
+    between_mask = censor_between_outliers(outlier_mask, censor_between)
+    n_good_volumes = np.sum((outlier_mask + between_mask) == 0)
+    # Make sure the test exercises censoring
+    assert 0 < n_good_volumes < n_volumes - dummy_scans
+
+    post_scrubbing_duration = flag_bad_run(
+        motion_file=str(motion_file),
+        dummy_scans=dummy_scans,
+        TR=TR,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        head_radius=50,
+        fd_thresh=fd_thresh,
+        censor_between=censor_between,
+    )
+    assert post_scrubbing_duration == pytest.approx(n_good_volumes * TR)
+
+
+def test_flag_bad_run_no_censoring(tmp_path):
+    """With censoring disabled, flag_bad_run returns the post-dummy duration, not infinity."""
+    rng = np.random.default_rng(0)
+    n_volumes, dummy_scans, TR = 100, 5, 2.0
+    motion_file, _ = _write_motion_file(tmp_path, n_volumes, rng)
+
+    post_scrubbing_duration = flag_bad_run(
+        motion_file=str(motion_file),
+        dummy_scans=dummy_scans,
+        TR=TR,
+        motion_filter_type=None,
+        motion_filter_order=None,
+        band_stop_min=None,
+        band_stop_max=None,
+        head_radius=50,
+        fd_thresh=0,
+        censor_between=0,
+    )
+    assert post_scrubbing_duration == (n_volumes - dummy_scans) * TR
+
+    # A request longer than the data is dropped, instead of reaching RandomCensor
+    exact_scans = calculate_exact_scans(
+        exact_times=[60, 1000],
+        scan_length=post_scrubbing_duration,
+        t_r=TR,
+        bold_file='sub-01_task-rest_bold.nii.gz',
+    )
+    assert exact_scans == [30]
+
+
+@pytest.mark.parametrize(
+    ('exact_time', 't_r', 'expected'),
+    [(300, 0.8, 375), (300, 2.0, 150), (0.3, 0.1, 3), (301, 0.8, 376), (300.5, 2.0, 150)],
+)
+def test_calculate_exact_scans_floating_point(exact_time, t_r, expected):
+    """Exact times that are a multiple of the TR are not rounded down by floating-point error.
+
+    For example, ``300 // 0.8 == 374.0``.
+    """
+    exact_scans = calculate_exact_scans(
+        exact_times=[exact_time],
+        scan_length=1000,
+        t_r=t_r,
+        bold_file='sub-01_task-rest_bold.nii.gz',
+    )
+    assert exact_scans == [expected]
+
+    # An exact time equal to the available low-motion time is retained
+    exact_scans = calculate_exact_scans(
+        exact_times=[expected * t_r],
+        scan_length=expected * t_r,
+        t_r=t_r,
+        bold_file='sub-01_task-rest_bold.nii.gz',
+    )
+    assert exact_scans == [expected]
+
+
+def test_calculate_exact_scans_drops_long_and_non_float():
+    """Exact times longer than the scan, 'all', and non-float values are dropped."""
+    exact_scans = calculate_exact_scans(
+        exact_times=['all', 120, 'bad', 600],
+        scan_length=300,
+        t_r=0.8,
+        bold_file='sub-01_task-rest_bold.nii.gz',
+    )
+    assert exact_scans == [150]
+
+
 def test_censor_between_outliers_accepts_bool():
     """A boolean input mask is handled the same as an integer one."""
     bool_mask = np.array([True, False, False, True])
@@ -153,5 +304,5 @@ def test_flag_bad_run_accounts_for_censor_between(tmp_path_factory):
     assert expanded < baseline
     assert expanded >= 0
 
-    # Censoring disabled short-circuits regardless of censor_between.
-    assert flag_bad_run(**{**kwargs, 'fd_thresh': 0}, censor_between=3) == np.inf
+    # With censoring disabled, all volumes are retained regardless of censor_between.
+    assert flag_bad_run(**{**kwargs, 'fd_thresh': 0}, censor_between=3) == n_volumes * t_r

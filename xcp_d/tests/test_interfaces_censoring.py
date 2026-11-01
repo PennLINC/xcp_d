@@ -767,6 +767,33 @@ def test_prepare_confounds_wf_expands_temporal_mask():
     assert ('process_motion', 'temporal_mask_metadata', 'temporal_mask_metadata') not in incoming
 
 
+def test_count_voxelwise_confounds(tmp_path, monkeypatch):
+    """Confounds without columns in the confounds config are counted as voxel-wise confounds."""
+    from xcp_d import config
+    from xcp_d.workflows.bold.postprocessing import _count_voxelwise_confounds
+
+    monkeypatch.setattr(config.execution, 'confounds_config', None)
+    assert _count_voxelwise_confounds() == 0
+
+    confounds_config = {
+        'name': 'test',
+        'description': 'Global and voxel-wise confounds',
+        'confounds': {
+            'motion': {
+                'dataset': 'preprocessed',
+                'query': {'desc': 'confounds'},
+                'columns': ['trans_x'],
+            },
+            'voxelwise1': {'dataset': 'custom', 'query': {'desc': 'a'}},
+            'voxelwise2': {'dataset': 'custom', 'query': {'desc': 'b'}},
+        },
+    }
+    config_file = tmp_path / 'confounds_config.yml'
+    config_file.write_text(yaml.safe_dump(confounds_config))
+    monkeypatch.setattr(config.execution, 'confounds_config', config_file)
+    assert _count_voxelwise_confounds() == 2
+
+
 def test_denoising_column_is_the_censoring_contract():
     """Every temporal-mask consumer reads the denoising column, not framewise_displacement.
 

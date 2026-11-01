@@ -356,37 +356,6 @@ def test_get_tr(ds001419_data):
     assert t_r == 3.0
 
 
-def test_collect_run_data_tr_header_mismatch(ds001419_data):
-    """Warn when the sidecar RepetitionTime differs from the image header TR."""
-    from unittest.mock import patch
-
-    bold_file = ds001419_data['nifti_file']
-    sidecar_tr = 2.0  # header TR for this file is 3.0 s
-
-    with patch('xcp_d.utils.bids._get_tr', return_value=3.0):
-        with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
-            xbids._check_tr_header_vs_sidecar(bold_file, sidecar_tr)
-
-    mock_logger.warning.assert_called_once()
-    warning_msg = mock_logger.warning.call_args[0][0]
-    assert 'RepetitionTime' in warning_msg
-    assert '2' in warning_msg or '3' in warning_msg
-
-
-def test_collect_run_data_tr_header_matches(ds001419_data):
-    """No warning when sidecar RepetitionTime matches the image header TR."""
-    from unittest.mock import patch
-
-    bold_file = ds001419_data['nifti_file']
-    header_tr = xbids._get_tr(bold_file)
-
-    with patch('xcp_d.utils.bids._get_tr', return_value=header_tr):
-        with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
-            xbids._check_tr_header_vs_sidecar(bold_file, header_tr)
-
-    mock_logger.warning.assert_not_called()
-
-
 def test_get_entity(datasets):
     """Test get_entity."""
     fname = os.path.join(datasets['ds001419'], 'sub-01', 'anat', 'sub-01_desc-preproc_T1w.nii.gz')

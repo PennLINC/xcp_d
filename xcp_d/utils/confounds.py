@@ -91,6 +91,8 @@ def load_motion(
         filtered_motion_confounds_df = pd.DataFrame(
             data=motion_confounds,
             columns=[f'{c}_filtered' for c in motion_confounds_df.columns],
+            # Match the input index, so the concatenation below aligns rows correctly
+            index=motion_confounds_df.index,
         )
         motion_confounds_df = pd.concat(
             [motion_confounds_df, filtered_motion_confounds_df],
