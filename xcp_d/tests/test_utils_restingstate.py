@@ -245,6 +245,63 @@ def test_compute_alff_matches_reference_long_uncensored(n_volumes):
     assert alff.tobytes() == expected.tobytes()
 
 
+def _make_reho_data(n_vertices, n_volumes, rng):
+    """Simulate a ring mesh with two neighbors on each side, plus spatially shared signal."""
+    adjacency_matrix = np.zeros((n_vertices, n_vertices), dtype=bool)
+    for i_vertex in range(n_vertices):
+        for offset in (1, 2):
+            adjacency_matrix[i_vertex, (i_vertex + offset) % n_vertices] = True
+            adjacency_matrix[i_vertex, (i_vertex - offset) % n_vertices] = True
+
+    shared = rng.standard_normal(n_volumes)
+    data = shared + 0.5 * rng.standard_normal((n_vertices, n_volumes))
+    return data, adjacency_matrix
+
+
+def test_compute_2d_reho_covered():
+    """Check ReHo on data where every vertex is covered."""
+    rng = np.random.default_rng(0)
+    data, adjacency_matrix = _make_reho_data(12, 100, rng)
+    # A vertex with some zeros is still covered
+    data[4, :50] = 0
+
+    reho = restingstate.compute_2d_reho(data, adjacency_matrix)
+    assert np.all(np.isfinite(reho))
+    assert np.all((reho >= 0) & (reho <= 1))
+
+
+@pytest.mark.parametrize('bad_value', ['nan', 'inf', 'zeros'])
+def test_compute_2d_reho_uncovered_neighbor(bad_value):
+    """Check that an uncovered vertex doesn't change its neighbors' ReHo."""
+    rng = np.random.default_rng(1)
+    data, adjacency_matrix = _make_reho_data(12, 100, rng)
+    if bad_value == 'zeros':
+        data[5] = 0
+    else:
+        data[5, 10] = float(bad_value)
+
+    reho = restingstate.compute_2d_reho(data, adjacency_matrix)
+    assert np.isnan(reho[5])
+    assert np.all(np.isfinite(np.delete(reho, 5)))
+
+    # The other vertices match ReHo computed with the bad vertex removed from the mesh
+    keep = np.arange(12) != 5
+    expected = restingstate.compute_2d_reho(data[keep], adjacency_matrix[np.ix_(keep, keep)])
+    np.testing.assert_allclose(reho[keep], expected)
+
+
+def test_compute_2d_reho_no_covered_neighbors():
+    """Check that a vertex whose neighbors are all uncovered gets a NaN ReHo value."""
+    rng = np.random.default_rng(2)
+    data, adjacency_matrix = _make_reho_data(12, 100, rng)
+    data[[3, 4], 0] = np.nan
+    data[[6, 7]] = 0
+
+    reho = restingstate.compute_2d_reho(data, adjacency_matrix)
+    assert np.all(np.isnan(reho[[3, 4, 5, 6, 7]]))
+    assert np.all(np.isfinite(reho[[0, 1, 2, 8, 9, 10, 11]]))
+
+
 def test_lombscargle_normalized_matches_scipy():
     """Check the reimplementation of SciPy's Lomb-Scargle periodogram against SciPy itself."""
     rng = np.random.default_rng(1)
