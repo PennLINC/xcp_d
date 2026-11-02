@@ -58,6 +58,14 @@ def mock_config():
 
     config.nipype.omp_nthreads = 1
     config.nipype.init()
+    loggers = (
+        config.loggers.default,
+        config.loggers.cli,
+        config.loggers.interface,
+        config.loggers.workflow,
+        config.loggers.utils,
+    )
+    old_levels = [logger.level for logger in loggers]
     config.loggers.init()
 
     config.execution.work_dir = Path(mkdtemp())
@@ -71,6 +79,10 @@ def mock_config():
 
     shutil.rmtree(config.execution.work_dir)
     shutil.rmtree(config.execution.output_dir)
+
+    # Restore the log levels set by config.loggers.init(), so later tests can capture logs.
+    for logger, level in zip(loggers, old_levels, strict=True):
+        logger.setLevel(level)
 
     if not _old_fs:
         del os.environ['FREESURFER_HOME']

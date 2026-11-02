@@ -14,6 +14,7 @@ from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
+    ExpandTemporalMask,
     GenerateConfounds,
     ProcessMotion,
     RemoveDummyVolumes,
@@ -44,6 +45,21 @@ def _load_confounds_config():
         return None
 
     return yaml.safe_load(config.execution.confounds_config.read_text())
+
+
+def _count_voxelwise_confounds():
+    """Count the voxel-wise confounds in the confounds configuration.
+
+    Returns
+    -------
+    n_voxelwise_confounds : :obj:`int`
+        Number of confounds that are images rather than columns of a table.
+    """
+    confounds_config = _load_confounds_config()
+    if confounds_config is None:
+        return 0
+
+    return sum('columns' not in params for params in confounds_config['confounds'].values())
 
 
 @fill_doc
@@ -120,6 +136,7 @@ def init_prepare_confounds_wf(
     band_stop_max = config.workflow.band_stop_max
     motion_filter_order = config.workflow.motion_filter_order
     fd_thresh = config.workflow.fd_thresh
+    censor_between = config.workflow.censor_between
 
     dummy_scans_str = ''
     if dummy_scans == 'auto':
@@ -151,6 +168,7 @@ def init_prepare_confounds_wf(
             motion_filter_type=motion_filter_type,
             head_radius=head_radius,
             fd_thresh=fd_thresh,
+            censor_between=censor_between,
             exact_scans=[],
         )
     else:
@@ -339,9 +357,23 @@ def init_prepare_confounds_wf(
             ]),
         ])  # fmt:skip
 
+    # Flag short runs of retained volumes. This runs after dummy-scan removal so that the
+    # beginning and end of the run refer to the data that are actually analyzed.
+    expand_temporal_mask = pe.Node(
+        ExpandTemporalMask(censor_between=censor_between),
+        name='expand_temporal_mask',
+        mem_gb=1,
+    )
+
     workflow.connect([
-        (process_motion, outputnode, [('temporal_mask_metadata', 'temporal_mask_metadata')]),
-        (dummy_scan_buffer, outputnode, [('temporal_mask', 'temporal_mask')]),
+        (dummy_scan_buffer, expand_temporal_mask, [('temporal_mask', 'temporal_mask')]),
+        (process_motion, expand_temporal_mask, [
+            ('temporal_mask_metadata', 'temporal_mask_metadata'),
+        ]),
+        (expand_temporal_mask, outputnode, [
+            ('temporal_mask', 'temporal_mask'),
+            ('temporal_mask_metadata', 'temporal_mask_metadata'),
+        ]),
     ])  # fmt:skip
 
     if config.execution.confounds_config is not None:
@@ -529,7 +561,7 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
             with mock_config():
                 wf = init_denoise_bold_wf(
                     TR=0.8,
-                    mem_gb={"bold": 1.0},
+                    mem_gb={"bold": 1.0, "denoise": 3.0},
                     name="denoise_bold_wf",
                 )
 
@@ -538,6 +570,8 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
     %(TR)s
     mem_gb : :obj:`dict`
         Memory size in GB to use for each of the nodes.
+        The ``'denoise'`` entry is the estimated peak memory of the denoising node,
+        from :func:`~xcp_d.utils.utils._estimate_denoise_mem_gb`.
     %(name)s
         Default is "denoise_bold_wf".
 
@@ -682,7 +716,7 @@ approach.
             num_threads=config.nipype.omp_nthreads,
         ),
         name='regress_and_filter_bold',
-        mem_gb=3 * mem_gb['bold'],
+        mem_gb=mem_gb['denoise'],
         n_procs=config.nipype.omp_nthreads,
     )
     config.loggers.workflow.debug('Created node for regression and filtering of BOLD data.')
@@ -709,7 +743,7 @@ approach.
 
     # Create a node for censoring the interpolated data using framewise displacement
     censor_interpolated_data = pe.Node(
-        Censor(column='framewise_displacement'),
+        Censor(column='denoising'),
         name='censor_interpolated_data',
         mem_gb=2 * mem_gb['bold'],
     )

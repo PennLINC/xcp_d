@@ -502,6 +502,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 'denoised_bold',
                 'denoised_interpolated_bold',
                 'censored_denoised_bold',
+                'smoothed_denoised_bold',
                 'bold_mask',
                 'boldref',
                 'timeseries',
@@ -547,10 +548,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 band_stop_max=config.workflow.band_stop_max,
                 head_radius=head_radius,
                 fd_thresh=config.workflow.fd_thresh,
+                censor_between=config.workflow.censor_between,
             )
 
-            if (config.workflow.min_time >= 0) and (
-                post_scrubbing_duration < config.workflow.min_time
+            # --min-time has no effect when scrubbing is disabled
+            if (
+                (config.workflow.fd_thresh > 0)
+                and (config.workflow.min_time >= 0)
+                and (post_scrubbing_duration < config.workflow.min_time)
             ):
                 LOGGER.warning(
                     f'Less than {config.workflow.min_time} seconds in '
@@ -622,14 +627,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                         (postprocess_bold_wf, node, [(f'outputnode.{io_name}', f'in{j_run + 1}')]),
                     ])  # fmt:skip
 
-        concat_exact_scans = []
-        if any(is_number(length) for length in config.workflow.correlation_lengths):
-            concat_exact_scans = calculate_exact_scans(
-                exact_times=config.workflow.correlation_lengths,
-                scan_length=concat_post_scrubbing_duration,
-                t_r=TR,
-                bold_file=task_files[0],
-            )
+        concat_exact_scans = _get_concat_exact_scans(
+            correlation_lengths=config.workflow.correlation_lengths,
+            multiscans=multiscans,
+            scan_length=concat_post_scrubbing_duration,
+            t_r=TR,
+            bold_file=task_files[0],
+        )
 
         if config.workflow.combine_runs and (n_processed_task_runs > 0) and multiscans:
             concat_mem_gb = {
@@ -673,6 +677,51 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])  # fmt:skip
 
     return clean_datasinks(workflow)
+
+
+def _get_concat_exact_scans(correlation_lengths, multiscans, scan_length, t_r, bold_file):
+    """Determine the number of volumes for each requested exact-time correlation matrix.
+
+    Exact-time correlation matrices are only produced from concatenated data,
+    so none are produced for scans without a run or dir entity.
+
+    Parameters
+    ----------
+    correlation_lengths : :obj:`list`
+        Requested correlation lengths, in seconds, possibly including "all".
+    multiscans : :obj:`bool`
+        Whether the scans are named with a run or dir entity, and so will be concatenated.
+    scan_length : :obj:`float`
+        Amount of low-motion time across the concatenated runs, in seconds.
+    t_r : :obj:`float`
+        Repetition time of the scans, in seconds.
+    bold_file : :obj:`str`
+        Path to the first BOLD file, used in log messages.
+
+    Returns
+    -------
+    exact_scans : :obj:`list` of :obj:`int`
+        Number of volumes for each retained exact-time correlation matrix.
+    """
+    if not any(is_number(length) for length in correlation_lengths):
+        return []
+
+    if not multiscans:
+        LOGGER.warning(
+            f'{os.path.basename(bold_file)} has no run or dir entity, '
+            'so it will not be concatenated. '
+            'Exact-time correlation matrices from --create-matrices '
+            'are only produced from concatenated data, '
+            'so none will be produced for this scan.'
+        )
+        return []
+
+    return calculate_exact_scans(
+        exact_times=correlation_lengths,
+        scan_length=scan_length,
+        t_r=t_r,
+        bold_file=bold_file,
+    )
 
 
 def clean_datasinks(workflow):

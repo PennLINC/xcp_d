@@ -12,14 +12,12 @@ from xcp_d.interfaces.concatenation import (
     CleanNameSource,
     ConcatenateInputs,
     FilterOutFailedRuns,
-    ZScoreInputs,
 )
 from xcp_d.interfaces.connectivity import CiftiToTSV, TSVConnect
 from xcp_d.interfaces.workbench import CiftiCorrelation
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _select_first
 from xcp_d.workflows.bold.plotting import init_qc_report_wf
-from xcp_d.workflows.bold.postprocessing import init_resd_smoothing_wf
 
 
 @fill_doc
@@ -96,7 +94,6 @@ def init_concatenate_data_wf(TR, head_radius, exact_scans, mem_gb, name='concate
 
     workflow.__desc__ = """
 Postprocessing derivatives from multi-run tasks were then concatenated across runs and directions.
-Prior to concatenation, the denoised BOLD data and parcellated time series were z-scored.
 """
 
     inputnode = pe.Node(
@@ -109,6 +106,7 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                 'denoised_bold',
                 'denoised_interpolated_bold',
                 'censored_denoised_bold',
+                'smoothed_denoised_bold',
                 'atlas_labels_files',
                 'bold_mask',  # only for niftis, from postproc workflows
                 'boldref',  # only for niftis, from postproc workflows
@@ -141,24 +139,12 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
             ('denoised_bold', 'denoised_bold'),
             ('denoised_interpolated_bold', 'denoised_interpolated_bold'),
             ('censored_denoised_bold', 'censored_denoised_bold'),
+            ('smoothed_denoised_bold', 'smoothed_denoised_bold'),
             ('bold_mask', 'bold_mask'),
             ('boldref', 'boldref'),
             ('timeseries', 'timeseries'),
             ('timeseries_ciftis', 'timeseries_ciftis'),
         ])
-    ])  # fmt:skip
-
-    z_score_inputs = pe.Node(
-        ZScoreInputs(),
-        name='z_score_inputs',
-        mem_gb=mem_gb['bold'],
-    )
-    workflow.connect([
-        (filter_runs, z_score_inputs, [
-            ('denoised_bold', 'denoised_bold'),
-            ('timeseries', 'timeseries'),
-            ('timeseries_ciftis', 'timeseries_ciftis'),
-        ]),
     ])  # fmt:skip
 
     concatenate_inputs = pe.Node(
@@ -172,11 +158,10 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
             ('preprocessed_bold', 'preprocessed_bold'),
             ('motion_file', 'motion_file'),
             ('temporal_mask', 'temporal_mask'),
+            ('denoised_bold', 'denoised_bold'),
             ('denoised_interpolated_bold', 'denoised_interpolated_bold'),
             ('censored_denoised_bold', 'censored_denoised_bold'),
-        ]),
-        (z_score_inputs, concatenate_inputs, [
-            ('denoised_bold', 'denoised_bold'),
+            ('smoothed_denoised_bold', 'smoothed_denoised_bold'),
             ('timeseries', 'timeseries'),
             ('timeseries_ciftis', 'timeseries_ciftis'),
         ]),
@@ -291,7 +276,6 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                 extension='.dtseries.nii',
             ),
             name='ds_denoised_bold',
-            run_without_submitting=True,
             mem_gb=2,
         )
 
@@ -299,12 +283,9 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     dismiss_entities=dismiss_hash(),
-                    desc='denoisedSmoothed',
                     extension='.dtseries.nii',
-                    FWHM=smoothing,
                 ),
                 name='ds_smoothed_denoised_bold',
-                run_without_submitting=True,
                 mem_gb=2,
             )
 
@@ -316,7 +297,6 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                 compression=True,
             ),
             name='ds_denoised_bold',
-            run_without_submitting=True,
             mem_gb=2,
         )
 
@@ -324,13 +304,10 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     dismiss_entities=dismiss_hash(),
-                    desc='denoisedSmoothed',
                     extension='.nii.gz',
                     compression=True,
-                    FWHM=smoothing,
                 ),
                 name='ds_smoothed_denoised_bold',
-                run_without_submitting=True,
                 mem_gb=2,
             )
 
@@ -352,20 +329,6 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
     ])  # fmt:skip
 
     if smoothing:
-        workflow.__desc__ += ' The concatenated, z-scored denoised BOLD data was smoothed.'
-
-        resd_smoothing_wf = init_resd_smoothing_wf(mem_gb=mem_gb)
-
-        workflow.connect([
-            (concatenate_inputs, resd_smoothing_wf, [('denoised_bold', 'inputnode.bold_file')]),
-            (filter_runs, ds_smoothed_denoised_bold, [
-                (('denoised_bold', _combine_name), 'source_file'),
-            ]),
-            (resd_smoothing_wf, ds_smoothed_denoised_bold, [
-                ('outputnode.smoothed_bold', 'in_file'),
-            ]),
-        ])  # fmt:skip
-
         smoothed_src = pe.Node(
             BIDSURI(
                 numinputs=1,
@@ -376,7 +339,13 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
             run_without_submitting=True,
         )
         workflow.connect([
-            (ds_denoised_bold, smoothed_src, [('out_file', 'in1')]),
+            (filter_runs, smoothed_src, [('smoothed_denoised_bold', 'in1')]),
+            (filter_runs, ds_smoothed_denoised_bold, [
+                (('smoothed_denoised_bold', _combine_name), 'source_file'),
+            ]),
+            (concatenate_inputs, ds_smoothed_denoised_bold, [
+                ('smoothed_denoised_bold', 'in_file'),
+            ]),
             (smoothed_src, ds_smoothed_denoised_bold, [('out', 'Sources')]),
         ])  # fmt:skip
 
@@ -547,6 +516,39 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                 (cifti_ts_src, ds_cifti_ts, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
 
+            # Reduce the concatenated CIFTI before calculating correlations
+            if 'all' in config.workflow.correlation_lengths or exact_scans:
+                censored_cifti_ts_buffer = pe.MapNode(
+                    niu.IdentityInterface(fields=['timeseries_cifti']),
+                    name='censored_cifti_ts_buffer',
+                    iterfield=['timeseries_cifti'],
+                )
+                if config.workflow.output_interpolated and fd_thresh > 0:
+                    # If we want interpolated time series, the concatenated parcellated CIFTI
+                    # will have interpolated values, but the correlation matrices should only
+                    # include low-motion volumes.
+                    # Without FD-based censoring, there is no temporal mask and nothing to remove.
+                    censor_cifti_ts = pe.MapNode(
+                        Censor(column='denoising'),
+                        name='censor_cifti_ts',
+                        iterfield=['in_file'],
+                    )
+                    workflow.connect([
+                        (concatenate_inputs, censor_cifti_ts, [
+                            ('temporal_mask', 'temporal_mask'),
+                        ]),
+                        (ds_cifti_ts, censor_cifti_ts, [('out_file', 'in_file')]),
+                        (censor_cifti_ts, censored_cifti_ts_buffer, [
+                            ('out_file', 'timeseries_cifti'),
+                        ]),
+                    ])  # fmt:skip
+                else:
+                    workflow.connect([
+                        (ds_cifti_ts, censored_cifti_ts_buffer, [
+                            ('out_file', 'timeseries_cifti'),
+                        ]),
+                    ])  # fmt:skip
+
             if 'all' in config.workflow.correlation_lengths:
                 correlate_cifti_ts_src = pe.MapNode(
                     BIDSURI(
@@ -571,7 +573,9 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                     n_procs=config.nipype.omp_nthreads,
                 )
                 workflow.connect([
-                    (ds_cifti_ts, correlate_cifti_ts, [('out_file', 'in_file')]),
+                    (censored_cifti_ts_buffer, correlate_cifti_ts, [
+                        ('timeseries_cifti', 'in_file'),
+                    ]),
                 ])  # fmt:skip
 
                 ds_cifti_correlations = pe.MapNode(
@@ -648,21 +652,8 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                 ])  # fmt:skip
 
             if exact_scans:
-                # The concatenated parcellated timeseries may be interpolated (e.g., in abcd
-                # mode) and therefore include FD-censored volumes. Censor those volumes before
-                # exact-scan subsetting so that the exact_N column row count matches the image.
-                censor_cifti_ts_for_exact = pe.MapNode(
-                    Censor(column='framewise_displacement'),
-                    name='censor_cifti_ts_for_exact',
-                    iterfield=['in_file'],
-                )
-                workflow.connect([
-                    (concatenate_inputs, censor_cifti_ts_for_exact, [
-                        ('temporal_mask', 'temporal_mask'),
-                    ]),
-                    (ds_cifti_ts, censor_cifti_ts_for_exact, [('out_file', 'in_file')]),
-                ])  # fmt:skip
-
+                # The exact-scan subsetting expects the high-motion volumes to have been removed
+                # already, so that the exact_N column row count matches the image.
                 for i_exact_scan, exact_scan in enumerate(exact_scans):
                     reduce_exact_bold = pe.MapNode(
                         Censor(column=f'exact_{exact_scan}'),
@@ -673,8 +664,8 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                         (temporal_mask_src, reduce_exact_bold, [
                             (temporal_mask_out, 'temporal_mask'),
                         ]),
-                        (censor_cifti_ts_for_exact, reduce_exact_bold, [
-                            ('out_file', 'in_file'),
+                        (censored_cifti_ts_buffer, reduce_exact_bold, [
+                            ('timeseries_cifti', 'in_file'),
                         ]),
                     ])  # fmt:skip
 

@@ -622,6 +622,8 @@ class workflow(_Config):
     """Radius of the head in mm."""
     fd_thresh = None
     """Framewise displacement threshold for censoring."""
+    censor_between = None
+    """Number of contiguous non-outliers to censor between outlier volumes."""
     min_time = None
     """Post-scrubbing threshold to apply to individual runs in the dataset."""
     bandpass_filter = None
@@ -841,6 +843,7 @@ DEFAULT_CONFIG_HASH_FIELDS = {
         'motion_filter_order',
         'head_radius',
         'fd_thresh',
+        'censor_between',
         'min_time',
         'bandpass_filter',
         'high_pass',

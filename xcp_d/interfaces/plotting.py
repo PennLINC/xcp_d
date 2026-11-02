@@ -75,8 +75,9 @@ class CensoringPlot(SimpleInterface):
         # Load temporal mask
         censoring_df = pd.read_table(self.inputs.temporal_mask)
 
-        # The number of colors in the palette depends on whether there are random censors or not
-        palette = sns.color_palette('colorblind', 4 + censoring_df.shape[1])
+        # Slots 0-4 are fixed; each set of randomly censored volumes takes one slot after that.
+        exact_columns = [col for col in censoring_df.columns if col.startswith('exact_')]
+        palette = sns.color_palette('colorblind', 5 + len(exact_columns))
 
         time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
 
@@ -141,7 +142,6 @@ class CensoringPlot(SimpleInterface):
         # Plot randomly censored volumes as well
         # These vertical lines start at the top and only go 20% of the way down the plot.
         # They are plotted in non-overlapping segments.
-        exact_columns = [col for col in censoring_df.columns if col.startswith('exact_')]
         vline_ymax = 1
         for i_col, exact_col in enumerate(exact_columns):
             tmask_arr = censoring_df[exact_col].values
@@ -156,7 +156,7 @@ class CensoringPlot(SimpleInterface):
                     ymin=vline_ymin,
                     ymax=vline_ymax,
                     label=label,
-                    color=palette[4 + i_col],
+                    color=palette[5 + i_col],
                     alpha=0.8,
                 )
 
@@ -176,6 +176,20 @@ class CensoringPlot(SimpleInterface):
                 idx * self.inputs.TR,
                 label=label,
                 color=palette[3],
+                alpha=0.5,
+            )
+
+        # Plot volumes flagged by the censor-between expansion as dashed vertical lines,
+        # so that they remain distinguishable from motion-censored volumes in grayscale.
+        between_arr = get_col(censoring_df, 'censor_between').values
+        between_idx = np.where(between_arr)[0]
+        for i_idx, idx in enumerate(between_idx):
+            label = 'Censor-Between Volumes' if i_idx == 0 else ''
+            ax.axvline(
+                idx * self.inputs.TR,
+                label=label,
+                color=palette[4],
+                linestyle='--',
                 alpha=0.5,
             )
 
@@ -275,7 +289,7 @@ class QCPlots(SimpleInterface):
         # Determine number of dummy volumes and load temporal mask
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
-            tmask_arr = get_col(censoring_df, 'framewise_displacement').values
+            tmask_arr = get_col(censoring_df, 'denoising').values
         else:
             tmask_arr = np.zeros(preproc_fd_timeseries.size, dtype=int)
 

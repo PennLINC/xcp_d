@@ -139,17 +139,20 @@ series to retain the original scaling.
         name='outputnode',
     )
 
+    # Measured peak memory is about 4.5x the BOLD size for NIfTI data (the denoised series is
+    # stored as float64 and loaded in full before masking) and 3x for CIFTI data (loaded as
+    # float64). Both include ~10% headroom.
+    alff_mem_gb = (5 if file_format == 'nifti' else 3.3) * mem_gb['bold']
+
     # compute alff
     alff_compt = pe.Node(
         ComputeALFF(
             TR=TR,
             low_pass=low_pass,
             high_pass=high_pass,
-            n_threads=config.nipype.omp_nthreads,
         ),
-        mem_gb=2 * mem_gb['bold'],
+        mem_gb=alff_mem_gb,
         name='alff_compt',
-        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
         (inputnode, alff_compt, [

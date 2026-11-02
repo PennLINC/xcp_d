@@ -477,6 +477,23 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         ),
     )
     g_censor.add_argument(
+        '--censor-between',
+        '--censor_between',
+        dest='censor_between',
+        default='auto',
+        type=parser_utils._int_or_auto,
+        help=(
+            'Censor short segments of contiguous non-outlier volumes found between outliers. '
+            'For example, if the value is set to 1, then any cases where only one non-outlier '
+            'volume exists between two outlier volumes will be censored. '
+            'The beginning and end of the time series are treated as outlier boundaries as '
+            'well, so a short run of non-outlier volumes at the start or end of the scan may '
+            'also be censored. '
+            'The default value is "auto", which is equivalent to 0 (disabled) for all '
+            'processing modes.'
+        ),
+    )
+    g_censor.add_argument(
         '--min-time',
         '--min_time',
         dest='min_time',
@@ -1057,13 +1074,22 @@ def parse_args(args=None, namespace=None):
         if not func_sessions:
             processing_groups.append([subject_id, '', []])
         else:
+            # Participant-level (session-less) anatomical data are shared across sessions
+            participant_anats = config.execution.layout.get(
+                subject=subject_id,
+                session=Query.NONE,
+                suffix=['T1w', 'T2w'],
+                extension=['.nii.gz', '.nii'],
+            )
             anat_sessions = config.execution.layout.get_sessions(
                 subject=subject_id,
                 session=session_filters or Query.OPTIONAL,
                 suffix=['T1w', 'T2w'],
                 extension=['.nii.gz', '.nii'],
             )
-            if not anat_sessions:
+            if participant_anats or not anat_sessions:
+                # Use the participant-level anatomical data for all functional sessions,
+                # even if some sessions also have session-level anatomical data.
                 processing_groups.append([subject_id, '', func_sessions])
             else:
                 func_only = sorted(set(func_sessions) - set(anat_sessions))
@@ -1206,6 +1232,7 @@ def _validate_parameters(opts, build_log, parser):
     # Check parameters based on the mode
     if opts.mode == 'abcd':
         opts.abcc_qc = True if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.censor_between = 0 if (opts.censor_between == 'auto') else opts.censor_between
         opts.combine_runs = True if (opts.combine_runs == 'auto') else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
@@ -1234,6 +1261,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'hbcd':
         opts.abcc_qc = True if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.censor_between = 0 if (opts.censor_between == 'auto') else opts.censor_between
         opts.combine_runs = True if (opts.combine_runs == 'auto') else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
@@ -1262,6 +1290,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'linc':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.censor_between = 0 if (opts.censor_between == 'auto') else opts.censor_between
         opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
@@ -1296,6 +1325,7 @@ def _validate_parameters(opts, build_log, parser):
             opts.correlation_lengths = []
     elif opts.mode == 'nichart':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.censor_between = 0 if (opts.censor_between == 'auto') else opts.censor_between
         opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
@@ -1321,6 +1351,10 @@ def _validate_parameters(opts, build_log, parser):
     elif opts.mode == 'none':
         if opts.abcc_qc == 'auto':
             error_messages.append("'--abcc-qc' (y or n) is required for 'none' mode.")
+
+        if opts.censor_between == 'auto':
+            error_messages.append("'--censor-between' is required for 'none' mode.")
+            opts.censor_between = 0  # just to satisfy later checks, not to actually use
 
         if opts.combine_runs == 'auto':
             error_messages.append("'--combine-runs' (y or n) is required for 'none' mode.")
@@ -1398,13 +1432,14 @@ def _validate_parameters(opts, build_log, parser):
         build_log.warning('Bandpass filtering is disabled. ALFF outputs will not be generated.')
 
     # Scrubbing parameters
-    if opts.fd_thresh <= 0 and opts.min_time > 0:
-        ignored_params = '--min-time'
+    if opts.fd_thresh <= 0 and (opts.min_time > 0 or opts.censor_between > 0):
+        ignored_params = '--min-time\n\t--censor-between'
         build_log.warning(
             'Framewise displacement-based scrubbing is disabled. '
             f'The following parameters will have no effect:\n\t{ignored_params}'
         )
         opts.min_time = 0
+        opts.censor_between = 0
 
     opts.output_interpolated = True if opts.output_type == 'interpolated' else False
 

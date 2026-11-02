@@ -68,6 +68,7 @@ def test_describe_censoring():
         motion_filter_type=motion_filter_type,
         head_radius=50,
         fd_thresh=fd_thresh,
+        censor_between=0,
         exact_scans=exact_scans,
     )
     assert 'Volumes with filtered framewise displacement' in desc
@@ -79,6 +80,7 @@ def test_describe_censoring():
         motion_filter_type=motion_filter_type,
         head_radius=50,
         fd_thresh=fd_thresh,
+        censor_between=0,
         exact_scans=exact_scans,
     )
     assert 'Volumes with framewise displacement' in desc
@@ -90,6 +92,7 @@ def test_describe_censoring():
         motion_filter_type=motion_filter_type,
         head_radius=50,
         fd_thresh=fd_thresh,
+        censor_between=0,
         exact_scans=exact_scans,
     )
     assert 'Volumes with framewise displacement' in desc
@@ -102,6 +105,7 @@ def test_describe_censoring():
         motion_filter_type=motion_filter_type,
         head_radius=50,
         fd_thresh=fd_thresh,
+        censor_between=0,
         exact_scans=exact_scans,
     )
     assert 'Volumes were randomly selected for censoring' in desc
@@ -114,6 +118,7 @@ def test_describe_censoring():
         motion_filter_type=motion_filter_type,
         head_radius=50,
         fd_thresh=fd_thresh,
+        censor_between=0,
         exact_scans=exact_scans,
     )
     assert 'Volumes were randomly selected for censoring' in desc
@@ -177,6 +182,26 @@ def _check_describe_regression_result(config, match):
     assert match in result
 
     return result
+
+
+def test_describe_censoring_censor_between():
+    """Test boilerplate.describe_censoring with --censor-between."""
+    kwargs = {
+        'motion_filter_type': None,
+        'head_radius': 50,
+        'fd_thresh': 0.3,
+        'exact_scans': [],
+    }
+
+    desc = boilerplate.describe_censoring(**kwargs, censor_between=0)
+    assert 'contiguous sets' not in desc
+
+    desc = boilerplate.describe_censoring(**kwargs, censor_between=3)
+    assert 'contiguous sets of 3 or fewer' in desc
+
+    # No censoring means no censoring description at all.
+    desc = boilerplate.describe_censoring(**{**kwargs, 'fd_thresh': 0}, censor_between=3)
+    assert 'contiguous sets' not in desc
 
 
 def test_describe_atlases():
