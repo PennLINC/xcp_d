@@ -136,6 +136,29 @@ def describe_censoring(*, motion_filter_type, head_radius, fd_thresh, censor_bet
 
 
 @fill_doc
+def describe_enorm(*, head_radius):
+    """Build a text description of the enorm calculation.
+
+    Parameters
+    ----------
+    %(head_radius)s
+
+    Returns
+    -------
+    desc : :obj:`str`
+        A text description of the enorm calculation.
+    """
+    return (
+        'The Euclidean norm of the frame-to-frame motion parameter differences (enorm) was also '
+        'calculated as a measure of head motion, following AFNI '
+        '[@cox1996afni; @reynolds2024afniproc]. '
+        'Unlike AFNI, which combines rotations in degrees with translations in millimeters, '
+        'rotations were converted to millimeters of displacement on a sphere with a radius of '
+        f'{head_radius} mm, as in framewise displacement [@power_fd_dvars].'
+    )
+
+
+@fill_doc
 def describe_regression(
     *,
     confounds_config,

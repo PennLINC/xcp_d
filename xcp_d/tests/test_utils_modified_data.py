@@ -10,8 +10,63 @@ from xcp_d.interfaces import censoring
 from xcp_d.utils.modified_data import (
     calculate_exact_scans,
     censor_between_outliers,
+    compute_enorm,
+    compute_fd,
     flag_bad_run,
 )
+
+MOTION_COLUMNS = ['trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z']
+
+
+def test_compute_enorm_known_values():
+    """Enorm is the L2 norm of the motion derivatives, with rotations as arc lengths."""
+    confounds_df = pd.DataFrame(
+        [
+            [0, 0, 0, 0, 0, 0],
+            [3, 4, 0, 0, 0, 0],  # 3-4-5 triangle of translations
+            [3, 4, 0, 0, 0, 0.02],  # 0.02 rad on a 50 mm sphere is 1 mm of arc
+        ],
+        columns=MOTION_COLUMNS,
+        dtype=float,
+    )
+    enorm = compute_enorm(confounds_df, head_radius=50)
+    assert np.allclose(enorm, [0, 5, 1])
+
+    # The head radius only scales rotations
+    enorm = compute_enorm(confounds_df, head_radius=100)
+    assert np.allclose(enorm, [0, 5, 2])
+
+    # FD uses the L1 norm of the same derivatives
+    fd = compute_fd(confounds_df, head_radius=50)
+    assert np.allclose(fd, [0, 7, 1])
+
+
+def test_compute_enorm_bounds():
+    """Enorm is bounded by FD (L1 norm) and FD / sqrt(6) for the same motion parameters."""
+    rng = np.random.default_rng(0)
+    confounds_df = pd.DataFrame(rng.normal(size=(50, 6)), columns=MOTION_COLUMNS)
+    confounds_df[['rot_x', 'rot_y', 'rot_z']] /= 50
+
+    enorm = compute_enorm(confounds_df, head_radius=50)
+    fd = compute_fd(confounds_df, head_radius=50)
+    assert enorm.shape == (50,)
+    assert enorm[0] == 0
+    assert np.all(enorm <= fd + 1e-12)
+    assert np.all(enorm >= fd / np.sqrt(6) - 1e-12)
+
+
+def test_compute_enorm_filtered_and_nans():
+    """Enorm reads the _filtered columns when requested, and treats NaNs as zeros."""
+    confounds_df = pd.DataFrame(
+        [[0, 0, 0, 0, 0, 0], [np.nan, 1, 0, 0, 0, 0]],
+        columns=MOTION_COLUMNS,
+    )
+    filtered_df = confounds_df.fillna(0) * 2
+    filtered_df.columns = [f'{col}_filtered' for col in MOTION_COLUMNS]
+    confounds_df = pd.concat([confounds_df, filtered_df], axis=1)
+
+    assert np.allclose(compute_enorm(confounds_df, filtered=False), [0, 1])
+    assert np.allclose(compute_enorm(confounds_df, filtered=True), [0, 2])
 
 
 def test_censor_between_outliers_zero_is_noop():
@@ -191,6 +246,47 @@ def test_flag_bad_run_no_censoring(tmp_path):
         bold_file='sub-01_task-rest_bold.nii.gz',
     )
     assert exact_scans == [30]
+
+
+@pytest.mark.parametrize('motion_filter_type', [None, 'lp'])
+def test_process_motion_writes_enorm(tmp_path, motion_filter_type):
+    """ProcessMotion adds enorm (and filtered enorm) columns and metadata to the motion file."""
+    rng = np.random.default_rng(1)
+    motion_file, motion_json = _write_motion_file(tmp_path, 100, rng)
+
+    results = censoring.ProcessMotion(
+        motion_file=str(motion_file),
+        motion_json=str(motion_json),
+        TR=0.8,
+        fd_thresh=0.2,
+        head_radius=60,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=4 if motion_filter_type else None,
+        band_stop_min=6 if motion_filter_type else None,
+        band_stop_max=None,
+    ).run(cwd=tmp_path)
+    motion_df = pd.read_table(results.outputs.motion_file)
+    motion_metadata = results.outputs.motion_metadata
+
+    # Enorm is computed from the unfiltered motion parameters
+    confounds_df = pd.read_table(motion_file)
+    assert np.allclose(motion_df['enorm'], compute_enorm(confounds_df, head_radius=60))
+    assert motion_metadata['enorm']['Units'] == 'mm'
+    assert motion_metadata['enorm']['HeadRadius'] == 60
+
+    # Enorm does not affect censoring, which still uses FD
+    temporal_mask = pd.read_table(results.outputs.temporal_mask)
+    assert list(temporal_mask.columns) == ['framewise_displacement']
+
+    if motion_filter_type:
+        assert np.allclose(
+            motion_df['enorm_filtered'],
+            compute_enorm(motion_df, head_radius=60, filtered=True),
+        )
+        assert not np.allclose(motion_df['enorm_filtered'], motion_df['enorm'])
+        assert 'SoftwareFilters' in motion_metadata['enorm_filtered']
+    else:
+        assert 'enorm_filtered' not in motion_df.columns
 
 
 @pytest.mark.parametrize(

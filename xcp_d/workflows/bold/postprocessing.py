@@ -25,6 +25,7 @@ from xcp_d.interfaces.restingstate import DespikePatch
 from xcp_d.interfaces.workbench import CiftiConvert, CiftiSmooth, FixCiftiIntent
 from xcp_d.utils.boilerplate import (
     describe_censoring,
+    describe_enorm,
     describe_motion_parameters,
     describe_regression,
 )
@@ -174,6 +175,8 @@ def init_prepare_confounds_wf(
     else:
         censoring_description = ''
 
+    enorm_description = describe_enorm(head_radius=head_radius)
+
     confounds_config = _load_confounds_config()
 
     confounds_description = describe_regression(
@@ -187,7 +190,8 @@ def init_prepare_confounds_wf(
     )
 
     workflow.__desc__ = (
-        f' {dummy_scans_str}{motion_description} {censoring_description} {confounds_description}'
+        f' {dummy_scans_str}{motion_description} {censoring_description} {enorm_description} '
+        f'{confounds_description}'
     )
 
     inputnode = pe.Node(

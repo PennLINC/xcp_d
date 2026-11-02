@@ -18,7 +18,12 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import _drop_dummy_scans, censor_between_outliers, compute_fd
+from xcp_d.utils.modified_data import (
+    _drop_dummy_scans,
+    censor_between_outliers,
+    compute_enorm,
+    compute_fd,
+)
 from xcp_d.utils.utils import get_col
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -605,6 +610,30 @@ class ProcessMotion(SimpleInterface):
                 filtered=True,
             )
             fd_timeseries = motion_df['framewise_displacement_filtered'].to_numpy()
+
+        # Add in the Euclidean norm of the motion parameter derivatives
+        motion_df['enorm'] = compute_enorm(
+            confound=motion_df,
+            head_radius=self.inputs.head_radius,
+            filtered=False,
+        )
+        motion_metadata['enorm'] = {
+            'LongName': 'Euclidean Norm of Motion Parameter Derivatives',
+            'Description': (
+                'The square root of the sum of squared frame-to-frame differences of the six '
+                'motion parameters, as in AFNI (Reynolds et al., 2024). '
+                'Unlike AFNI, rotations are converted from radians to millimeters of '
+                'displacement on a sphere with radius HeadRadius.'
+            ),
+            'HeadRadius': self.inputs.head_radius,
+            'Units': 'mm',
+        }
+        if self.inputs.motion_filter_type:
+            motion_df['enorm_filtered'] = compute_enorm(
+                confound=motion_df,
+                head_radius=self.inputs.head_radius,
+                filtered=True,
+            )
 
         # Compile motion metadata from confounds metadata, adding in filtering info
         # First drop any columns that are not motion parameters

@@ -334,11 +334,22 @@ Other outputs include quality control, framewise displacement, and confounds fil
             <source_entities>_design.tsv
             <source_entities>_space-<label>_desc-linc_qc.tsv
 
-``_motion.tsv`` is a tab-delimited file with seven columns:
-one for each of the six filtered motion parameters, as well as "framewise_displacement".
-If motion filtering was applied, this file will seven extra columns: the seven described above,
+``_motion.tsv`` is a tab-delimited file with nine columns:
+one for each of the six motion parameters, "rmsd", "framewise_displacement",
+and "enorm" (the Euclidean norm of the frame-to-frame motion parameter differences;
+see :footcite:t:`reynolds2024afniproc`).
+Both "framewise_displacement" and "enorm" are in millimeters,
+with rotations converted to millimeters using the head radius.
+If motion filtering was applied, this file will have eight extra columns:
+the six motion parameters, "framewise_displacement", and "enorm",
 with ``_filtered`` appended to each column.
 This file includes the high-motion volumes that are removed in most other derivatives.
+
+``_desc-linc_qc.tsv`` includes summary measures of head motion,
+such as "mean_fd" and "mean_enorm" (both calculated from the unfiltered motion parameters),
+as well as "mean_fd_post_censoring" and "mean_enorm_post_censoring",
+which exclude censored volumes.
+The columns are described in the dataset-level ``desc-linc_qc.json`` file.
 
 ``outliers.tsv`` is a tab-delimited file with three columns:
 "framewise_displacement", "censor_between", and "denoising".

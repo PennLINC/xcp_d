@@ -507,6 +507,27 @@ be flagged as "high motion outliers".
 These volumes will later be removed from the denoised data.
 
 
+Euclidean norm of the motion parameter derivatives (enorm)
+----------------------------------------------------------
+:class:`~xcp_d.interfaces.censoring.ProcessMotion`,
+:func:`~xcp_d.utils.modified_data.compute_enorm`
+
+*XCP-D* also calculates the Euclidean norm of the frame-to-frame differences of the six motion
+parameters (enorm), which AFNI's ``afni_proc.py`` uses as its primary motion measure
+:footcite:p:`cox1996afni,reynolds2024afniproc`.
+Where FD sums the absolute values of the motion parameter differences,
+enorm takes the square root of the sum of their squares,
+so it is always less than or equal to FD for the same volume.
+
+AFNI combines rotations in degrees with translations in millimeters when calculating enorm.
+*XCP-D* instead converts rotations to millimeters of displacement on a sphere,
+using the same head radius as FD (``--head-radius``).
+Enorm values from *XCP-D* are therefore not directly comparable to those from AFNI.
+
+Enorm is written to the ``_motion.tsv`` file and summarized in the LINC QC file,
+but it is not currently used to identify high-motion outliers.
+
+
 Confound regressor selection
 ============================
 :func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
