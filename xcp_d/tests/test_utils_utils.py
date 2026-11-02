@@ -360,6 +360,45 @@ def test_denoise_with_nilearn_voxelwise_parallel(n_voxelwise_confounds, have_con
         assert np.max(np.abs(corrs)) < 0.5
 
 
+@pytest.mark.parametrize('have_voxelwise_confounds', [True, False])
+def test_denoise_with_nilearn_zero_column_confounds(have_voxelwise_confounds):
+    """Test that a confounds DataFrame without columns is treated the same as no confounds.
+
+    The denoising interfaces drop the all-NaN placeholder columns for voxel-wise confounds,
+    so a confounds config with only voxel-wise confounds gives a (T, 0) DataFrame.
+    """
+    n_voxels, n_volumes = 20, 60
+    rng = np.random.default_rng(0)
+    voxelwise_confounds = None
+    if have_voxelwise_confounds:
+        voxelwise_confounds = [rng.standard_normal((n_volumes, n_voxels))]
+
+    data_arr = rng.standard_normal((n_volumes, n_voxels))
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[20:25] = False
+
+    params = {
+        'voxelwise_confounds': voxelwise_confounds,
+        'sample_mask': sample_mask,
+        'low_pass': 0.08,
+        'high_pass': 0.01,
+        'filter_order': 2,
+        'TR': 2,
+        'num_threads': 1,
+    }
+    out_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        confounds=pd.DataFrame(index=range(n_volumes)),
+        **params,
+    )
+    expected_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        confounds=None,
+        **params,
+    )
+    assert np.array_equal(out_arr, expected_arr)
+
+
 @pytest.mark.parametrize('n_confounds', [6, 36])
 @pytest.mark.parametrize('bandpass_filter', [True, False])
 def test_denoise_with_nilearn_parallel(n_confounds, bandpass_filter):
