@@ -176,12 +176,16 @@ def flag_bad_run(
     Returns
     -------
     post_scrubbing_duration : :obj:`float`
-        Amount of time remaining in the run after dummy scan removal, in seconds.
-    """
-    if fd_thresh <= 0:
-        # No scrubbing will be performed, so there's no point is calculating amount of "good time".
-        return np.inf
+        Amount of low-motion time remaining in the run after dummy scan removal, in seconds.
+        If censoring is disabled (``fd_thresh <= 0``), this is the full duration of the run
+        after dummy scan removal.
 
+    Notes
+    -----
+    Framewise displacement is computed the same way as in the postprocessing workflow:
+    the motion parameters from the full run are filtered, FD is calculated,
+    and only then are the dummy volumes dropped.
+    """
     dummy_scans = _infer_dummy_scans(
         dummy_scans=dummy_scans,
         confounds_file=motion_file,
@@ -190,8 +194,9 @@ def flag_bad_run(
     # Read in fmriprep confounds tsv to calculate FD
     fmriprep_confounds_df = pd.read_table(motion_file)
 
-    # Remove dummy volumes
-    fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
+    if fd_thresh <= 0:
+        # No scrubbing will be performed, so all post-dummy volumes are retained.
+        return (fmriprep_confounds_df.shape[0] - dummy_scans) * TR
 
     # Calculate filtered FD
     band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
@@ -213,6 +218,10 @@ def flag_bad_run(
         head_radius=head_radius,
         filtered=bool(motion_filter_type),
     )
+
+    # Remove dummy volumes
+    fd_arr = fd_arr[dummy_scans:]
+
     outlier_mask = (fd_arr > fd_thresh).astype(int)
     between_mask = censor_between_outliers(outlier_mask, censor_between)
     denoising_mask = ((outlier_mask + between_mask) > 0).astype(int)
@@ -291,13 +300,15 @@ def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
         except ValueError:
             non_float_times.append(time)
 
-    retained_exact_times = [t for t in float_times if t <= scan_length]
-    dropped_exact_times = [t for t in float_times if t > scan_length]
+    # Tolerate floating-point error, so that (e.g.) 300 seconds at a TR of 0.8 is 375 volumes.
+    tolerance = 1e-6
+    retained_exact_times = [t for t in float_times if t <= scan_length + tolerance]
+    dropped_exact_times = [t for t in float_times if t > scan_length + tolerance]
     if dropped_exact_times:
         LOGGER.warning(
             f'{scan_length} seconds in {os.path.basename(bold_file)} '
             'survive high-motion outlier scrubbing. '
-            'Only retaining exact-time values greater than this '
+            'Only retaining exact-time values less than or equal to this '
             f'({retained_exact_times}).'
         )
 
@@ -306,5 +317,5 @@ def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
             f'Non-float values {non_float_times} in {os.path.basename(bold_file)} will be ignored.'
         )
 
-    exact_scans = [int(t // t_r) for t in retained_exact_times]
+    exact_scans = [int(np.floor(t / t_r + tolerance)) for t in retained_exact_times]
     return exact_scans
