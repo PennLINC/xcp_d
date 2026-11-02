@@ -648,12 +648,12 @@ The default is 240 (4 minutes).
         '--correlation_outputs',
         dest='correlation_outputs',
         required=False,
-        default=['auto'],
+        default=['r'],
         nargs='+',
-        choices=['auto', 'r', 'var_r', 'z', 'var_z'],
+        choices=['r', 'var_r', 'z', 'var_z'],
         help=(
             'Outputs to calculate correlations for. '
-            "If 'auto', the outputs will be inferred from the processing mode. "
+            "The default is 'r'. "
             "The variance outputs ('var_r' and 'var_z') are only written for individual runs, "
             'not for concatenated runs, so they require --output-run-wise-correlations '
             'when runs are combined.'
@@ -1274,9 +1274,6 @@ def _validate_parameters(opts, build_log, parser):
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
         opts.correlation_lengths = opts.correlation_lengths or []
-        if 'auto' in opts.correlation_outputs:
-            opts.correlation_outputs.remove('auto')
-            opts.correlation_outputs = sorted(set(['r'] + opts.correlation_outputs))
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1306,9 +1303,6 @@ def _validate_parameters(opts, build_log, parser):
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
         opts.correlation_lengths = opts.correlation_lengths or []
-        if 'auto' in opts.correlation_outputs:
-            opts.correlation_outputs.remove('auto')
-            opts.correlation_outputs = sorted(set(['r'] + opts.correlation_outputs))
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1337,9 +1331,6 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        if 'auto' in opts.correlation_outputs:
-            opts.correlation_outputs.remove('auto')
-            opts.correlation_outputs = sorted(set(['r', 'var_r'] + opts.correlation_outputs))
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1376,9 +1367,6 @@ def _validate_parameters(opts, build_log, parser):
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
         opts.correlation_lengths = opts.correlation_lengths or []
-        if 'auto' in opts.correlation_outputs:
-            opts.correlation_outputs.remove('auto')
-            opts.correlation_outputs = sorted(set(['r'] + opts.correlation_outputs))
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'nifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1412,10 +1400,6 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
 
         opts.correlation_lengths = opts.correlation_lengths or []
-
-        if 'auto' in opts.correlation_outputs:
-            opts.correlation_outputs.remove('auto')
-            opts.correlation_outputs = sorted(set(['r', 'var_r'] + opts.correlation_outputs))
 
         if opts.despike == 'auto':
             error_messages.append("'--despike' (y or n) is required for 'none' mode.")
@@ -1629,6 +1613,8 @@ def _validate_parameters(opts, build_log, parser):
     if opts.correlation_lengths and not opts.combine_runs:
         error_messages.append("'--create-matrices' requires '--combine-runs'.")
 
+    # Drop repeated outputs, which would otherwise create duplicate workflow nodes
+    opts.correlation_outputs = sorted(set(opts.correlation_outputs))
     variance_outputs = [out for out in opts.correlation_outputs if out in ('var_r', 'var_z')]
     if variance_outputs and opts.combine_runs and not opts.output_run_wise_correlations:
         build_log.warning(
