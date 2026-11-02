@@ -11,6 +11,7 @@ from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import BIDSURI, AddHashToTSV, DerivativesDataSink
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
+from xcp_d.workflows.bold.connectivity import _compute_run_wise_correlations
 
 
 @fill_doc
@@ -131,6 +132,7 @@ def init_postproc_derivatives_wf(
                 'temporal_mask',
                 'denoised_bold',
                 'censored_denoised_bold',
+                'smoothed_denoised_bold',
                 'timeseries',
                 'timeseries_ciftis',
             ],
@@ -344,7 +346,6 @@ def init_postproc_derivatives_wf(
             SoftwareFilters=software_filters,
         ),
         name='ds_denoised_bold',
-        run_without_submitting=True,
         mem_gb=2,
     )
     workflow.connect([
@@ -407,12 +408,12 @@ def init_postproc_derivatives_wf(
                 FWHM=smoothing,
             ),
             name='ds_smoothed_bold',
-            run_without_submitting=True,
             mem_gb=2,
         )
         workflow.connect([
             (inputnode, ds_smoothed_bold, [('smoothed_denoised_bold', 'in_file')]),
             (smoothed_bold_src, ds_smoothed_bold, [('out', 'Sources')]),
+            (ds_smoothed_bold, outputnode, [('out_file', 'smoothed_denoised_bold')]),
         ])  # fmt:skip
 
     # Connectivity workflow outputs
@@ -537,7 +538,7 @@ def init_postproc_derivatives_wf(
             (ds_timeseries, outputnode, [('out_file', 'timeseries')]),
         ])  # fmt:skip
 
-        if config.workflow.output_run_wise_correlations or not has_multiple_runs:
+        if _compute_run_wise_correlations(has_multiple_runs):
             make_corrs_meta_dict1 = pe.MapNode(
                 BIDSURI(
                     numinputs=1,
@@ -674,7 +675,7 @@ def init_postproc_derivatives_wf(
                 (ds_timeseries_ciftis, outputnode, [('out_file', 'timeseries_ciftis')]),
             ])  # fmt:skip
 
-            if config.workflow.output_run_wise_correlations or not has_multiple_runs:
+            if _compute_run_wise_correlations(has_multiple_runs):
                 make_ccorrs_meta_dict1 = pe.MapNode(
                     BIDSURI(
                         numinputs=1,

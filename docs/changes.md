@@ -1,5 +1,24 @@
 # What's New
 
+
+## 26.3.0 (October 27, 2026)
+
+### 🛠 Breaking Changes
+
+* Revert "Z-score data before concatenating" by @tsalo in https://github.com/PennLINC/xcp_d/pull/1642
+
+### 🐛 Bug Fixes
+
+* Strip kernel ABI note from libQt5Core for EL7 hosts by @tsalo in https://github.com/PennLINC/xcp_d/pull/1635
+* Check Docker Hub for the latest XCP-D release by @tsalo in https://github.com/PennLINC/xcp_d/pull/1639
+
+### Other Changes
+
+* Write BOLD derivatives faster: ISA-L gzip, 4D sinks in workers by @tsalo in https://github.com/PennLINC/xcp_d/pull/1641
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.2.0...26.3.0
+
+
 ## 26.2.0 (August 13, 2026)
 
 ### 🎉 Exciting New Features

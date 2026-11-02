@@ -47,6 +47,21 @@ def _load_confounds_config():
     return yaml.safe_load(config.execution.confounds_config.read_text())
 
 
+def _count_voxelwise_confounds():
+    """Count the voxel-wise confounds in the confounds configuration.
+
+    Returns
+    -------
+    n_voxelwise_confounds : :obj:`int`
+        Number of confounds that are images rather than columns of a table.
+    """
+    confounds_config = _load_confounds_config()
+    if confounds_config is None:
+        return 0
+
+    return sum('columns' not in params for params in confounds_config['confounds'].values())
+
+
 @fill_doc
 def init_prepare_confounds_wf(
     TR,
@@ -546,7 +561,7 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
             with mock_config():
                 wf = init_denoise_bold_wf(
                     TR=0.8,
-                    mem_gb={"bold": 1.0},
+                    mem_gb={"bold": 1.0, "denoise": 3.0},
                     name="denoise_bold_wf",
                 )
 
@@ -555,6 +570,8 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
     %(TR)s
     mem_gb : :obj:`dict`
         Memory size in GB to use for each of the nodes.
+        The ``'denoise'`` entry is the estimated peak memory of the denoising node,
+        from :func:`~xcp_d.utils.utils._estimate_denoise_mem_gb`.
     %(name)s
         Default is "denoise_bold_wf".
 
@@ -699,7 +716,7 @@ approach.
             num_threads=config.nipype.omp_nthreads,
         ),
         name='regress_and_filter_bold',
-        mem_gb=3 * mem_gb['bold'],
+        mem_gb=mem_gb['denoise'],
         n_procs=config.nipype.omp_nthreads,
     )
     config.loggers.workflow.debug('Created node for regression and filtering of BOLD data.')

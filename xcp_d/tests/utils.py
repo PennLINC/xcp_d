@@ -40,12 +40,20 @@ def update_resources(parameters):
     case, the number should be kept. Otherwise, try to read the
     env variable (specified in each job in config.yml). If
     this variable doesn't work, just set it to 4.
+
+    ``--omp-nthreads`` is set to a quarter of ``--nthreads``, but at least 2
+    (and no more than ``--nthreads``).
+    If it matched ``--nthreads``, every node that requests ``omp_nthreads`` CPUs would
+    claim all of them, so the scheduler would run those nodes one at a time.
+    The floor of 2 keeps the multithreaded code paths exercised on small runners.
     """
     nthreads = get_cpu_count()
     if not _check_arg_specified('--nthreads', parameters):
         parameters.append(f'--nthreads={nthreads}')
+
     if not _check_arg_specified('--omp-nthreads', parameters):
-        parameters.append(f'--omp-nthreads={nthreads}')
+        omp_nthreads = min(nthreads, max(2, nthreads // 4))
+        parameters.append(f'--omp-nthreads={omp_nthreads}')
     return parameters
 
 
