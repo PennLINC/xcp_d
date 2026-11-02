@@ -499,3 +499,99 @@ def test_init_concatenate_data_wf_cifti_no_correlations():
         assert 'ds_cifti_ts' in node_names
         assert 'censored_cifti_ts_buffer' not in node_names
         assert 'censor_cifti_ts' not in node_names
+
+
+_CORRELATION_NODES = {
+    'functional_connectivity',
+    'parcellated_bold_buffer',
+    'remove_outliers',
+    'correlate_bold',
+    'dconn_to_tsv',
+    'connectivity_plot',
+    'ds_report_connectivity_plot',
+    'ds_report_connectivity',
+}
+_CORRELATION_SINKS = {
+    'make_corrs_meta_dict1',
+    'make_corrs_meta_dict2',
+    'add_hash_correlations_r',
+    'ds_correlations_r',
+    'make_ccorrs_meta_dict1',
+    'make_ccorrs_meta_dict2',
+    'ds_correlation_ciftis_r',
+}
+
+
+@pytest.mark.parametrize('file_format', ['nifti', 'cifti'])
+@pytest.mark.parametrize('skip_connectivity', [True, False])
+def test_run_wise_correlations_skip_connectivity(file_format, skip_connectivity, monkeypatch):
+    """Test that --skip connectivity removes run-wise correlations but keeps time series."""
+    from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
+
+    init_connectivity_wf = (
+        init_functional_connectivity_nifti_wf
+        if file_format == 'nifti'
+        else init_functional_connectivity_cifti_wf
+    )
+
+    with mock_config():
+        # mock_config does not reset these, so restore them after the test
+        monkeypatch.setattr(config.workflow, 'output_run_wise_correlations', True)
+        monkeypatch.setattr(
+            config.workflow,
+            'skip_outputs',
+            ['connectivity'] if skip_connectivity else [],
+        )
+        monkeypatch.setattr(config.workflow, 'correlation_outputs', ['r'])
+        config.workflow.file_format = file_format
+        config.workflow.output_interpolated = True
+        config.execution.atlases = ['Glasser']
+
+        connectivity_wf = init_connectivity_wf(
+            mem_gb={'volume': 0.1, 'bold': 1.0},
+            has_multiple_runs=False,
+        )
+        node_names = {node.name for node in connectivity_wf._graph.nodes()}
+        parcellate_node = 'parcellate_data' if file_format == 'nifti' else 'parcellate_bold_wf'
+        assert parcellate_node in node_names
+        assert bool(node_names & _CORRELATION_NODES) != skip_connectivity
+
+        derivatives_wf = init_postproc_derivatives_wf(
+            name_source='/data/sub-01/func/sub-01_task-rest_bold.nii.gz',
+            source_metadata={},
+            has_multiple_runs=False,
+        )
+        node_names = {node.name for node in derivatives_wf._graph.nodes()}
+        assert {'ds_coverage', 'ds_timeseries'} <= node_names
+        assert bool(node_names & _CORRELATION_SINKS) != skip_connectivity
+
+
+@pytest.mark.parametrize('file_format', ['nifti', 'cifti'])
+def test_init_concatenate_data_wf_skip_connectivity(file_format, monkeypatch):
+    """Test that --skip connectivity removes concatenated correlations but keeps time series."""
+    from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
+
+    with mock_config():
+        # mock_config does not reset skip_outputs, so restore it after the test
+        monkeypatch.setattr(config.workflow, 'skip_outputs', ['connectivity'])
+        config.workflow.correlation_lengths = ['all', '300']
+        config.workflow.combine_runs = True
+        config.workflow.fd_thresh = 0.3
+        config.workflow.file_format = file_format
+        config.workflow.output_interpolated = True
+        config.execution.atlases = ['Glasser']
+
+        wf = init_concatenate_data_wf(
+            TR=2.0,
+            head_radius=50,
+            exact_scans=[150],
+            mem_gb={'bold': 1.0, 'volume': 0.01},
+        )
+        node_names = {node.name for node in wf._graph.nodes()}
+
+        assert 'ds_timeseries' in node_names
+        assert 'random_censor' not in node_names
+        assert not [name for name in node_names if 'correlat' in name or 'volumes' in name]
+        if file_format == 'cifti':
+            assert 'ds_cifti_ts' in node_names
+            assert 'censored_cifti_ts_buffer' not in node_names

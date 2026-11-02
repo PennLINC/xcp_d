@@ -138,7 +138,7 @@ or the whole parcel was set to NaN (when the parcel had less than {min_coverage 
         ]),
     ])  # fmt:skip
 
-    if config.workflow.output_run_wise_correlations or not has_multiple_runs:
+    if _compute_run_wise_correlations(has_multiple_runs):
         functional_connectivity = pe.MapNode(
             TSVConnect(),
             name='functional_connectivity',
@@ -395,7 +395,7 @@ or the whole parcel was set to NaN (when the parcel had less than {min_coverage 
             ]),
         ])  # fmt:skip
 
-    if config.workflow.output_run_wise_correlations or not has_multiple_runs:
+    if _compute_run_wise_correlations(has_multiple_runs):
         # Calculate the correlation matrix from the parcellated tsv files
         functional_connectivity = pe.MapNode(
             TSVConnect(),
@@ -565,3 +565,23 @@ or the whole parcel was set to NaN (when the parcel had less than {min_coverage 
             ])  # fmt:skip
 
     return workflow
+
+
+def _compute_run_wise_correlations(has_multiple_runs):
+    """Determine whether run-wise correlation matrices should be computed and written.
+
+    Parameters
+    ----------
+    has_multiple_runs : :obj:`bool`
+        Whether the run will be concatenated with other runs.
+
+    Returns
+    -------
+    :obj:`bool`
+        False if connectivity is skipped (``--skip connectivity``).
+        Otherwise, True if run-wise correlations are requested or there is only one run.
+    """
+    if 'connectivity' in config.workflow.skip_outputs:
+        return False
+
+    return bool(config.workflow.output_run_wise_correlations or not has_multiple_runs)

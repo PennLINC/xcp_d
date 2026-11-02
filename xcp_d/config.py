@@ -551,13 +551,16 @@ class execution(_Config):
         if cls.bids_filters:
 
             def _process_value(value):
-                """Convert string with "Query" in it to Query object."""
+                """Convert string with "Query" in it to Query object.
+
+                Non-string values (e.g., integer run or echo indices) are returned unchanged.
+                """
                 if isinstance(value, list):
                     return [_process_value(val) for val in value]
                 else:
                     return (
                         getattr(Query, value[7:-4])
-                        if not isinstance(value, Query) and 'Query' in value
+                        if isinstance(value, str) and 'Query' in value
                         else value
                     )
 

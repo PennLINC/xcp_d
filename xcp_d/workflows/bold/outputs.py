@@ -11,6 +11,7 @@ from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import BIDSURI, AddHashToTSV, DerivativesDataSink
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
+from xcp_d.workflows.bold.connectivity import _compute_run_wise_correlations
 
 
 @fill_doc
@@ -578,7 +579,7 @@ def init_postproc_derivatives_wf(
             (ds_timeseries, outputnode, [('out_file', 'timeseries')]),
         ])  # fmt:skip
 
-        if config.workflow.output_run_wise_correlations or not has_multiple_runs:
+        if _compute_run_wise_correlations(has_multiple_runs):
             make_corrs_meta_dict1 = pe.MapNode(
                 BIDSURI(
                     numinputs=1,
@@ -710,7 +711,7 @@ def init_postproc_derivatives_wf(
                 (ds_timeseries_ciftis, outputnode, [('out_file', 'timeseries_ciftis')]),
             ])  # fmt:skip
 
-            if config.workflow.output_run_wise_correlations or not has_multiple_runs:
+            if _compute_run_wise_correlations(has_multiple_runs):
                 make_ccorrs_meta_dict1 = pe.MapNode(
                     BIDSURI(
                         numinputs=1,

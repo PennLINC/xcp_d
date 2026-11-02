@@ -182,7 +182,7 @@ def init_postprocess_anat_wf(
             workflow.connect([(inputnode, ds_t2w_std, [('t2w', 'in_file')])])
 
     else:
-        out = ['T1w'] if t1w_available else [] + ['T2w'] if t2w_available else []
+        out = (['T1w'] if t1w_available else []) + (['T2w'] if t2w_available else [])
         workflow.__desc__ = f"""
 
 #### Anatomical data
