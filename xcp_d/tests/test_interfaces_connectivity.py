@@ -5,6 +5,7 @@ import os
 import nibabel as nb
 import numpy as np
 import pandas as pd
+import pytest
 
 from xcp_d.interfaces.connectivity import NiftiParcellate
 
@@ -85,6 +86,114 @@ def test_nifti_parcellate(tmp_path_factory):
         np.array([[np.nan, np.nan, 3, 4, np.nan]]),
         equal_nan=True,
     )
+
+
+@pytest.mark.parametrize(
+    ('image_values', 'lut_values', 'expected_timeseries', 'expected_coverage'),
+    [
+        # The image has a value (7) that isn't in the labels file.
+        ([1, 2, 3, 4, 5, 7], [1, 2, 3, 4, 5], [10, 20, 30, 40, 50], [1, 1, 1, 1, 1]),
+        # The image has an unlabeled value (7) and is missing a labeled parcel (2),
+        # so the number of extracted columns matches the number of labels.
+        ([1, 3, 5, 7], [1, 2, 3, 5], [10, np.nan, 30, 50], [1, 0, 1, 1]),
+    ],
+)
+def test_nifti_parcellate_atlas_labels_mismatch(
+    tmp_path_factory,
+    image_values,
+    lut_values,
+    expected_timeseries,
+    expected_coverage,
+):
+    """Parcels are matched to labels by atlas value when the image and labels file disagree."""
+    tmpdir = tmp_path_factory.mktemp('test_nifti_parcellate_atlas_labels_mismatch')
+
+    arr = np.zeros((len(image_values) + 1, 2, 2), dtype=np.int32)
+    for i_row, value in enumerate(image_values):
+        arr[i_row, :, :] = value
+
+    atlas_img = nb.Nifti1Image(arr, np.eye(4))
+    atlas_file = os.path.join(tmpdir, 'atlas.nii.gz')
+    atlas_img.to_filename(atlas_file)
+
+    # Each parcel's signal is ten times its atlas value.
+    bold_img = nb.Nifti1Image((arr * 10).astype(np.float32), np.eye(4))
+    bold_file = os.path.join(tmpdir, 'bold.nii.gz')
+    bold_img.to_filename(bold_file)
+
+    mask_img = nb.Nifti1Image(np.ones(arr.shape, dtype=np.int32), np.eye(4))
+    mask_file = os.path.join(tmpdir, 'mask.nii.gz')
+    mask_img.to_filename(mask_file)
+
+    names = [f'Region {value}' for value in lut_values]
+    lut = pd.DataFrame({'index': lut_values, 'name': names})
+    lut_file = os.path.join(tmpdir, 'lut.tsv')
+    lut.to_csv(lut_file, sep='\t', index=False)
+
+    parcellator = NiftiParcellate(
+        filtered_file=bold_file,
+        mask=mask_file,
+        atlas=atlas_file,
+        atlas_labels=lut_file,
+        min_coverage=0.5,
+    )
+    results = parcellator.run(cwd=tmpdir)
+    coverage_df = pd.read_table(results.outputs.coverage, index_col='Node')
+    timeseries_df = pd.read_table(results.outputs.timeseries)
+
+    assert timeseries_df.columns.tolist() == names
+    assert coverage_df.index.tolist() == names
+    assert np.array_equal(
+        timeseries_df.to_numpy(),
+        np.array([expected_timeseries], dtype=float),
+        equal_nan=True,
+    )
+    assert np.array_equal(coverage_df['coverage'].to_numpy(), np.array(expected_coverage))
+
+
+def test_nifti_parcellate_float32_coverage(tmp_path_factory, monkeypatch):
+    """Check that parcels with float32 coverage equal to min_coverage are kept."""
+    from nilearn.maskers import NiftiLabelsMasker
+
+    from xcp_d.interfaces import connectivity
+
+    class Float32Masker(NiftiLabelsMasker):
+        def fit_transform(self, *args, **kwargs):
+            return super().fit_transform(*args, **kwargs).astype(np.float32)
+
+    monkeypatch.setattr(connectivity, 'NiftiLabelsMasker', Float32Masker)
+
+    tmpdir = tmp_path_factory.mktemp('test_nifti_parcellate_float32_coverage')
+
+    # A 10-voxel parcel with 7 voxels in the mask, plus a fully covered parcel.
+    # In float32, 7 / 10 is 0.69999999, which is below the float64 value of 0.7.
+    assert float(np.float32(7) / np.float32(10)) < 0.7
+    arr = np.zeros((10, 2, 1))
+    arr[:, 0, 0] = 1
+    arr[:, 1, 0] = 2
+    atlas_img = nb.Nifti1Image(arr.astype(np.int32), np.eye(4))
+    mask = np.ones((10, 2, 1))
+    mask[7:, 0, 0] = 0
+    mask_img = nb.Nifti1Image(mask.astype(np.int32), np.eye(4))
+    lut = pd.DataFrame(columns=['index', 'name'], data=[[1, 'Region A'], [2, 'Region B']])
+
+    atlas_file = os.path.join(tmpdir, 'atlas.nii.gz')
+    atlas_img.to_filename(atlas_file)
+    mask_file = os.path.join(tmpdir, 'mask.nii.gz')
+    mask_img.to_filename(mask_file)
+    lut_file = os.path.join(tmpdir, 'lut.tsv')
+    lut.to_csv(lut_file, sep='\t', index=False)
+
+    parcellator = NiftiParcellate(
+        filtered_file=atlas_file,
+        mask=mask_file,
+        atlas=atlas_file,
+        atlas_labels=lut_file,
+        min_coverage=0.7,
+    )
+    results = parcellator.run(cwd=tmpdir)
+    timeseries_df = pd.read_table(results.outputs.timeseries)
+    assert np.array_equal(timeseries_df.to_numpy(), np.array([[1, 2]]))
 
 
 def test_correlate_timeseries_uses_denoising_column(tmp_path_factory):

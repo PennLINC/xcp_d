@@ -3,6 +3,7 @@
 import re
 
 import numpy as np
+import pandas as pd
 import pytest
 from scipy import signal
 
@@ -226,3 +227,32 @@ def test_motion_filtering_notch():
     )
     notch_data_test = np.squeeze(notch_data_test)
     assert np.allclose(notch_data_test, notch_data_true)
+
+
+@pytest.mark.parametrize('motion_filter_type', ['lp', 'notch'])
+def test_load_motion_non_zero_index(motion_filter_type):
+    """load_motion aligns filtered parameters with a confounds DataFrame not indexed from 0.
+
+    A DataFrame with dummy volumes dropped is indexed from the number of dummy volumes.
+    The filtered columns must keep that index, rather than being shifted and padded with NaNs.
+    """
+    rng = np.random.default_rng(0)
+    n_volumes, n_dummy = 100, 5
+    columns = ['rot_x', 'rot_y', 'rot_z', 'trans_x', 'trans_y', 'trans_z', 'rmsd']
+    confounds_df = pd.DataFrame(
+        np.cumsum(rng.normal(scale=0.05, size=(n_volumes, len(columns))), axis=0),
+        columns=columns,
+    )
+    confounds_df = confounds_df.drop(np.arange(n_dummy))
+
+    motion_df = confounds.load_motion(
+        confounds_df,
+        TR=0.8,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=4,
+        band_stop_min=6 if motion_filter_type == 'lp' else 12,
+        band_stop_max=None if motion_filter_type == 'lp' else 18,
+    )
+    assert motion_df.shape[0] == n_volumes - n_dummy
+    assert motion_df.index.equals(confounds_df.index)
+    assert not motion_df.isna().any().any()

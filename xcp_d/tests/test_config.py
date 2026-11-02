@@ -50,6 +50,51 @@ def test_reset_config():
     assert execution.fmri_dir == 'TESTING'
 
 
+def test_bids_filters_non_string_values(tmp_path):
+    """Load BIDS filters with integer, list-of-integer, and serialized Query values."""
+    import json
+
+    from bids.layout import Query
+
+    fmri_dir = tmp_path / 'derivatives'
+    fmri_dir.mkdir()
+    (fmri_dir / 'dataset_description.json').write_text(
+        json.dumps(
+            {
+                'Name': 'Test',
+                'BIDSVersion': '1.9.0',
+                'DatasetType': 'derivative',
+                'GeneratedBy': [{'Name': 'fMRIPrep'}],
+            },
+        ),
+    )
+
+    try:
+        config.from_dict(
+            {
+                'fmri_dir': str(fmri_dir),
+                'work_dir': str(tmp_path / 'work'),
+                'bids_filters': {
+                    'bold': {
+                        'run': 1,
+                        'echo': [1, 2],
+                        'acquisition': '<Query.NONE: 1>',
+                        # Query.ANY is an alias of Query.REQUIRED, so it serializes this way
+                        'space': ['MNI152NLin6Asym', '<Query.REQUIRED: 2>'],
+                    },
+                },
+            },
+            init=['execution'],
+        )
+        bold_filters = config.execution.bids_filters['bold']
+        assert bold_filters['run'] == 1
+        assert bold_filters['echo'] == [1, 2]
+        assert bold_filters['acquisition'] is Query.NONE
+        assert bold_filters['space'] == ['MNI152NLin6Asym', Query.ANY]
+    finally:
+        _reset_config()
+
+
 @pytest.mark.skip(reason='This test is not working')
 def test_hash_config():
     # This may change with changes to config defaults / new attributes!
