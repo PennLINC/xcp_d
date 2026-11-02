@@ -705,6 +705,28 @@ def test_interpolate_linear(dtype):
     assert np.allclose(interpolated, expected, rtol=1e-6 if dtype == np.float32 else 1e-12)
 
 
+def test_interpolate_linear_chunks():
+    """Test that linear interpolation in chunks of voxels matches interpolating all at once."""
+    n_volumes = 400
+    rng = np.random.default_rng(0)
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[rng.choice(n_volumes, 300, replace=False)] = False
+    # Enough voxels for several chunks, with a partial chunk at the end
+    n_voxels = 3 * ((2**20) // 300) + 7
+    arr = rng.standard_normal((n_volumes, n_voxels)).astype(np.float32)
+
+    volume_idx = np.arange(n_volumes)
+    voxels = [0, n_voxels // 2, n_voxels - 1]
+    expected = [
+        np.interp(volume_idx, volume_idx[sample_mask], arr[sample_mask, i_voxel])
+        for i_voxel in voxels
+    ]
+
+    interpolated = utils._interpolate_linear(arr=arr, sample_mask=sample_mask, TR=2)
+    for i_voxel, expected_voxel in zip(voxels, expected, strict=True):
+        assert np.allclose(interpolated[:, i_voxel], expected_voxel, rtol=1e-6)
+
+
 def test_interpolate_linear_no_low_motion_volumes():
     """Test that linear interpolation needs at least one low-motion volume."""
     with pytest.raises(ValueError, match='At least one low-motion volume'):

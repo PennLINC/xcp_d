@@ -870,7 +870,14 @@ def _interpolate_linear(*, arr, sample_mask, TR):
         where=distance > 0,
     )[:, None]
 
-    arr[high_motion_idx, :] = (1 - weights) * arr[before_idx, :] + weights * arr[after_idx, :]
+    # Work on chunks of voxels, so the float64 temporaries are about 8 MiB each
+    chunk_size = max(1, (2**20) // max(high_motion_idx.size, 1))
+    for start in range(0, arr.shape[1], chunk_size):
+        voxels = slice(start, start + chunk_size)
+        arr[high_motion_idx, voxels] = (1 - weights) * arr[before_idx, voxels] + (
+            weights * arr[after_idx, voxels]
+        )
+
     return arr
 
 
