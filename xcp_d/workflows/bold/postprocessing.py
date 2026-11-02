@@ -631,7 +631,8 @@ approach.
         workflow.__desc__ += (
             'Any volumes censored earlier in the workflow were first linearly interpolated in '
             'the BOLD data, from the closest low-motion volumes before and after them, '
-            "as in *AFNI*'s 3dTproject with '-cenmode NTRP' [@cox1996afni]. "
+            "based on DCAN Labs' BOLD processing in the ABCD-BIDS pipeline "
+            '[@feczko2021adolescent]. '
             'Outlier volumes at the beginning or end of the time series were replaced with the '
             "closest low-motion volume's values. "
         )

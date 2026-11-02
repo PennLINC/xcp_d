@@ -850,9 +850,14 @@ The method is chosen with ``--interpolation``:
 
 ``linear``
    Each outlier volume is a weighted average of the closest non-outlier volumes before and after
-   it, as in *AFNI*'s ``3dTproject`` with ``-cenmode NTRP`` :footcite:p:`cox1996afni`.
+   it, based on DCAN Labs' ``dcan_bold_processing`` in the ABCD-BIDS pipeline
+   :footcite:p:`feczko2021adolescent`.
    Any outlier volumes at the beginning or end of the run are replaced with the closest
-   non-outlier volume's data, as ``3dTproject`` also does.
+   non-outlier volume's data.
+   This differs from ``dcan_bold_processing`` in two ways.
+   That pipeline fills outlier volumes at the beginning or end of the run with the mean of the
+   non-outlier volumes, and it interpolates the residuals after nuisance regression,
+   while *XCP-D* interpolates the BOLD data and confounds before filtering and regression.
 
 ``spectral``
    A Lomb-Scargle least squares spectral reconstruction, as in :footcite:t:`power_fd_dvars`
