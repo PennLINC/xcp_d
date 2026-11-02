@@ -34,6 +34,7 @@ dummy_scans = 0
 input_type = "fmriprep"
 despike = false
 smoothing = 6
+interpolation = "spline"
 combine_runs = false
 motion_filter_order = 4
 head_radius = 50
