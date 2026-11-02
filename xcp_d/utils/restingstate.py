@@ -27,14 +27,15 @@ def compute_2d_reho(datat, adjacency_matrix):
     -------
     kcc : numpy.ndarray of shape (V,)
         ReHo values.
-        Uncovered vertices get a ReHo value of NaN,
-        as do vertices with no covered neighbors.
+        Vertices with any non-finite (NaN or infinite) value get a ReHo value of NaN,
+        and vertices with all zeros get a ReHo value of 0, as they do for ALFF.
+        Covered vertices with no covered neighbors get a ReHo value of NaN.
 
     Notes
     -----
     From https://www.sciencedirect.com/science/article/pii/S0165178119305384#bib0045.
 
-    Uncovered vertices are those with any non-finite (NaN or infinite) value or with all zeros,
+    Uncovered vertices are those with any non-finite value or with all zeros,
     matching the vertex-wise coverage mask used for parcellation.
     They are excluded from their neighbors' neighborhoods,
     so a single uncovered vertex does not make ReHo NaN (for NaNs) or lower (for zeros)
@@ -42,11 +43,12 @@ def compute_2d_reho(datat, adjacency_matrix):
     """
     n_vertices = datat.shape[0]
     kcc = np.zeros(n_vertices)
-    bad_vertices = ~np.all(np.isfinite(datat), axis=1) | np.all(datat == 0, axis=1)
+    nonfinite_vertices = ~np.all(np.isfinite(datat), axis=1)
+    bad_vertices = nonfinite_vertices | np.all(datat == 0, axis=1)
 
     for i_vertex in range(n_vertices):  # loop through each voxel
         if bad_vertices[i_vertex]:
-            kcc[i_vertex] = np.nan
+            kcc[i_vertex] = np.nan if nonfinite_vertices[i_vertex] else 0
             continue
 
         neighbor_idx = np.where(adjacency_matrix[i_vertex, :])[0]  # the index of neighbors

@@ -281,7 +281,11 @@ def test_compute_2d_reho_uncovered_neighbor(bad_value):
         data[5, 10] = float(bad_value)
 
     reho = restingstate.compute_2d_reho(data, adjacency_matrix)
-    assert np.isnan(reho[5])
+    if bad_value == 'zeros':
+        assert reho[5] == 0
+    else:
+        assert np.isnan(reho[5])
+
     assert np.all(np.isfinite(np.delete(reho, 5)))
 
     # The other vertices match ReHo computed with the bad vertex removed from the mesh
@@ -298,8 +302,32 @@ def test_compute_2d_reho_no_covered_neighbors():
     data[[6, 7]] = 0
 
     reho = restingstate.compute_2d_reho(data, adjacency_matrix)
-    assert np.all(np.isnan(reho[[3, 4, 5, 6, 7]]))
+    assert np.all(np.isnan(reho[[3, 4, 5]]))
+    assert np.all(reho[[6, 7]] == 0)
     assert np.all(np.isfinite(reho[[0, 1, 2, 8, 9, 10, 11]]))
+
+
+def test_compute_2d_reho_matches_alff_for_uncovered():
+    """Check that ReHo and ALFF give the same values for uncovered vertices."""
+    rng = np.random.default_rng(3)
+    data, adjacency_matrix = _make_reho_data(12, 100, rng)
+    data[2] = 0
+    data[8, 10] = np.nan
+
+    reho = restingstate.compute_2d_reho(data, adjacency_matrix)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', RuntimeWarning)
+        alff = restingstate.compute_alff(
+            data_matrix=data,
+            low_pass=0.08,
+            high_pass=0.01,
+            TR=0.8,
+            sample_mask=None,
+        )
+
+    assert reho[2] == alff[2] == 0
+    assert np.isnan(reho[8])
+    assert np.isnan(alff[8])
 
 
 def test_lombscargle_normalized_matches_scipy():
