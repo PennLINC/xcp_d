@@ -843,15 +843,16 @@ An interpolated version of the BOLD data is created by filling in the high-motio
 The method is chosen with ``--interpolation``:
 
 ``spline`` (default)
-   Cubic spline interpolation, as implemented in ``nilearn``.
+   Cubic spline interpolation, as in *Nilearn*'s :func:`~nilearn.signal.clean`
+   :footcite:p:`abraham2014machine`.
    Any outlier volumes at the beginning or end of the run are replaced with the closest
    non-outlier volume's data, in order to avoid extrapolation by the interpolation function.
 
 ``linear``
    Each outlier volume is a weighted average of the closest non-outlier volumes before and after
-   it.
+   it, as in *AFNI*'s ``3dTproject`` with ``-cenmode NTRP`` :footcite:p:`cox1996afni`.
    Any outlier volumes at the beginning or end of the run are replaced with the closest
-   non-outlier volume's data.
+   non-outlier volume's data, as ``3dTproject`` also does.
 
 ``spectral``
    A Lomb-Scargle least squares spectral reconstruction, as in :footcite:t:`power_fd_dvars`

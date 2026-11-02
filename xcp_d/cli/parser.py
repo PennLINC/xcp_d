@@ -520,8 +520,9 @@ The default is 240 (4 minutes).
         help=(
             'The method used to interpolate high-motion volumes before filtering and '
             'denoising. '
-            "'spline' uses cubic spline interpolation. "
-            "'linear' uses linear interpolation between the closest low-motion volumes. "
+            "'spline' uses cubic spline interpolation, as in Nilearn's signal.clean. "
+            "'linear' uses linear interpolation between the closest low-motion volumes, "
+            "as in AFNI's 3dTproject with '-cenmode NTRP'. "
             "'spectral' uses a Lomb-Scargle least squares spectral reconstruction, "
             'as in Power et al. (2014). '
             "With 'spline' and 'linear', high-motion volumes at the beginning or end of the run "
