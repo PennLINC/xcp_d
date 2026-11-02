@@ -165,7 +165,7 @@ def init_postprocess_surfaces_wf(
 
     if abcc_qc and mesh_available:
         # Determine whether to warp the surfaces to standard space or not.
-        apply_transform = True if process_surfaces else False
+        apply_transform = bool(process_surfaces)
 
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
@@ -204,28 +204,37 @@ def init_postprocess_surfaces_wf(
                 (inputnode, copy_morphs_wf, [(morphometry_file, f'inputnode.{morphometry_file}')]),
             ])  # fmt:skip
 
-    if mesh_available:
-        workflow.__desc__ += (
-            ' HCP-style midthickness, inflated, and very-inflated surfaces were generated from '
-            'the white-matter and pial surface meshes.'
-        )
-        # Generate and output HCP-style surface files.
-        hcp_surface_wfs = {
-            hemi: init_generate_hcp_surfaces_wf(name=f'{hemi}_generate_hcp_surfaces_wf')
-            for hemi in ['lh', 'rh']
-        }
-        workflow.connect([
-            (inputnode, hcp_surface_wfs['lh'], [('lh_pial_surf', 'inputnode.name_source')]),
-            (inputnode, hcp_surface_wfs['rh'], [('rh_pial_surf', 'inputnode.name_source')]),
-            (hcp_surface_wfs['lh'], outputnode, [('outputnode.midthickness', 'lh_midthickness')]),
-            (hcp_surface_wfs['rh'], outputnode, [('outputnode.midthickness', 'rh_midthickness')]),
-        ])  # fmt:skip
+    if not mesh_available:
+        if not morphometry_files:
+            raise ValueError(
+                'No surfaces found. '
+                'Surfaces are required if `--warp-surfaces-native2std` is enabled.'
+            )
+
+        # Return early, as all remaining steps operate on the mesh files.
+        return workflow
+
+    workflow.__desc__ += (
+        ' HCP-style midthickness, inflated, and very-inflated surfaces were generated from '
+        'the white-matter and pial surface meshes.'
+    )
+    # Generate and output HCP-style surface files.
+    hcp_surface_wfs = {
+        hemi: init_generate_hcp_surfaces_wf(name=f'{hemi}_generate_hcp_surfaces_wf')
+        for hemi in ['lh', 'rh']
+    }
+    workflow.connect([
+        (inputnode, hcp_surface_wfs['lh'], [('lh_pial_surf', 'inputnode.name_source')]),
+        (inputnode, hcp_surface_wfs['rh'], [('rh_pial_surf', 'inputnode.name_source')]),
+        (hcp_surface_wfs['lh'], outputnode, [('outputnode.midthickness', 'lh_midthickness')]),
+        (hcp_surface_wfs['rh'], outputnode, [('outputnode.midthickness', 'rh_midthickness')]),
+    ])  # fmt:skip
 
     fslr_mesh_buffer = pe.Node(
         niu.IdentityInterface(fields=['lh_wm_surf', 'rh_wm_surf', 'lh_pial_surf', 'rh_pial_surf']),
         name='fslr_mesh_buffer',
     )
-    if mesh_available and standard_space_mesh:
+    if standard_space_mesh:
         workflow.connect([
             (inputnode, fslr_mesh_buffer, [
                 ('lh_wm_surf', 'lh_wm_surf'),
@@ -235,7 +244,7 @@ def init_postprocess_surfaces_wf(
             ]),
         ])  # fmt:skip
 
-    elif mesh_available:
+    else:
         workflow.__desc__ += ' The fsnative-space surfaces were then warped to fsLR space.'
         # Mesh files are in fsnative and must be warped to fsLR.
         fsnative_to_fsLR_wf = init_fsnative_to_fsLR_wf(
@@ -262,11 +271,6 @@ def init_postprocess_surfaces_wf(
                 ('outputnode.rh_wm_surf', 'rh_wm_surf'),
             ]),
         ])  # fmt:skip
-
-    elif not morphometry_files:
-        raise ValueError(
-            'No surfaces found. Surfaces are required if `--warp-surfaces-native2std` is enabled.'
-        )
 
     workflow.__desc__ += (
         ' The vertices of fsLR-space mesh files were transformed to align with the '

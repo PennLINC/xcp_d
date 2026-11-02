@@ -5,6 +5,7 @@ import os
 import nibabel as nb
 import numpy as np
 import pandas as pd
+import pytest
 
 from xcp_d.interfaces import nilearn
 
@@ -251,6 +252,182 @@ def test_nilearn_denoisecifti_voxelwise(tmp_path_factory):
         num_threads=1,
     )
     assert denoised_arr.shape == (n_volumes, n_voxels)
+    assert np.allclose(denoised_arr, expected_arr, atol=1e-4)
+
+
+def test_nilearn_denoisecifti_voxelwise_only_config(tmp_path_factory):
+    """Test denoising with a confounds config that only contains voxel-wise confounds.
+
+    GenerateConfounds writes a confounds TSV with only an all-NaN placeholder column,
+    which DenoiseCifti drops, leaving a confounds DataFrame with zero columns.
+    The voxel-wise confound must still be regressed out, with the same result as fitting it alone.
+    """
+    from nilearn.signal import standardize_signal
+
+    from xcp_d.interfaces.censoring import GenerateConfounds
+    from xcp_d.utils.utils import _interpolate
+
+    tmpdir = tmp_path_factory.mktemp('test_nilearn_denoisecifti_voxelwise_only_config')
+    n_volumes, TR = 50, 2
+    brain_models = nb.cifti2.BrainModelAxis.from_mask(
+        np.ones((4, 4, 4), dtype=bool),
+        affine=np.eye(4),
+        name='thalamus_left',
+    )
+    series = nb.cifti2.SeriesAxis(start=0, step=TR, size=n_volumes)
+    n_voxels = len(brain_models)
+
+    rng = np.random.default_rng(0)
+    voxelwise_arr = rng.standard_normal((n_volumes, n_voxels))
+    bold_arr = rng.standard_normal((n_volumes, n_voxels)) + 10 * voxelwise_arr + 100
+    bold_file = os.path.join(tmpdir, 'bold.dtseries.nii')
+    voxelwise_file = os.path.join(tmpdir, 'voxelwise.dtseries.nii')
+    nb.Cifti2Image(bold_arr, header=(series, brain_models)).to_filename(bold_file)
+    nb.Cifti2Image(voxelwise_arr, header=(series, brain_models)).to_filename(voxelwise_file)
+
+    confounds_config = {
+        'name': 'voxelwise_only',
+        'description': 'Only a voxel-wise confound',
+        'confounds': {
+            'voxelwise': {'dataset': 'custom', 'query': {'desc': 'voxelwise'}},
+        },
+    }
+    confounds = GenerateConfounds(
+        in_file=bold_file,
+        confounds_config=confounds_config,
+        TR=TR,
+        confounds_files={'voxelwise': {'file': voxelwise_file, 'metadata': {}}},
+        motion_filter_type=None,
+        motion_filter_order=0,
+        band_stop_min=0,
+        band_stop_max=0,
+        dataset_links={},
+        out_dir=str(tmpdir),
+    ).run(cwd=tmpdir)
+    assert pd.read_table(confounds.outputs.confounds_tsv).isna().all().all()
+
+    temporal_mask = os.path.join(tmpdir, 'censoring.tsv')
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[20:25] = False
+    pd.DataFrame({'denoising': (~sample_mask).astype(int)}).to_csv(
+        temporal_mask,
+        sep='\t',
+        index=False,
+    )
+
+    interface = nilearn.DenoiseCifti(
+        preprocessed_bold=bold_file,
+        confounds_tsv=confounds.outputs.confounds_tsv,
+        confounds_images=confounds.outputs.confounds_images,
+        temporal_mask=temporal_mask,
+        TR=TR,
+        bandpass_filter=False,
+        high_pass=0,
+        low_pass=0,
+        filter_order=0,
+    )
+    results = interface.run(cwd=tmpdir)
+    denoised_arr = nb.load(results.outputs.denoised_interpolated_bold).get_fdata()
+
+    # Interpolate, then detrend, the BOLD data and the voxel-wise confound,
+    # then fit the voxel-wise confound alone to each voxel's low-motion volumes.
+    interpolated_bold = standardize_signal(
+        _interpolate(arr=bold_arr, sample_mask=sample_mask, TR=TR),
+        detrend=True,
+        standardize=False,
+    )
+    interpolated_voxelwise = standardize_signal(
+        _interpolate(arr=voxelwise_arr, sample_mask=sample_mask, TR=TR),
+        detrend=True,
+        standardize=False,
+    )
+    expected_arr = np.empty_like(interpolated_bold)
+    for i_voxel in range(n_voxels):
+        design_matrix = interpolated_voxelwise[:, [i_voxel]]
+        betas = np.linalg.lstsq(
+            design_matrix[sample_mask],
+            interpolated_bold[sample_mask, i_voxel],
+            rcond=None,
+        )[0]
+        expected_arr[:, i_voxel] = interpolated_bold[:, i_voxel] - design_matrix @ betas
+
+    assert np.allclose(denoised_arr, expected_arr, atol=1e-4)
+
+
+@pytest.mark.parametrize('cifti', [True, False])
+@pytest.mark.parametrize('interpolation', ['spline', 'linear', 'spectral'])
+def test_nilearn_denoise_interpolation(tmp_path_factory, interpolation, cifti):
+    """Test that the denoising interfaces pass the interpolation method through."""
+    from xcp_d.utils.utils import denoise_with_nilearn
+
+    tmpdir = tmp_path_factory.mktemp('test_nilearn_denoise_interpolation')
+    n_volumes, TR = 50, 2
+    mask_arr = np.ones((3, 3, 3), dtype=bool)
+    n_voxels = int(mask_arr.sum())
+
+    rng = np.random.default_rng(0)
+    bold_arr = (rng.standard_normal((n_volumes, n_voxels)) + 100).astype(np.float32)
+    confounds_df = pd.DataFrame(rng.standard_normal((n_volumes, 2)), columns=['a', 'b'])
+    confounds_tsv = os.path.join(tmpdir, 'confounds.tsv')
+    confounds_df.to_csv(confounds_tsv, sep='\t', index=False)
+
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[[0, 20, 21, 22, 23, 40]] = False
+    temporal_mask = os.path.join(tmpdir, 'censoring.tsv')
+    pd.DataFrame({'denoising': (~sample_mask).astype(int)}).to_csv(
+        temporal_mask,
+        sep='\t',
+        index=False,
+    )
+
+    kwargs = {
+        'confounds_tsv': confounds_tsv,
+        'temporal_mask': temporal_mask,
+        'TR': TR,
+        'bandpass_filter': True,
+        'high_pass': 0.01,
+        'low_pass': 0.08,
+        'filter_order': 2,
+        'interpolation': interpolation,
+    }
+    if cifti:
+        brain_models = nb.cifti2.BrainModelAxis.from_mask(
+            mask_arr,
+            affine=np.eye(4),
+            name='thalamus_left',
+        )
+        series = nb.cifti2.SeriesAxis(start=0, step=TR, size=n_volumes)
+        bold_file = os.path.join(tmpdir, 'bold.dtseries.nii')
+        nb.Cifti2Image(bold_arr, header=(series, brain_models)).to_filename(bold_file)
+        interface = nilearn.DenoiseCifti(preprocessed_bold=bold_file, **kwargs)
+    else:
+        bold_file = os.path.join(tmpdir, 'bold.nii.gz')
+        mask_file = os.path.join(tmpdir, 'mask.nii.gz')
+        nb.Nifti1Image(bold_arr.T.reshape((3, 3, 3, n_volumes)), np.eye(4)).to_filename(
+            bold_file,
+        )
+        nb.Nifti1Image(mask_arr.astype(np.uint8), np.eye(4)).to_filename(mask_file)
+        interface = nilearn.DenoiseNifti(preprocessed_bold=bold_file, mask=mask_file, **kwargs)
+
+    results = interface.run(cwd=tmpdir)
+    if cifti:
+        denoised_arr = nb.load(results.outputs.denoised_interpolated_bold).get_fdata()
+    else:
+        denoised_img = nb.load(results.outputs.denoised_interpolated_bold)
+        denoised_arr = denoised_img.get_fdata().reshape((n_voxels, n_volumes)).T
+
+    expected_arr = denoise_with_nilearn(
+        preprocessed_bold=bold_arr,
+        confounds=confounds_df,
+        voxelwise_confounds=None,
+        sample_mask=sample_mask,
+        low_pass=0.08,
+        high_pass=0.01,
+        filter_order=2,
+        TR=TR,
+        num_threads=1,
+        interpolation=interpolation,
+    )
     assert np.allclose(denoised_arr, expected_arr, atol=1e-4)
 
 

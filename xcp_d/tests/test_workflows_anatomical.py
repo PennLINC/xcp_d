@@ -170,3 +170,56 @@ def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
 
         out_t2w = wf_nodes['postprocess_anat_wf.ds_t2w_std'].get_output('out_file')
         assert os.path.isfile(out_t2w), os.listdir(out_anat_dir)
+
+
+@pytest.mark.parametrize('abcc_qc', [True, False])
+def test_postprocess_surfaces_wf_morphometry_only(abcc_qc, tmp_path_factory):
+    """Build the surface workflow with morphometry files but no mesh files.
+
+    The morphometry files should be copied to the output directory,
+    and no mesh-warping or HCP-surface-generation steps should be added.
+    """
+    tmpdir = tmp_path_factory.mktemp('test_postprocess_surfaces_wf_morphometry_only')
+
+    with mock_config():
+        config.execution.output_dir = tmpdir
+        config.workflow.process_surfaces = True
+        config.workflow.abcc_qc = abcc_qc
+        config.nipype.omp_nthreads = 1
+
+        wf = anatomical.surface.init_postprocess_surfaces_wf(
+            mesh_available=False,
+            standard_space_mesh=False,
+            reg_sphere_available=False,
+            morphometry_files=['sulcal_depth', 'cortical_thickness'],
+            t1w_available=True,
+            t2w_available=False,
+            software='FreeSurfer',
+        )
+
+    node_names = wf.list_node_names()
+    assert any(name.startswith('copy_morphs_wf.') for name in node_names)
+    assert not any('generate_hcp_surfaces_wf' in name for name in node_names)
+    assert not any('_warp_wf' in name for name in node_names)
+    assert not any(name.startswith('ds_fslr_') for name in node_names)
+    assert not any(name.startswith('brainsprite_wf.') for name in node_names)
+    assert 'morphometry surfaces were copied' in wf.__desc__
+    assert 'mesh' not in wf.__desc__
+
+
+def test_postprocess_surfaces_wf_no_surfaces():
+    """Building the surface workflow with neither meshes nor morphometry files should fail."""
+    with mock_config():
+        config.workflow.process_surfaces = True
+        config.workflow.abcc_qc = False
+
+        with pytest.raises(ValueError, match='No surfaces found'):
+            anatomical.surface.init_postprocess_surfaces_wf(
+                mesh_available=False,
+                standard_space_mesh=False,
+                reg_sphere_available=False,
+                morphometry_files=[],
+                t1w_available=True,
+                t2w_available=False,
+                software='FreeSurfer',
+            )
