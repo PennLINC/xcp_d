@@ -598,6 +598,15 @@ def test_create_mem_gb_float32(tmp_path):
     mem_gb = utils._create_mem_gb(bold_file)
     assert mem_gb['bold'] == np.prod(shape) * 4 / (1024**3)
     assert mem_gb['volume'] == mem_gb['bold'] / shape[3]
+    # int16 data are not downcast, but are loaded as float32 afterward
+    assert mem_gb['downcast'] == mem_gb['bold']
+
+    # Downcasting float64 data loads them as float64
+    bold_file = str(tmp_path / 'bold64.nii.gz')
+    nb.Nifti1Image(np.zeros(shape, dtype=np.float64), np.eye(4)).to_filename(bold_file)
+    mem_gb = utils._create_mem_gb(bold_file)
+    assert mem_gb['bold'] == np.prod(shape) * 4 / (1024**3)
+    assert mem_gb['downcast'] == np.prod(shape) * 8 / (1024**3)
 
 
 def test_estimate_denoise_mem_gb(tmp_path):

@@ -900,12 +900,17 @@ def _create_mem_gb(bold_fname):
     dtype_size = np.dtype(np.float32).itemsize
     uncompressed_size_gb = (n_voxels * dtype_size) / (1024**3)
 
+    # Downcasting a >32-bit file to 32 bits loads the data in their stored data type
+    disk_dtype_size = max(bold_img.get_data_dtype().itemsize, dtype_size)
+    downcast_size_gb = (n_voxels * disk_dtype_size) / (1024**3)
+
     n_volumes = bold_img.shape[-1]
 
     # Estimate memory usage based on uncompressed size
     mem_gbz = {
         'bold': uncompressed_size_gb,
         'volume': uncompressed_size_gb / n_volumes,
+        'downcast': downcast_size_gb,
     }
 
     return mem_gbz
