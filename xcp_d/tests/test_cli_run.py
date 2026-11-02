@@ -983,6 +983,45 @@ def test_parse_args_04(tmp_path_factory):
     _reset_config()
 
 
+def test_parse_args_random_seed(tmp_path_factory):
+    """Test that --random-seed sets the master seed and survives a config round trip."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_random_seed')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    base_args = [
+        str(bids_dir),
+        str(out_dir),
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+        '--work-dir',
+        str(tmpdir / 'work'),
+        '--random-seed',
+        '1234',
+    ]
+    parser.parse_args(args=base_args, namespace=None)
+    assert config.seeds.master == 1234
+
+    # The seed must be written to the config file and restored in a fresh process.
+    config_file = tmpdir / 'config.toml'
+    config.to_filename(config_file)
+    _reset_config()
+    assert config.seeds.master is None
+    config.load(config_file)
+    assert config.seeds.master == 1234
+    _reset_config()
+
+
 def test_validate_parameters_skip_alff(base_opts, base_parser):
     """Test parser._validate_parameters with --skip alff option."""
     opts = deepcopy(base_opts)
@@ -1023,12 +1062,15 @@ def test_validate_parameters_skip_connectivity(base_opts, base_parser, caplog):
     opts = deepcopy(base_opts)
     opts.skip_outputs = ['connectivity']
     opts.atlases = ['Glasser']
+    opts.output_run_wise_correlations = True
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.atlases == ['Glasser']  # Atlases preserved for time series extraction
     assert opts.correlation_lengths == []  # correlation_lengths set to empty
+    assert opts.output_run_wise_correlations is False
     assert 'Skipping connectivity as requested' in caplog.text
+    assert 'run-wise correlation matrices will not be written' in caplog.text
 
 
 def test_validate_parameters_skip_multiple(base_opts, base_parser):
