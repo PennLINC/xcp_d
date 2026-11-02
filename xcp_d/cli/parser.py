@@ -661,7 +661,7 @@ This option is not supported in the "linc" mode.
     g_dcan.add_argument(
         '--random-seed',
         '--random_seed',
-        dest='random_seed',
+        dest='_random_seed',
         default=None,
         type=int,
         metavar='_RANDOM_SEED',
