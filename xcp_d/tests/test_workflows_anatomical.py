@@ -109,6 +109,30 @@ def test_itk_warp_gifti_surface_wf(
     assert os.path.isfile(wf_nodes['wf.csv_to_gifti'].get_output('out_file'))
 
 
+@pytest.mark.parametrize(
+    ('t1w_available', 't2w_available', 'expected'),
+    [
+        (True, False, 'Native-space T1w images'),
+        (False, True, 'Native-space T2w images'),
+        (True, True, 'Native-space T1w and T2w images'),
+    ],
+)
+def test_postprocess_anat_wf_desc(t1w_available, t2w_available, expected):
+    """Check that the boilerplate names every available anatomical image."""
+    with mock_config():
+        config.workflow.input_type = 'fmriprep'
+        config.nipype.omp_nthreads = 1
+
+        wf = anatomical.volume.init_postprocess_anat_wf(
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
+            target_space='MNI152NLin6Asym',
+            name='postprocess_anat_wf',
+        )
+
+    assert expected in wf.__desc__
+
+
 def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
     """Test xcp_d.workflows.anatomical.volume.init_postprocess_anat_wf."""
     tmpdir = tmp_path_factory.mktemp('test_postprocess_anat_wf')

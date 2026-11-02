@@ -91,6 +91,11 @@ def init_concatenate_data_wf(TR, head_radius, exact_scans, mem_gb, name='concate
     file_format = config.workflow.file_format
     fd_thresh = config.workflow.fd_thresh
     atlases = config.execution.atlases
+    if 'connectivity' in config.workflow.skip_outputs:
+        correlation_lengths = []
+        exact_scans = []
+    else:
+        correlation_lengths = config.workflow.correlation_lengths or []
 
     workflow.__desc__ = """
 Postprocessing derivatives from multi-run tasks were then concatenated across runs and directions.
@@ -383,7 +388,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (make_timeseries_dict, ds_timeseries, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
 
-        if config.workflow.correlation_lengths and file_format == 'nifti':
+        if correlation_lengths and file_format == 'nifti':
             correlate_timeseries = pe.MapNode(
                 TSVConnect(),
                 run_without_submitting=True,
@@ -398,7 +403,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 ]),
             ])  # fmt:skip
 
-            if 'all' in config.workflow.correlation_lengths:
+            if 'all' in correlation_lengths:
                 make_correlations_dict = pe.MapNode(
                     BIDSURI(
                         numinputs=1,
@@ -517,7 +522,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ])  # fmt:skip
 
             # Reduce the concatenated CIFTI before calculating correlations
-            if 'all' in config.workflow.correlation_lengths or exact_scans:
+            if 'all' in correlation_lengths or exact_scans:
                 censored_cifti_ts_buffer = pe.MapNode(
                     niu.IdentityInterface(fields=['timeseries_cifti']),
                     name='censored_cifti_ts_buffer',
@@ -549,7 +554,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                         ]),
                     ])  # fmt:skip
 
-            if 'all' in config.workflow.correlation_lengths:
+            if 'all' in correlation_lengths:
                 correlate_cifti_ts_src = pe.MapNode(
                     BIDSURI(
                         numinputs=1,

@@ -661,7 +661,7 @@ This option is not supported in the "linc" mode.
     g_dcan.add_argument(
         '--random-seed',
         '--random_seed',
-        dest='random_seed',
+        dest='_random_seed',
         default=None,
         type=int,
         metavar='_RANDOM_SEED',
@@ -1532,6 +1532,17 @@ def _validate_parameters(opts, build_log, parser):
             # Set correlation_lengths to empty to skip connectivity calculations
             # while still performing parcellation
             opts.correlation_lengths = []
+
+        # Run-wise correlation matrices are connectivity outputs too
+        if 'connectivity' in opts.skip_outputs:
+            # In linc mode this is enabled by default, so it is not necessarily user-requested.
+            if opts.output_run_wise_correlations is True:
+                build_log.info(
+                    'Connectivity is skipped, so run-wise correlation matrices will not be '
+                    "written, even though '--output-run-wise-correlations' is enabled."
+                )
+
+            opts.output_run_wise_correlations = False
 
     # Some parameters are automatically set depending on the input type.
     if opts.input_type == 'ukb':
