@@ -98,9 +98,11 @@ class NiftiParcellate(SimpleInterface):
         atlas_img.set_data_dtype(np.int32)
         masker_lut = masker_lut.loc[masker_lut['index'].isin(atlas_values)].reset_index(drop=True)
 
-        # Before anything, we need to measure coverage
+        # Before anything, we need to measure coverage.
+        # The binary image only holds 0s and 1s; the masker sums them per parcel in float64,
+        # so uint8 does not limit the voxel counts.
         atlas_img_bin = nb.Nifti1Image(
-            (atlas_img.get_fdata(dtype=np.float32) > 0).astype(np.uint8),
+            (atlas_data > 0).astype(np.uint8),
             atlas_img.affine,
             atlas_img.header,
         )

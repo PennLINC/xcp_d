@@ -540,6 +540,7 @@ def test_denoise_with_nilearn_float32(n_voxelwise_confounds):
         1000 + 10 * rng.standard_normal((n_volumes, n_voxels)) + 10 * sum(voxelwise_confounds)
     ).astype(np.float32)
     original_arr = data_arr.copy()
+    original_voxelwise_confounds = [arr.copy() for arr in voxelwise_confounds]
     sample_mask = np.ones(n_volumes, dtype=bool)
     sample_mask[[0, 40, 41, 42, 99]] = False
     params = {
@@ -560,12 +561,29 @@ def test_denoise_with_nilearn_float32(n_voxelwise_confounds):
     assert denoised_arr.dtype == np.float32
     assert np.array_equal(data_arr, original_arr)
 
+    for voxelwise_arr, original_voxelwise_arr in zip(
+        voxelwise_confounds,
+        original_voxelwise_confounds,
+        strict=True,
+    ):
+        assert np.array_equal(voxelwise_arr, original_voxelwise_arr)
+
+    # float64 inputs are not modified either, though astype(np.float64) could skip the copy
+    data_arr_64 = data_arr.astype(np.float64)
+    voxelwise_confounds_64 = [arr.astype(np.float64) for arr in voxelwise_confounds]
     expected_arr = utils.denoise_with_nilearn(
-        preprocessed_bold=data_arr.astype(np.float64),
-        voxelwise_confounds=[arr.astype(np.float64) for arr in voxelwise_confounds] or None,
+        preprocessed_bold=data_arr_64,
+        voxelwise_confounds=voxelwise_confounds_64 or None,
         **params,
     )
     assert np.array_equal(denoised_arr, expected_arr)
+    assert np.array_equal(data_arr_64, original_arr)
+    for voxelwise_arr, original_voxelwise_arr in zip(
+        voxelwise_confounds_64,
+        original_voxelwise_confounds,
+        strict=True,
+    ):
+        assert np.array_equal(voxelwise_arr, original_voxelwise_arr)
 
 
 def test_create_mem_gb_float32(tmp_path):
