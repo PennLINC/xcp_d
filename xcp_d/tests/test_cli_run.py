@@ -44,6 +44,7 @@ def base_opts():
         'bandpass_filter': True,
         'fd_thresh': 'auto',
         'censor_between': 'auto',
+        'interpolation': 'spline',
         'min_time': 240,
         'motion_filter_type': None,
         'band_stop_min': None,
@@ -52,6 +53,7 @@ def base_opts():
         'process_surfaces': 'auto',
         'atlases': ['Glasser'],
         'min_coverage': 'auto',
+        'correlation_outputs': ['r'],
         'correlation_lengths': None,
         'despike': 'auto',
         'abcc_qc': 'auto',
@@ -109,6 +111,62 @@ def test_validate_parameters_censor_between_retained(base_opts, base_parser):
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.censor_between == 5
+
+
+def test_validate_parameters_variance_outputs_concatenated(
+    base_opts,
+    base_parser,
+    caplog,
+    tmp_path,
+):
+    """Test the warning about variance outputs when only concatenated outputs are written."""
+    opts = deepcopy(base_opts)
+    opts.datasets = {'xcpdatlases': tmp_path}
+    opts.correlation_outputs = ['var_r', 'r', 'var_r']
+    opts.combine_runs = True
+    opts.output_run_wise_correlations = False
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    # Repeated outputs are dropped
+    assert opts.correlation_outputs == ['r', 'var_r']
+    assert 'Variance outputs (var_r) are not written for concatenated runs' in caplog.text
+
+    caplog.clear()
+    opts = deepcopy(base_opts)
+    opts.datasets = {'xcpdatlases': tmp_path}
+    opts.correlation_outputs = ['r', 'var_r']
+    opts.combine_runs = True
+    opts.output_run_wise_correlations = True
+
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert 'Variance outputs' not in caplog.text
+
+
+def test_validate_parameters_interpolation_disabled(base_opts, base_parser, caplog):
+    """Test that --interpolation is reset to the default when censoring is disabled."""
+    opts = deepcopy(base_opts)
+    opts.fd_thresh = 0
+    opts.min_time = 0
+    opts.interpolation = 'spectral'
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.interpolation == 'spline'
+    assert 'Framewise displacement-based scrubbing is disabled.' in caplog.text
+    assert '--interpolation' in caplog.text
+
+
+def test_validate_parameters_interpolation_retained(base_opts, base_parser):
+    """Test that an explicit --interpolation survives when censoring is enabled."""
+    opts = deepcopy(base_opts)
+    opts.fd_thresh = 0.3
+    opts.interpolation = 'spectral'
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.interpolation == 'spectral'
 
 
 def test_validate_parameters_03(base_opts, base_parser):
@@ -597,6 +655,28 @@ def test_build_parser_01(tmp_path_factory):
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
     assert opts.correlation_lengths == ['all', '300.0', '480.0']
+
+
+def test_build_parser_interpolation(tmp_path_factory):
+    """Test the --interpolation choices and default."""
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_interpolation')
+    data_dir = os.path.join(tmpdir, 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    out_dir = os.path.join(tmpdir, 'out')
+    os.makedirs(out_dir, exist_ok=True)
+
+    base_args = [data_dir, out_dir, 'participant', '--mode', 'linc']
+    parser_obj = parser._build_parser()
+
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    assert opts.interpolation == 'spline'
+
+    for method in ['spline', 'linear', 'spectral']:
+        opts = parser_obj.parse_args(args=[*base_args, '--interpolation', method], namespace=None)
+        assert opts.interpolation == method
+
+    with pytest.raises(SystemExit):
+        parser_obj.parse_args(args=[*base_args, '--interpolation', 'cubic'], namespace=None)
 
 
 def test_build_parser_02(tmp_path_factory):

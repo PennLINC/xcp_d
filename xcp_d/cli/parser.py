@@ -512,6 +512,26 @@ The default is 240 (4 minutes).
 """,
     )
     g_censor.add_argument(
+        '--interpolation',
+        dest='interpolation',
+        default='spline',
+        action='store',
+        choices=['spline', 'linear', 'spectral'],
+        help=(
+            'The method used to interpolate high-motion volumes before filtering and '
+            'denoising. '
+            "'spline' uses cubic spline interpolation, as in Nilearn's signal.clean. "
+            "'linear' uses linear interpolation between the closest low-motion volumes, "
+            "based on DCAN Labs' BOLD processing in the ABCD-BIDS pipeline. "
+            "'spectral' uses a Lomb-Scargle least squares spectral reconstruction, "
+            'as in Power et al. (2014). '
+            "With 'spline' and 'linear', high-motion volumes at the beginning or end of the run "
+            "are set to the closest low-motion volume's values. "
+            'This parameter has no effect if censoring is disabled. '
+            "The default is 'spline'."
+        ),
+    )
+    g_censor.add_argument(
         '--output-type',
         dest='output_type',
         default='auto',
@@ -621,6 +641,22 @@ The default is 240 (4 minutes).
             'Coverage threshold to apply to parcels in each atlas. '
             'Any parcels with lower coverage than the threshold will be replaced with NaNs. '
             'Must be a value between zero and one, indicating proportion of the parcel.'
+        ),
+    )
+    g_parcellation.add_argument(
+        '--correlation-outputs',
+        '--correlation_outputs',
+        dest='correlation_outputs',
+        required=False,
+        default=['r'],
+        nargs='+',
+        choices=['r', 'var_r', 'z', 'var_z'],
+        help=(
+            'Outputs to calculate correlations for. '
+            "The default is 'r'. "
+            "The variance outputs ('var_r' and 'var_z') are only written for individual runs, "
+            'not for concatenated runs, so they require --output-run-wise-correlations '
+            'when runs are combined.'
         ),
     )
     g_parcellation.add_argument(
@@ -1432,14 +1468,18 @@ def _validate_parameters(opts, build_log, parser):
         build_log.warning('Bandpass filtering is disabled. ALFF outputs will not be generated.')
 
     # Scrubbing parameters
-    if opts.fd_thresh <= 0 and (opts.min_time > 0 or opts.censor_between > 0):
-        ignored_params = '--min-time\n\t--censor-between'
+    if opts.fd_thresh <= 0 and (
+        opts.min_time > 0 or opts.censor_between > 0 or opts.interpolation != 'spline'
+    ):
+        ignored_params = '--min-time\n\t--censor-between\n\t--interpolation'
         build_log.warning(
             'Framewise displacement-based scrubbing is disabled. '
             f'The following parameters will have no effect:\n\t{ignored_params}'
         )
         opts.min_time = 0
         opts.censor_between = 0
+        # Reset to the default, so that the configuration hash doesn't depend on it
+        opts.interpolation = 'spline'
 
     opts.output_interpolated = True if opts.output_type == 'interpolated' else False
 
@@ -1572,6 +1612,16 @@ def _validate_parameters(opts, build_log, parser):
 
     if opts.correlation_lengths and not opts.combine_runs:
         error_messages.append("'--create-matrices' requires '--combine-runs'.")
+
+    # Drop repeated outputs, which would otherwise create duplicate workflow nodes
+    opts.correlation_outputs = sorted(set(opts.correlation_outputs))
+    variance_outputs = [out for out in opts.correlation_outputs if out in ('var_r', 'var_z')]
+    if variance_outputs and opts.combine_runs and not opts.output_run_wise_correlations:
+        build_log.warning(
+            f'Variance outputs ({", ".join(variance_outputs)}) are not written for concatenated '
+            'runs, so they will only be written for tasks with a single run. '
+            "Use '--output-run-wise-correlations y' to write them for every run."
+        )
 
     if error_messages:
         error_message_str = 'Errors detected in parameter parsing:\n\t- ' + '\n\t- '.join(

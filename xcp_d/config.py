@@ -611,6 +611,8 @@ class workflow(_Config):
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
     output_interpolated = None
     """Output interpolated data, not censored data."""
+    interpolation = None
+    """Method used to interpolate high-motion volumes ("spline", "linear", or "spectral")."""
     combine_runs = None
     """Combine runs of the same task."""
     motion_filter_type = None
@@ -639,6 +641,8 @@ class workflow(_Config):
     """Order of the band-pass filter."""
     min_coverage = None
     """Coverage threshold to apply to parcels in each atlas."""
+    correlation_outputs = None
+    """Correlation measures to output."""
     correlation_lengths = None
     """Produce correlation matrices limited to each requested amount of time.
     If this list includes 'all' then correlations from the full (censored) time series will
@@ -839,6 +843,7 @@ DEFAULT_CONFIG_HASH_FIELDS = {
         'despike',
         'smoothing',
         'output_interpolated',
+        'interpolation',
         'combine_runs',
         'motion_filter_type',
         'band_stop_min',
