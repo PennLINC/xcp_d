@@ -644,6 +644,22 @@ The default is 240 (4 minutes).
         ),
     )
     g_parcellation.add_argument(
+        '--correlation-outputs',
+        '--correlation_outputs',
+        dest='correlation_outputs',
+        required=False,
+        default=['r'],
+        nargs='+',
+        choices=['r', 'var_r', 'z', 'var_z'],
+        help=(
+            'Outputs to calculate correlations for. '
+            "The default is 'r'. "
+            "The variance outputs ('var_r' and 'var_z') are only written for individual runs, "
+            'not for concatenated runs, so they require --output-run-wise-correlations '
+            'when runs are combined.'
+        ),
+    )
+    g_parcellation.add_argument(
         '--output-run-wise-correlations',
         '--output_run_wise_correlations',
         dest='output_run_wise_correlations',
@@ -1596,6 +1612,16 @@ def _validate_parameters(opts, build_log, parser):
 
     if opts.correlation_lengths and not opts.combine_runs:
         error_messages.append("'--create-matrices' requires '--combine-runs'.")
+
+    # Drop repeated outputs, which would otherwise create duplicate workflow nodes
+    opts.correlation_outputs = sorted(set(opts.correlation_outputs))
+    variance_outputs = [out for out in opts.correlation_outputs if out in ('var_r', 'var_z')]
+    if variance_outputs and opts.combine_runs and not opts.output_run_wise_correlations:
+        build_log.warning(
+            f'Variance outputs ({", ".join(variance_outputs)}) are not written for concatenated '
+            'runs, so they will only be written for tasks with a single run. '
+            "Use '--output-run-wise-correlations y' to write them for every run."
+        )
 
     if error_messages:
         error_message_str = 'Errors detected in parameter parsing:\n\t- ' + '\n\t- '.join(
