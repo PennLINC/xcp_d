@@ -246,6 +246,7 @@ class LINCQC(SimpleInterface):
         # Load confound matrix and load motion without motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
         preproc_fd = get_col(motion_df, 'framewise_displacement').to_numpy()
+        preproc_enorm = get_col(motion_df, 'enorm').to_numpy()
         rmsd = get_col(motion_df, 'rmsd').to_numpy()
 
         # Determine number of dummy volumes and load temporal mask
@@ -262,6 +263,7 @@ class LINCQC(SimpleInterface):
         # Apply temporal mask to interpolated/full data
         rmsd_censored = rmsd[tmask_arr == 0]
         postproc_fd = preproc_fd[tmask_arr == 0]
+        postproc_enorm = preproc_enorm[tmask_arr == 0]
 
         dvars_before_processing = compute_dvars(
             datat=read_ndata(
@@ -291,6 +293,8 @@ class LINCQC(SimpleInterface):
         # Calculate QC measures
         mean_fd = np.nanmean(preproc_fd)
         mean_fd_post_censoring = np.nanmean(postproc_fd)
+        mean_enorm = np.nanmean(preproc_enorm)
+        mean_enorm_post_censoring = np.nanmean(postproc_enorm)
         mean_relative_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
         mean_dvars_before_processing = np.nanmean(dvars_before_processing)
         mean_dvars_after_processing = np.nanmean(dvars_after_processing)
@@ -314,6 +318,8 @@ class LINCQC(SimpleInterface):
             {
                 'mean_fd': [mean_fd],
                 'mean_fd_post_censoring': [mean_fd_post_censoring],
+                'mean_enorm': [mean_enorm],
+                'mean_enorm_post_censoring': [mean_enorm_post_censoring],
                 'mean_relative_rms': [mean_relative_rms],
                 'max_relative_rms': [rmsd_max_value],
                 'mean_dvars_initial': [mean_dvars_before_processing],
@@ -346,6 +352,30 @@ class LINCQC(SimpleInterface):
                 ),
                 'Units': 'mm',
                 'Term URL': 'https://doi.org/10.1016/j.neuroimage.2011.10.018',
+            },
+            'mean_enorm': {
+                'LongName': 'Mean Euclidean Norm of Motion Parameter Derivatives',
+                'Description': (
+                    'Average Euclidean norm of the frame-to-frame motion parameter differences '
+                    '(enorm), without any motion parameter filtering. '
+                    'This value includes high-motion outliers, but not dummy volumes. '
+                    'Enorm is calculated as in AFNI, except that rotations are converted to '
+                    'millimeters using the head radius.'
+                ),
+                'Units': 'mm',
+                'Term URL': 'https://doi.org/10.1162/imag_a_00347',
+            },
+            'mean_enorm_post_censoring': {
+                'LongName': 'Mean Euclidean Norm of Motion Parameter Derivatives After Censoring',
+                'Description': (
+                    'Average Euclidean norm of the frame-to-frame motion parameter differences '
+                    '(enorm), without any motion parameter filtering. '
+                    'This value does not include high-motion outliers or dummy volumes. '
+                    'Enorm is calculated as in AFNI, except that rotations are converted to '
+                    'millimeters using the head radius.'
+                ),
+                'Units': 'mm',
+                'Term URL': 'https://doi.org/10.1162/imag_a_00347',
             },
             'mean_relative_rms': {
                 'LongName': 'Mean Relative Root Mean Squared',

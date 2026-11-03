@@ -34,6 +34,57 @@ def compute_fd(confound, head_radius=50, filtered=False):
     fdres : numpy.ndarray
         The framewise displacement time series.
     """
+    diff = _compute_motion_derivatives(confound, head_radius=head_radius, filtered=filtered)
+    fd_res = np.abs(diff).sum(axis=1)
+    fdres = np.hstack([0, fd_res])
+
+    return fdres
+
+
+@fill_doc
+def compute_enorm(confound, head_radius=50, filtered=False):
+    """Compute the Euclidean norm of the motion parameter derivatives (enorm).
+
+    Enorm is the square root of the sum of squared frame-to-frame differences of the six
+    motion parameters, as used for motion censoring in AFNI's ``afni_proc.py``
+    :footcite:p:`cox1996afni,reynolds2024afniproc`.
+    Unlike AFNI, which combines rotation parameters in degrees with translation parameters
+    in millimeters, this function converts the rotation parameters to millimeters of
+    displacement on the surface of a sphere, as in framewise displacement
+    :footcite:p:`power_fd_dvars`.
+
+    Parameters
+    ----------
+    confound : pandas.DataFrame
+        DataFrame with six motion parameters.
+        Translation parameters must be in millimeters and rotation parameters in radians.
+    %(head_radius)s
+    filtered : :obj:`bool`
+        If True, use the filtered motion parameters (columns ending in ``_filtered``).
+        Default is False.
+
+    Returns
+    -------
+    enorm : numpy.ndarray
+        The enorm time series, in millimeters.
+        The first value is always zero.
+
+    References
+    ----------
+    .. footbibliography::
+    """
+    diff = _compute_motion_derivatives(confound, head_radius=head_radius, filtered=filtered)
+    enorm = np.hstack([0, np.sqrt(np.sum(diff**2, axis=1))])
+
+    return enorm
+
+
+def _compute_motion_derivatives(confound, head_radius, filtered):
+    """Compute frame-to-frame motion parameter differences, with rotations in millimeters.
+
+    Rotations (in radians) are converted to arc lengths on a sphere with radius
+    ``head_radius``.
+    """
     confound = confound.replace(np.nan, 0)
     motion_columns = ['trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z']
     if filtered:
@@ -42,10 +93,8 @@ def compute_fd(confound, head_radius=50, filtered=False):
     mpars = confound[motion_columns].to_numpy()
     diff = mpars[:-1, :6] - mpars[1:, :6]
     diff[:, 3:6] *= head_radius
-    fd_res = np.abs(diff).sum(axis=1)
-    fdres = np.hstack([0, fd_res])
 
-    return fdres
+    return diff
 
 
 def _drop_dummy_scans(bold_file, dummy_scans):
