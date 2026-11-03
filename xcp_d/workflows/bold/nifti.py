@@ -263,6 +263,7 @@ the following post-processing was performed.
         mask_file=run_data['boldmask'],
         n_voxelwise_confounds=_count_voxelwise_confounds(),
         n_procs=config.nipype.omp_nthreads,
+        interpolation=config.workflow.interpolation or 'spline',
     )
     denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb={**mem_gb, 'denoise': denoise_mem_gb})
 
@@ -430,7 +431,10 @@ the following post-processing was performed.
             (connectivity_wf, postproc_derivatives_wf, [
                 ('outputnode.coverage', 'inputnode.coverage'),
                 ('outputnode.timeseries', 'inputnode.timeseries'),
-                ('outputnode.correlations', 'inputnode.correlations'),
+                ('outputnode.correlations_r', 'inputnode.correlations_r'),
+                ('outputnode.correlations_z', 'inputnode.correlations_z'),
+                ('outputnode.correlations_var_r', 'inputnode.correlations_var_r'),
+                ('outputnode.correlations_var_z', 'inputnode.correlations_var_z'),
             ]),
         ])  # fmt:skip
 
