@@ -1,6 +1,5 @@
 """Classes for building an executive summary file."""
 
-import multiprocessing
 import os
 import re
 from pathlib import Path
@@ -12,6 +11,7 @@ from bids.layout import BIDSLayout, Query
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup
+from nilearn.image import reorder_img
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -19,7 +19,6 @@ from nipype.interfaces.base import (
     OutputMultiObject,
     SimpleInterface,
     TraitedSpec,
-    traits,
 )
 from PIL import Image
 
@@ -436,7 +435,6 @@ class FormatForBrainSwipes(SimpleInterface):
 
 
 class _PlotSlicesForBrainSpriteInputSpec(BaseInterfaceInputSpec):
-    n_procs = traits.Int(1, usedefault=True, desc='number of cpus to use for making figures')
     lh_wm = File(exists=True, mandatory=True, desc='left hemisphere wm surface in gifti format')
     rh_wm = File(exists=True, mandatory=True, desc='right hemisphere wm surface in gifti format')
     lh_pial = File(
@@ -452,94 +450,141 @@ class _PlotSlicesForBrainSpriteOutputSpec(BaseInterfaceInputSpec):
     out_files = OutputMultiObject(File(exist=True), desc='png files')
 
 
+# The PNGs are shrunk to 218 pixels wide in make_mosaic,
+# so render them at about twice that instead of at the default 100 dpi (717 pixels wide).
+BRAINSPRITE_DPI = 60
+
+
 class PlotSlicesForBrainSprite(SimpleInterface):
-    """A class that produces images for BrainSprite mosaics."""
+    """A class that produces images for BrainSprite mosaics.
+
+    The figure is drawn once and then updated with each sagittal slice and its surface contours,
+    which is fast enough that the slices are plotted serially.
+    """
 
     input_spec = _PlotSlicesForBrainSpriteInputSpec
     output_spec = _PlotSlicesForBrainSpriteOutputSpec
 
     def _run_interface(self, runtime):
+        import matplotlib.pyplot as plt
+        from nilearn import plotting
+
         img = nb.load(self.inputs.nifti)
-        lh_wm = get_mesh(self.inputs.lh_wm)
-        lh_pial = get_mesh(self.inputs.lh_pial)
-        rh_wm = get_mesh(self.inputs.rh_wm)
-        rh_pial = get_mesh(self.inputs.rh_pial)
+        data = img.get_fdata()
+        vmin, vmax = np.percentile(data, [2, 98])
 
+        # The sagittal cut through each voxel column of the original image
         n_x = img.shape[0]
-        filenames = []
-        slice_args = [
-            (img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, runtime.cwd) for i_slice in range(n_x)
-        ]
+        coords = nb.affines.apply_affine(
+            img.affine,
+            np.column_stack((np.arange(n_x), np.zeros((n_x, 2)))),
+        )[:, 0]
 
-        with multiprocessing.Pool(processes=self.inputs.n_procs) as pool:
-            filenames = pool.starmap(_plot_single_slice, slice_args)
+        # plot_anat would reorder (and, for oblique images, resample) the volume on every call,
+        # so do it once here.
+        data[~np.isfinite(data)] = 0
+        img = reorder_img(
+            nb.Nifti1Image(data.astype(np.float32), img.affine),
+            resample='continuous',
+            copy_header=True,
+        )
+        data = np.asanyarray(img.dataobj)
+        inv_affine = np.linalg.inv(img.affine)
+
+        meshes = [
+            (get_mesh(self.inputs.lh_pial), 'darkred'),
+            (get_mesh(self.inputs.rh_pial), 'darkred'),
+            (get_mesh(self.inputs.lh_wm), 'black'),
+            (get_mesh(self.inputs.rh_wm), 'black'),
+        ]
+        # Only faces that span a slice's coordinate can intersect it,
+        # so record each face's extent to avoid sectioning the whole mesh for every slice.
+        face_ranges = []
+        for mesh, _ in meshes:
+            face_x = mesh.vertices[mesh.faces, 0]
+            face_ranges.append((face_x.min(axis=1), face_x.max(axis=1)))
+
+        fig, ax = plt.subplots(figsize=(9, 7.5))
+        slicer = plotting.plot_anat(
+            img,
+            display_mode='x',
+            cut_coords=[coords[0]],
+            axes=ax,
+            figure=fig,
+            annotate=False,
+            vmin=vmin,
+            vmax=vmax,
+            colorbar=False,
+            black_bg=True,
+        )
+        _ax = slicer.axes[next(iter(slicer.axes.keys()))]
+        # With black_bg=True, nilearn draws a background image before the anatomical one
+        anat_image = _ax.ax.images[-1]
+
+        filenames = []
+        try:
+            for i_slice, coord in enumerate(coords):
+                # Select the slice as nilearn does for a sagittal cut
+                x_map = int(np.round(nb.affines.apply_affine(inv_affine, [coord, 0, 0])[0]))
+                try:
+                    anat_image.set_data(np.rot90(data[x_map, :, :]))
+                    anat_image.set_visible(True)
+                except IndexError:
+                    anat_image.set_visible(False)
+
+                lines = []
+                for (mesh, color), face_range in zip(meshes, face_ranges, strict=True):
+                    sub_mesh = _crop_mesh_to_plane(mesh, face_range, coord)
+                    if sub_mesh is not None:
+                        lines += plot_gii(sub_mesh, coord, color, slicer, 'x')
+
+                filename = os.path.join(runtime.cwd, f'test_{i_slice:03d}.png')
+                fig.savefig(
+                    filename,
+                    bbox_inches='tight',
+                    facecolor='black',
+                    dpi=BRAINSPRITE_DPI,
+                )
+                filenames.append(filename)
+
+                for line in lines:
+                    line.remove()
+        finally:
+            plt.close(fig)
+
         self._results['out_files'] = filenames
 
         return runtime
 
 
-def _plot_single_slice(img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, root_dir):
-    """Filter translation and rotation motion parameters.
+def _crop_mesh_to_plane(mesh, face_range, coord):
+    """Keep only the faces of a mesh that span a sagittal coordinate.
 
     Parameters
     ----------
-    img : nb.Nifti1Image
-        NiBabel Spatial Image
-    i_slice : int
-        Which slice number to create a png of
-    rh_pial : trimesh.Trimesh
-        Right hemisphere pial surface loaded as a Trimesh
-    lh_pial : trimesh.Trimesh
-        Left hemisphere pial surface loaded as a Trimesh
-    rh_wm : trimesh.Trimesh
-        Right hemisphere wm surface loaded as a Trimesh
-    lh_wm : trimesh.Trimesh
-        Left hemisphere wm surface loaded as a Trimesh
-    root_dir : str
-        String representing the directory where files will be written
+    mesh : trimesh.Trimesh
+        Surface mesh
+    face_range : tuple of numpy.ndarray
+        The minimum and maximum x coordinate of each face in the mesh
+    coord : float
+        Sagittal coordinate, in mm
 
     Returns
     -------
-    filename : str
-        Absolute path of the png created
+    sub_mesh : trimesh.Trimesh or None
+        The faces that span the coordinate, with only the vertices they use,
+        or None if no faces span it.
     """
+    import trimesh
 
-    import os
+    face_min, face_max = face_range
+    face_idx = (face_min <= coord) & (face_max >= coord)
+    if not face_idx.any():
+        return None
 
-    import matplotlib.pyplot as plt
-    import nibabel as nb
-    from nilearn import plotting
-
-    fig, ax = plt.subplots(figsize=(9, 7.5))
-
-    # Get the appropriate coordinate
-    # TODO: Shift so middle is center of image
-    coord = nb.affines.apply_affine(img.affine, [i_slice, 0, 0])[0]
-
-    # Display a sagittal slice (adjust 'display_mode' and 'cut_coords' as needed)
-    data = img.get_fdata()
-    vmin = np.percentile(data, 2)
-    vmax = np.percentile(data, 98)
-    slicer = plotting.plot_anat(
-        img,
-        display_mode='x',
-        cut_coords=[coord],
-        axes=ax,
-        figure=fig,
-        annotate=False,
-        vmin=vmin,
-        vmax=vmax,
-        colorbar=False,
-        black_bg=True,
+    vertex_idx, faces = np.unique(mesh.faces[face_idx], return_inverse=True)
+    return trimesh.Trimesh(
+        vertices=mesh.vertices[vertex_idx],
+        faces=faces.reshape(-1, 3),
+        process=False,
     )
-
-    # Load the surface mesh (GIFTI format)
-    plot_gii(lh_pial, coord, 'darkred', slicer, 'x')
-    plot_gii(rh_pial, coord, 'darkred', slicer, 'x')
-    plot_gii(lh_wm, coord, 'black', slicer, 'x')
-    plot_gii(rh_wm, coord, 'black', slicer, 'x')
-
-    filename = os.path.join(root_dir, f'test_{i_slice:03d}.png')
-    fig.savefig(filename, bbox_inches='tight', facecolor='black')
-    plt.close(fig)
-    return filename

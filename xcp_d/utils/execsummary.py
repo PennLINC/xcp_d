@@ -9,6 +9,13 @@ LOGGER = logging.getLogger('nipype.utils')
 
 
 def plot_gii(mesh, coord, color, slicer, view, max_distance=10.0):
+    """Draw the intersection of a mesh with a plane on a nilearn slicer.
+
+    Returns
+    -------
+    lines : list of matplotlib.lines.Line2D
+        The lines that were drawn.
+    """
     _ax = slicer.axes[next(iter(slicer.axes.keys()))]
 
     if view == 'x':
@@ -22,9 +29,10 @@ def plot_gii(mesh, coord, color, slicer, view, max_distance=10.0):
         plane_normal = [0, 0, 1]  # Normal for the axial plane
 
     # Use trimesh to find the intersection of the mesh and the plane
+    lines = []
     slice_section = mesh.section(plane_origin=plane_origin, plane_normal=plane_normal)
     if slice_section is None:
-        return
+        return lines
 
     for disc in slice_section.discrete:
         temp = disc
@@ -32,12 +40,15 @@ def plot_gii(mesh, coord, color, slicer, view, max_distance=10.0):
         differences = np.abs(np.diff(temp, axis=0))
         if np.any(differences.max(axis=0) > max_distance):
             continue
+
         if view == 'x':
-            _ax.ax.plot(temp[:, 1], temp[:, 2], color=color)
+            lines += _ax.ax.plot(temp[:, 1], temp[:, 2], color=color)
         elif view == 'y':
-            _ax.ax.plot(temp[:, 0], temp[:, 2], color=color)
+            lines += _ax.ax.plot(temp[:, 0], temp[:, 2], color=color)
         else:
-            _ax.ax.plot(temp[:, 0], temp[:, 1], color=color)
+            lines += _ax.ax.plot(temp[:, 0], temp[:, 1], color=color)
+
+    return lines
 
 
 def get_mesh(filename):
