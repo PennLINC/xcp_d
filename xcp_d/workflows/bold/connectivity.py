@@ -139,7 +139,7 @@ or the whole parcel was set to NaN (when the parcel had less than {min_coverage 
 
     if _compute_run_wise_correlations(has_multiple_runs):
         functional_connectivity = pe.MapNode(
-            TSVConnect(),
+            TSVConnect(compute_variance=_compute_variance()),
             name='functional_connectivity',
             iterfield=['timeseries'],
             mem_gb=mem_gb['bold'],
@@ -395,7 +395,7 @@ or the whole parcel was set to NaN (when the parcel had less than {min_coverage 
     if _compute_run_wise_correlations(has_multiple_runs):
         # Calculate the correlation matrix from the parcellated tsv files
         functional_connectivity = pe.MapNode(
-            TSVConnect(),
+            TSVConnect(compute_variance=_compute_variance()),
             name='functional_connectivity',
             iterfield=['timeseries'],
             mem_gb=mem_gb['bold'],
@@ -582,6 +582,18 @@ def _compute_run_wise_correlations(has_multiple_runs):
         return False
 
     return bool(config.workflow.output_run_wise_correlations or not has_multiple_runs)
+
+
+def _compute_variance():
+    """Determine whether the xDF variance of the correlations should be estimated.
+
+    Returns
+    -------
+    :obj:`bool`
+        True if a variance output ("var_r" or "var_z") is requested.
+        The xDF variance estimate is slow, so it is skipped otherwise.
+    """
+    return bool({'var_r', 'var_z'} & set(config.workflow.correlation_outputs))
 
 
 def _describe_correlations(has_multiple_runs):

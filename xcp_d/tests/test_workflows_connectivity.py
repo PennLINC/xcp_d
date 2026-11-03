@@ -644,3 +644,46 @@ def test_describe_correlations(
         )
         assert desc in wf.__desc__
         assert 'with\nthe Connectome Workbench' not in wf.__desc__
+
+
+@pytest.mark.parametrize('file_format', ['nifti', 'cifti'])
+@pytest.mark.parametrize(
+    ('correlation_outputs', 'compute_variance'),
+    [
+        (['r'], False),
+        (['r', 'z'], False),
+        (['var_r'], True),
+        (['r', 'var_z'], True),
+    ],
+)
+def test_connectivity_wf_compute_variance(
+    file_format,
+    correlation_outputs,
+    compute_variance,
+    monkeypatch,
+):
+    """Test that the xDF variance is only estimated when a variance output is requested."""
+    from xcp_d.workflows.bold.connectivity import (
+        init_functional_connectivity_cifti_wf,
+        init_functional_connectivity_nifti_wf,
+    )
+
+    init_connectivity_wf = (
+        init_functional_connectivity_nifti_wf
+        if file_format == 'nifti'
+        else init_functional_connectivity_cifti_wf
+    )
+
+    with mock_config():
+        # mock_config does not reset these, so restore them after the test
+        monkeypatch.setattr(config.workflow, 'skip_outputs', [])
+        monkeypatch.setattr(config.workflow, 'correlation_outputs', correlation_outputs)
+        config.workflow.file_format = file_format
+        config.execution.atlases = ['Glasser']
+
+        wf = init_connectivity_wf(
+            mem_gb={'volume': 0.1, 'bold': 1.0},
+            has_multiple_runs=False,
+        )
+        node = wf.get_node('functional_connectivity')
+        assert node.inputs.compute_variance is compute_variance

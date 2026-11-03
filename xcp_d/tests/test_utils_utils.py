@@ -1560,6 +1560,34 @@ def test_correlate_timeseries_censored_and_uncensored(tmp_path):
     np.testing.assert_allclose(uncensored['r'].to_numpy(), expected_r, atol=1e-10)
 
 
+@pytest.mark.parametrize('censored', [True, False])
+def test_correlate_timeseries_without_variance(censored, tmp_path):
+    """Check that skipping the variance gives the same correlations as xDF."""
+    arr, temporal_mask = _make_xdf_data()
+    retained = ~temporal_mask.astype(bool)
+    # Add a feature without data, like a parcel with low coverage
+    arr = np.vstack([arr, np.full((1, arr.shape[1]), np.nan)])
+    if censored:
+        arr = arr[:, retained]
+
+    columns = ['a', 'b', 'c', 'd']
+    timeseries_file = tmp_path / 'timeseries.tsv'
+    pd.DataFrame(arr.T, columns=columns).to_csv(timeseries_file, sep='\t', index=False)
+
+    expected = utils.correlate_timeseries(str(timeseries_file), temporal_mask)
+    out = utils.correlate_timeseries(
+        str(timeseries_file),
+        temporal_mask,
+        compute_variance=False,
+    )
+
+    assert sorted(out.keys()) == ['r', 'z']
+    for key in ['r', 'z']:
+        assert list(out[key].index) == columns
+        assert list(out[key].columns) == columns
+        np.testing.assert_allclose(out[key].to_numpy(), expected[key].to_numpy(), atol=1e-10)
+
+
 def test_correlate_timeseries_xdf_empty_feature():
     """Check that a feature without data gets NaNs, including on the diagonal."""
     arr, temporal_mask = _make_xdf_data()
