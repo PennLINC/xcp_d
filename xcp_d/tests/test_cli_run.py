@@ -53,6 +53,7 @@ def base_opts():
         'process_surfaces': 'auto',
         'atlases': ['Glasser'],
         'min_coverage': 'auto',
+        'correlation_outputs': ['r'],
         'correlation_lengths': None,
         'despike': 'auto',
         'abcc_qc': 'auto',
@@ -110,6 +111,37 @@ def test_validate_parameters_censor_between_retained(base_opts, base_parser):
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.censor_between == 5
+
+
+def test_validate_parameters_variance_outputs_concatenated(
+    base_opts,
+    base_parser,
+    caplog,
+    tmp_path,
+):
+    """Test the warning about variance outputs when only concatenated outputs are written."""
+    opts = deepcopy(base_opts)
+    opts.datasets = {'xcpdatlases': tmp_path}
+    opts.correlation_outputs = ['var_r', 'r', 'var_r']
+    opts.combine_runs = True
+    opts.output_run_wise_correlations = False
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    # Repeated outputs are dropped
+    assert opts.correlation_outputs == ['r', 'var_r']
+    assert 'Variance outputs (var_r) are not written for concatenated runs' in caplog.text
+
+    caplog.clear()
+    opts = deepcopy(base_opts)
+    opts.datasets = {'xcpdatlases': tmp_path}
+    opts.correlation_outputs = ['r', 'var_r']
+    opts.combine_runs = True
+    opts.output_run_wise_correlations = True
+
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert 'Variance outputs' not in caplog.text
 
 
 def test_validate_parameters_interpolation_disabled(base_opts, base_parser, caplog):
