@@ -2,6 +2,7 @@
 
 import os
 
+import numpy as np
 import pandas as pd
 from nilearn import masking
 from nipype.interfaces.base import (
@@ -444,6 +445,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         preprocessed_bold_arr = masking.apply_mask(
             imgs=self.inputs.preprocessed_bold,
             mask_img=self.inputs.mask,
+            dtype=np.float32,
         )
         n_volumes = preprocessed_bold_arr.shape[0]
 
@@ -473,7 +475,9 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         if self.inputs.confounds_images:
             voxelwise_confounds = []
             for f in self.inputs.confounds_images:
-                voxelwise_confounds.append(masking.apply_mask(imgs=f, mask_img=self.inputs.mask))
+                voxelwise_confounds.append(
+                    masking.apply_mask(imgs=f, mask_img=self.inputs.mask, dtype=np.float32)
+                )
 
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,

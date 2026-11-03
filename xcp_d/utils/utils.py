@@ -1,5 +1,6 @@
 """Miscellaneous utility functions for xcp_d."""
 
+import functools
 import itertools
 import multiprocessing
 
@@ -398,7 +399,7 @@ def denoise_with_nilearn(
 
         with threadpool_limits(limits=1, user_api='blas'):
             return _denoise_with_nilearn(
-                preprocessed_bold.copy(),
+                preprocessed_bold,
                 confounds,
                 voxelwise_confounds,
                 sample_mask,
@@ -515,11 +516,15 @@ def _denoise_with_nilearn(
     Returns
     -------
     denoised_interpolated_bold : :obj:`numpy.ndarray` of shape (T, S)
-        The denoised, interpolated data.
+        The denoised, interpolated data, as float32.
 
     Notes
     -----
     This step only removes high-motion outliers (not the random volumes for trimming).
+
+    Each voxel is denoised independently, so the voxels are denoised in chunks.
+    Each chunk is denoised in float64 and stored as float32,
+    so float32 data are never copied to float64 in full, and the inputs are not modified.
 
     The denoising method is designed to follow recommendations from
     :footcite:t:`lindquist2019modular`.
@@ -528,8 +533,8 @@ def _denoise_with_nilearn(
     This function is a modified version of Nilearn's :func:`~nilearn.signal.clean` function,
     with the following changes:
 
-    1.  Use :func:`numpy.linalg.lstsq` to estimate betas, instead of QR decomposition,
-        in order to denoise the interpolated data as well.
+    1.  Estimate betas with a least-squares fit to the low-motion volumes,
+        instead of QR decomposition, in order to denoise the interpolated data as well.
     2.  Set any leading or trailing high-motion volumes to the closest low-motion volume's values
         instead of disabling extrapolation.
     3.  Return denoised, interpolated data.
@@ -538,9 +543,7 @@ def _denoise_with_nilearn(
     ----------
     .. footbibliography::
     """
-    from nilearn.signal import butterworth, standardize_signal
-
-    n_volumes = preprocessed_bold.shape[0]
+    n_volumes, n_voxels = preprocessed_bold.shape
 
     # Coerce 0 filter values to None
     low_pass = low_pass if low_pass != 0 else None
@@ -554,46 +557,22 @@ def _denoise_with_nilearn(
     detrend_and_denoise = have_confounds or have_voxelwise_confounds
     censor_and_interpolate = bool(outlier_idx)
 
-    if detrend_and_denoise:
-        if have_confounds:
-            confounds_arr = confounds.to_numpy().copy()
-
-        if have_voxelwise_confounds:
-            voxelwise_confounds = [arr.copy() for arr in voxelwise_confounds]
-
+    interpolate = None
     if censor_and_interpolate:
-        # Replace high-motion volumes in the BOLD data and confounds with interpolated values.
         interpolate = INTERPOLATION_METHODS[interpolation]
-        preprocessed_bold = interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
-        if detrend_and_denoise:
-            if have_confounds:
-                confounds_arr = interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
+        if interpolation == 'spectral':
+            # The reconstruction matrix only depends on the sample mask,
+            # so it is built once and shared by every chunk of voxels.
+            interpolate = functools.partial(
+                interpolate,
+                reconstruction_matrix=_lombscargle_reconstruction_matrix(
+                    sample_mask=sample_mask,
+                    TR=TR,
+                ),
+            )
 
-            if have_voxelwise_confounds:
-                voxelwise_confounds = [
-                    interpolate(arr=arr, sample_mask=sample_mask, TR=TR)
-                    for arr in voxelwise_confounds
-                ]
-
-    if detrend_and_denoise:
-        # Detrend the interpolated data and confounds.
-        # This also mean-centers the data and confounds.
-        preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=False)
-        if have_confounds:
-            confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
-
-        if have_voxelwise_confounds:
-            # Replace one array at a time, so only one extra (T, S) array is held at once
-            for i_confound, arr in enumerate(voxelwise_confounds):
-                voxelwise_confounds[i_confound] = standardize_signal(
-                    arr,
-                    detrend=True,
-                    standardize=False,
-                )
-                del arr
-
+    butterworth_kwargs = None
     if low_pass or high_pass:
-        # Now apply the bandpass filter to the interpolated data and confounds
         butterworth_kwargs = {
             'sampling_rate': 1.0 / TR,
             'low_pass': low_pass,
@@ -602,36 +581,125 @@ def _denoise_with_nilearn(
             'padtype': 'constant',
             'padlen': n_volumes - 1,  # maximum possible padding
         }
-        preprocessed_bold = butterworth(signals=preprocessed_bold, **butterworth_kwargs)
-        if detrend_and_denoise:
-            if have_confounds:
-                confounds_arr = butterworth(signals=confounds_arr, **butterworth_kwargs)
 
-            if have_voxelwise_confounds:
-                voxelwise_confounds = [
-                    butterworth(signals=arr, **butterworth_kwargs) for arr in voxelwise_confounds
-                ]
+    clean_kwargs = {
+        'sample_mask': sample_mask,
+        'TR': TR,
+        'interpolate': interpolate,
+        'detrend': detrend_and_denoise,
+        'butterworth_kwargs': butterworth_kwargs,
+    }
 
-    if detrend_and_denoise:
-        if have_confounds and not voxelwise_confounds:
+    if have_confounds:
+        confounds_arr = _clean_signals(
+            confounds.to_numpy(dtype=np.float64, copy=True),
+            warn=False,
+            **clean_kwargs,
+        )
+        if not have_voxelwise_confounds:
+            confounds_pinv = _confounds_pinv(confounds_arr[sample_mask, :])
+
+    denoised_bold = np.empty((n_volumes, n_voxels), dtype=np.float32)
+
+    # About 8 MiB of float64 values per chunk
+    chunk_size = max(1, (2**20) // n_volumes)
+    for start in range(0, n_voxels, chunk_size):
+        voxels = slice(start, start + chunk_size)
+        # Only warn about outliers at the edges of the run once
+        bold_chunk = _clean_signals(
+            preprocessed_bold[:, voxels].astype(np.float64),
+            warn=start == 0,
+            **clean_kwargs,
+        )
+
+        if have_voxelwise_confounds:
+            bold_chunk = _regress_voxelwise_confounds(
+                preprocessed_bold=bold_chunk,
+                confounds_arr=confounds_arr if have_confounds else None,
+                voxelwise_confounds=[
+                    _clean_signals(arr[:, voxels].astype(np.float64), warn=False, **clean_kwargs)
+                    for arr in voxelwise_confounds
+                ],
+                sample_mask=sample_mask,
+            )
+        elif have_confounds:
             # Estimate betas using only the censored data
-            censored_bold = preprocessed_bold[sample_mask, :]
-            censored_confounds = confounds_arr[sample_mask, :]
-            betas = np.linalg.lstsq(censored_confounds, censored_bold, rcond=None)[0]
+            betas = confounds_pinv @ bold_chunk[sample_mask, :]
 
             # Denoise the interpolated data.
             # The low-motion volumes of the denoised, interpolated data will be the same as the
             # denoised, censored data.
-            preprocessed_bold = preprocessed_bold - np.dot(confounds_arr, betas)
-        else:
-            preprocessed_bold = _regress_voxelwise_confounds(
-                preprocessed_bold=preprocessed_bold,
-                confounds_arr=confounds_arr if have_confounds else None,
-                voxelwise_confounds=voxelwise_confounds,
-                sample_mask=sample_mask,
-            )
+            bold_chunk -= confounds_arr @ betas
 
-    return preprocessed_bold
+        denoised_bold[:, voxels] = bold_chunk
+
+    return denoised_bold
+
+
+def _clean_signals(
+    arr,
+    *,
+    sample_mask,
+    TR,
+    interpolate,
+    detrend,
+    butterworth_kwargs,
+    warn=True,
+):
+    """Interpolate, detrend, and filter an array of signals.
+
+    Parameters
+    ----------
+    arr : :obj:`numpy.ndarray` of shape (T, S)
+        The signals to clean. May be modified in place.
+    sample_mask : :obj:`numpy.ndarray` of shape (T,)
+        Low-motion volumes are True and high-motion volumes are False.
+    TR : float
+        The repetition time.
+    interpolate : callable or None
+        The function that replaces the high-motion volumes with interpolated values,
+        from :data:`INTERPOLATION_METHODS`.
+        If None, the signals are not interpolated.
+    detrend : bool
+        Whether to detrend the interpolated signals. This also mean-centers them.
+    butterworth_kwargs : :obj:`dict` or None
+        Keyword arguments for :func:`nilearn.signal.butterworth`.
+        If None, the signals are not filtered.
+    warn : bool
+        Whether to warn about high-motion volumes at the beginning or end of the run.
+
+    Returns
+    -------
+    arr : :obj:`numpy.ndarray` of shape (T, S)
+        The cleaned signals.
+    """
+    from nilearn.signal import butterworth, standardize_signal
+
+    if interpolate is not None:
+        # Replace high-motion volumes with interpolated values.
+        arr = interpolate(arr=arr, sample_mask=sample_mask, TR=TR, warn=warn)
+
+    if detrend:
+        arr = standardize_signal(arr, detrend=True, standardize=False)
+
+    if butterworth_kwargs is not None:
+        # Now apply the bandpass filter to the interpolated data
+        arr = butterworth(signals=arr, **butterworth_kwargs)
+
+    return arr
+
+
+def _confounds_pinv(censored_confounds):
+    """Compute the pseudoinverse of the censored global confounds.
+
+    The pseudoinverse uses the same singular-value cutoff as np.linalg.lstsq(rcond=None).
+    The pseudoinverse's default cutoff (1e-15) is lower, so a rank-deficient set of
+    confounds (e.g., a duplicated column) would get huge, noise-fitting betas.
+    """
+    return np.linalg.pinv(
+        censored_confounds,
+        rcond=np.finfo(np.float64).eps * max(censored_confounds.shape),
+    )
 
 
 def _regress_voxelwise_confounds(
@@ -686,13 +754,7 @@ def _regress_voxelwise_confounds(
     if confounds_arr is not None:
         n_columns += confounds_arr.shape[1]
         censored_confounds = confounds_arr[sample_mask, :]
-        # Use the same singular-value cutoff as np.linalg.lstsq(rcond=None).
-        # The pseudoinverse's default cutoff (1e-15) is lower, so a rank-deficient set of
-        # confounds (e.g., a duplicated column) would get huge, noise-fitting betas.
-        confounds_pinv = np.linalg.pinv(
-            censored_confounds,
-            rcond=np.finfo(np.float64).eps * max(censored_confounds.shape),
-        )
+        confounds_pinv = _confounds_pinv(censored_confounds)
 
     # Work on chunks of voxels, so the temporary arrays are about 64 MB at most
     chunk_size = max(1, (2**23) // n_volumes)
@@ -756,7 +818,7 @@ def _regress_voxelwise_confounds(
     return preprocessed_bold
 
 
-def _interpolate(*, arr, sample_mask, TR):
+def _interpolate(*, arr, sample_mask, TR, warn=True):
     """Replace high-motion volumes with cubic-spline interpolated values.
 
     This function applies Nilearn's :func:`~nilearn.signal._interpolate_volumes` function,
@@ -771,6 +833,8 @@ def _interpolate(*, arr, sample_mask, TR):
         The sample mask. True for low-motion volumes, False for high-motion volumes.
     TR : float
         The repetition time.
+    warn : bool
+        Whether to warn about high-motion volumes at the beginning or end of the run.
 
     Returns
     -------
@@ -815,24 +879,28 @@ def _interpolate(*, arr, sample_mask, TR):
 
     # Replace outliers at beginning of run
     if first_outliers[0] == 0:
-        LOGGER.warning(
-            f'Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) '
-            "will be replaced with first non-outlier volume's values."
-        )
+        if warn:
+            LOGGER.warning(
+                f'Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) '
+                "will be replaced with first non-outlier volume's values."
+            )
+
         interpolated_arr[: first_outliers[1] + 1, :] = interpolated_arr[first_outliers[1] + 1, :]
 
     # Replace outliers at end of run
     if last_outliers[1] == n_volumes - 1:
-        LOGGER.warning(
-            f'Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) '
-            "will be replaced with last non-outlier volume's values."
-        )
+        if warn:
+            LOGGER.warning(
+                f'Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) '
+                "will be replaced with last non-outlier volume's values."
+            )
+
         interpolated_arr[last_outliers[0] :, :] = interpolated_arr[last_outliers[0] - 1, :]
 
     return interpolated_arr
 
 
-def _interpolate_linear(*, arr, sample_mask, TR):
+def _interpolate_linear(*, arr, sample_mask, TR, warn=True):
     """Replace high-motion volumes with linearly interpolated values.
 
     Each high-motion volume is a weighted average of the closest low-motion volumes before and
@@ -850,6 +918,9 @@ def _interpolate_linear(*, arr, sample_mask, TR):
         The repetition time.
         Unused, since the volumes are evenly spaced, but accepted for consistency with the other
         interpolation functions.
+    warn : bool
+        Unused, since linear interpolation doesn't warn, but accepted for consistency with the
+        other interpolation functions.
 
     Returns
     -------
@@ -886,7 +957,15 @@ def _interpolate_linear(*, arr, sample_mask, TR):
     return arr
 
 
-def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
+def _interpolate_lombscargle(
+    *,
+    arr,
+    sample_mask,
+    TR,
+    warn=True,
+    oversampling_factor=4,
+    reconstruction_matrix=None,
+):
     """Replace high-motion volumes with values from a least squares spectral reconstruction.
 
     Each voxel's low-motion volumes are linearly detrended, decomposed into sinusoids with the
@@ -904,8 +983,15 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
         The sample mask. True for low-motion volumes, False for high-motion volumes.
     TR : float
         The repetition time.
+    warn : bool
+        Whether to warn when too few low-motion volumes remain for spectral interpolation.
     oversampling_factor : int
         The frequency grid's oversampling factor. Default is 4.
+    reconstruction_matrix : :obj:`numpy.ndarray` of shape (T, C) or None
+        The reconstruction matrix from :func:`_lombscargle_reconstruction_matrix`,
+        for the same ``sample_mask``, ``TR``, and ``oversampling_factor``.
+        If None, it is built here.
+        Passing it in lets chunks of voxels from the same run share one matrix.
 
     Returns
     -------
@@ -952,15 +1038,81 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
     .. footbibliography::
     """
     n_volumes, n_voxels = arr.shape
+    n_low_motion = int(np.count_nonzero(sample_mask))
+    if n_low_motion < 3:
+        if warn:
+            LOGGER.warning(
+                f'Only {n_low_motion} low-motion volume(s) remain, but spectral interpolation '
+                'needs at least three. Linear interpolation will be used instead.'
+            )
+
+        return _interpolate_linear(arr=arr, sample_mask=sample_mask, TR=TR)
+
+    if reconstruction_matrix is None:
+        reconstruction_matrix = _lombscargle_reconstruction_matrix(
+            sample_mask=sample_mask,
+            TR=TR,
+            oversampling_factor=oversampling_factor,
+        )
+
+    # Linear trend, fit to the low-motion volumes
+    frame_times = np.arange(n_volumes) * TR
+    trend_design = np.column_stack([np.ones(n_volumes), frame_times - frame_times.mean()])
+    trend_pinv = np.linalg.pinv(trend_design[sample_mask, :])
+
+    # About 8 MiB of float64 values per (T, chunk) array
+    chunk_size = max(1, (2**20) // n_volumes)
+    for start in range(0, n_voxels, chunk_size):
+        voxels = slice(start, start + chunk_size)
+        low_motion_data = arr[sample_mask, voxels].astype(np.float64)
+        trend = trend_design @ (trend_pinv @ low_motion_data)
+        residuals = low_motion_data - trend[sample_mask, :]
+
+        reconstructed = reconstruction_matrix @ residuals
+        # Rescale the reconstruction, so its standard deviation across all volumes matches the
+        # low-motion residuals' standard deviation.
+        # Voxels with constant residuals get no sinusoidal component.
+        reconstructed_std = np.std(reconstructed, axis=0)
+        residual_std = np.std(residuals, axis=0)
+        scale = np.divide(
+            residual_std,
+            reconstructed_std,
+            out=np.zeros_like(residual_std),
+            where=reconstructed_std > 0,
+        )
+        reconstructed = reconstructed[~sample_mask, :] * scale + trend[~sample_mask, :]
+        arr[~sample_mask, voxels] = reconstructed
+
+    return arr
+
+
+def _lombscargle_reconstruction_matrix(*, sample_mask, TR, oversampling_factor=4):
+    """Build the matrix that reconstructs every volume from the low-motion volumes' residuals.
+
+    See :func:`_interpolate_lombscargle` for the method.
+
+    Parameters
+    ----------
+    sample_mask : :obj:`numpy.ndarray` of shape (T,)
+        The sample mask. True for low-motion volumes, False for high-motion volumes.
+    TR : float
+        The repetition time.
+    oversampling_factor : int
+        The frequency grid's oversampling factor. Default is 4.
+
+    Returns
+    -------
+    reconstruction_matrix : :obj:`numpy.ndarray` of shape (T, C) or None
+        The float64 reconstruction matrix, where C is the number of low-motion volumes.
+        None if there are fewer than three low-motion volumes,
+        in which case :func:`_interpolate_lombscargle` interpolates linearly instead.
+    """
+    n_volumes = sample_mask.size
     frame_times = np.arange(n_volumes) * TR
     low_motion_times = frame_times[sample_mask]
     n_low_motion = low_motion_times.size
     if n_low_motion < 3:
-        LOGGER.warning(
-            f'Only {n_low_motion} low-motion volume(s) remain, but spectral interpolation needs '
-            'at least three. Linear interpolation will be used instead.'
-        )
-        return _interpolate_linear(arr=arr, sample_mask=sample_mask, TR=TR)
+        return None
 
     time_span = low_motion_times[-1] - low_motion_times[0]
     frequency_step = 1 / (time_span * oversampling_factor)
@@ -998,34 +1150,7 @@ def _interpolate_lombscargle(*, arr, sample_mask, TR, oversampling_factor=4):
         reconstruction_matrix += np.cos(phases) @ cos_terms
         reconstruction_matrix += np.sin(phases) @ sin_terms
 
-    # Linear trend, fit to the low-motion volumes
-    trend_design = np.column_stack([np.ones(n_volumes), frame_times - frame_times.mean()])
-    trend_pinv = np.linalg.pinv(trend_design[sample_mask, :])
-
-    # About 8 MiB of float64 values per (T, chunk) array
-    chunk_size = max(1, (2**20) // n_volumes)
-    for start in range(0, n_voxels, chunk_size):
-        voxels = slice(start, start + chunk_size)
-        low_motion_data = arr[sample_mask, voxels].astype(np.float64)
-        trend = trend_design @ (trend_pinv @ low_motion_data)
-        residuals = low_motion_data - trend[sample_mask, :]
-
-        reconstructed = reconstruction_matrix @ residuals
-        # Rescale the reconstruction, so its standard deviation across all volumes matches the
-        # low-motion residuals' standard deviation.
-        # Voxels with constant residuals get no sinusoidal component.
-        reconstructed_std = np.std(reconstructed, axis=0)
-        residual_std = np.std(residuals, axis=0)
-        scale = np.divide(
-            residual_std,
-            reconstructed_std,
-            out=np.zeros_like(residual_std),
-            where=reconstructed_std > 0,
-        )
-        reconstructed = reconstructed[~sample_mask, :] * scale + trend[~sample_mask, :]
-        arr[~sample_mask, voxels] = reconstructed
-
-    return arr
+    return reconstruction_matrix
 
 
 INTERPOLATION_METHODS = {
@@ -1061,14 +1186,19 @@ def _transpose_lol(lol):
 
 
 def _create_mem_gb(bold_fname):
-    # Load only the header to get shape and data type information
+    # Load only the header to get shape information
     bold_img = nb.load(bold_fname)
 
-    # Calculate uncompressed memory size from header information
-    # This accounts for compression (e.g., .nii.gz files)
+    # Calculate the in-memory size from header information.
+    # XCP-D works with float32 data, whatever the data type on disk,
+    # and this also accounts for compression (e.g., .nii.gz files).
     n_voxels = np.prod(bold_img.shape)
-    dtype_size = bold_img.get_data_dtype().itemsize
+    dtype_size = np.dtype(np.float32).itemsize
     uncompressed_size_gb = (n_voxels * dtype_size) / (1024**3)
+
+    # Downcasting a >32-bit file to 32 bits loads the data in their stored data type
+    disk_dtype_size = max(bold_img.get_data_dtype().itemsize, dtype_size)
+    downcast_size_gb = (n_voxels * disk_dtype_size) / (1024**3)
 
     n_volumes = bold_img.shape[-1]
 
@@ -1076,6 +1206,7 @@ def _create_mem_gb(bold_fname):
     mem_gbz = {
         'bold': uncompressed_size_gb,
         'volume': uncompressed_size_gb / n_volumes,
+        'downcast': downcast_size_gb,
     }
 
     return mem_gbz
@@ -1111,17 +1242,16 @@ def _estimate_denoise_mem_gb(
 
     Notes
     -----
-    The peak is the largest of three phases, in units of one in-mask data array
-    (volumes x voxels, float32 for NIfTI and float64 for CIFTI):
+    The peak is the largest of three phases, in units of one in-mask float32 data array
+    (volumes x voxels):
 
     -   Loading: each image is read as a full-grid float32 array (NIfTI only, about 2.3 times
         its size while decompressing), plus the in-mask arrays of the BOLD data and confounds.
-    -   Denoising: 3.2 + 2 arrays per voxel-wise confound (at least one) in one process,
-        plus 2.5 arrays to cast float32 data to float64 when there are no voxel-wise confounds.
-        With several processes, 4 + 3 arrays per voxel-wise confound (6 without any),
-        plus 0.3 GiB per process.
-    -   Writing: the full-grid output (float64 when there are no voxel-wise confounds,
-        which costs about 2.3 times the float32 grid), the in-mask arrays, and 0.25 GiB.
+    -   Denoising: the in-mask arrays and the float32 output, plus 0.15 GiB in one process.
+        The float64 working copies are small chunks, so they are not counted.
+        With several processes, the chunks sent to and returned from the workers
+        take 2 more arrays, plus 0.4 GiB per process.
+    -   Writing: the full-grid float32 output (NIfTI only), the in-mask arrays, and 0.25 GiB.
 
     Spectral interpolation adds its (T, C) float64 reconstruction matrix to the denoising phase
     in every process, where C is the number of low-motion volumes.
@@ -1129,37 +1259,33 @@ def _estimate_denoise_mem_gb(
     blocks the matrix is built from.
 
     The coefficients were measured on MNI152NLin6Asym 2 mm NIfTI and fsLR 91k CIFTI data,
-    with 0 to 3 voxel-wise confounds and 1 to 8 processes. A fixed 0.25 GiB covers the process.
+    with 0 or 1 voxel-wise confounds and 1 or 4 processes.
+    A fixed 0.25 GiB covers the process.
     """
     gib = 1024**3
     bold_img = nb.load(bold_file)
-    if bold_img.ndim == 2:  # CIFTI, read as float64
+    if bold_img.ndim == 2:  # CIFTI
         n_volumes, n_elements = bold_img.shape
-        itemsize = 8
         grid_bytes = 0
-    else:  # NIfTI, masked as float32
+    else:  # NIfTI
         n_volumes = bold_img.shape[3]
         mask = np.asanyarray(nb.load(mask_file).dataobj)
         n_elements = int(np.count_nonzero(mask))
-        itemsize = 4
         grid_bytes = np.prod(bold_img.shape) * 4
 
-    data_bytes = n_volumes * n_elements * itemsize
+    data_bytes = n_volumes * n_elements * 4
     n_arrays = 1 + n_voxelwise_confounds
-    upcast = (n_voxelwise_confounds == 0) and (itemsize < 8)
 
     load_bytes = 2.3 * grid_bytes + n_arrays * data_bytes
     if n_procs > 1:
-        n_working = 6 if n_voxelwise_confounds == 0 else 4 + 3 * n_voxelwise_confounds
-        denoise_bytes = n_working * data_bytes + 0.3 * gib * n_procs
+        denoise_bytes = (n_arrays + 3) * data_bytes + 0.4 * gib * n_procs
     else:
-        n_working = 3.2 + 2 * max(n_voxelwise_confounds, 1) + (2.5 if upcast else 0)
-        denoise_bytes = n_working * data_bytes
+        denoise_bytes = (n_arrays + 1) * data_bytes + 0.15 * gib
 
     if interpolation == 'spectral':
         denoise_bytes += n_procs * (n_volumes**2 * 8 + 64 * 1024**2)
 
-    write_bytes = grid_bytes * (2.3 if upcast else 1) + n_arrays * data_bytes + 0.25 * gib
+    write_bytes = grid_bytes + n_arrays * data_bytes + 0.25 * gib
 
     return (0.25 * gib + max(load_bytes, denoise_bytes, write_bytes)) / gib
 

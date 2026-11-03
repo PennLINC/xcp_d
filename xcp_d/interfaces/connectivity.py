@@ -79,6 +79,7 @@ class NiftiParcellate(SimpleInterface):
         full_parcel_mapper = {v: k for k, v in enumerate(node_labels_df['index'].tolist())}
         masker_lut = node_labels_df.copy()
         masker_lut = masker_lut[['index', 'name']]
+        # The atlas is read as float64, because float32 can't hold integer labels above 2**24
         atlas_data = np.round(atlas_img.get_fdata()).astype(int)
         atlas_values = np.unique(atlas_data)
         atlas_values = atlas_values[atlas_values != 0]
@@ -98,9 +99,11 @@ class NiftiParcellate(SimpleInterface):
         atlas_img.set_data_dtype(np.int32)
         masker_lut = masker_lut.loc[masker_lut['index'].isin(atlas_values)].reset_index(drop=True)
 
-        # Before anything, we need to measure coverage
+        # Before anything, we need to measure coverage.
+        # The binary image only holds 0s and 1s; the masker sums them per parcel in float64,
+        # so uint8 does not limit the voxel counts.
         atlas_img_bin = nb.Nifti1Image(
-            (atlas_img.get_fdata() > 0).astype(np.uint8),
+            (atlas_data > 0).astype(np.uint8),
             atlas_img.affine,
             atlas_img.header,
         )
@@ -174,6 +177,7 @@ class NiftiParcellate(SimpleInterface):
             standardize=False,
             resampling_target=None,  # they should be in the same space/resolution already
             keep_masked_labels=True,
+            dtype=np.float32,
         )
 
         # Use nilearn to parcellate the file
@@ -292,6 +296,8 @@ class TSVConnect(SimpleInterface):
     Write out time series using Nilearn's NiftiLabelMasker
     Then write out functional correlation matrix of
     timeseries using numpy.
+
+    The correlations and their variances are computed in float64 and written as float32.
     """
 
     input_spec = _TSVConnectInputSpec
@@ -307,7 +313,9 @@ class TSVConnect(SimpleInterface):
             # the full time series and a temporal mask.
             # Therefore, we can't calculate variance.
             r_df = timeseries_df.corr()
-            z_df = np.arctanh(r_df)
+            # The z-transform uses the float64 correlations, so values near 1 stay finite
+            z_df = np.arctanh(r_df).astype(np.float32)
+            r_df = r_df.astype(np.float32)
 
             self._results['r'] = fname_presuffix(
                 'r.tsv',
@@ -353,7 +361,7 @@ class TSVConnect(SimpleInterface):
                 newpath=runtime.cwd,
                 use_ext=True,
             )
-            correlations_dict[measure].to_csv(
+            correlations_dict[measure].astype(np.float32).to_csv(
                 self._results[measure],
                 sep='\t',
                 na_rep='n/a',
@@ -381,7 +389,7 @@ class TSVConnect(SimpleInterface):
                     newpath=runtime.cwd,
                     use_ext=True,
                 )
-                correlations_dict[measure].to_csv(
+                correlations_dict[measure].astype(np.float32).to_csv(
                     fname,
                     sep='\t',
                     na_rep='n/a',
@@ -663,14 +671,18 @@ class CiftiToTSV(SimpleInterface):
             ax1 = img.header.get_axis(1)
             ax0_labels = ax0.name
             ax1_labels = ax1.name
-            df = pd.DataFrame(columns=ax1_labels, index=ax0_labels, data=img.get_fdata())
+            df = pd.DataFrame(
+                columns=ax1_labels,
+                index=ax0_labels,
+                data=img.get_fdata(dtype=np.float32),
+            )
             check_axes = [0, 1]
         else:
             # Second axis is the parcels
             ax1 = img.header.get_axis(1)
             if not isinstance(ax1, nb.cifti2.ParcelsAxis):
                 raise TypeError(f'Expected ParcelsAxis, got {type(ax1)}')
-            df = pd.DataFrame(columns=ax1.name, data=img.get_fdata())
+            df = pd.DataFrame(columns=ax1.name, data=img.get_fdata(dtype=np.float32))
             check_axes = [1]
 
         # Check that all node labels in the CIFTI are present in the TSV, and vice versa.
@@ -778,8 +790,8 @@ class CiftiMask(SimpleInterface):
                 f'{in_file} ({in_img.shape}) vs {mask} ({mask_img.shape})'
             )
 
-        in_data = in_img.get_fdata()
-        mask_data = mask_img.get_fdata()[0, :]
+        in_data = in_img.get_fdata(dtype=np.float32)
+        mask_data = mask_img.get_fdata(dtype=np.float32)[0, :]
         mask_data = mask_data.astype(bool)
         in_data[:, ~mask_data] = np.nan
 
@@ -817,7 +829,7 @@ class CiftiVertexMask(SimpleInterface):
         data_file = self.inputs.in_file
 
         data_img = nb.load(data_file)
-        data_arr = data_img.get_fdata()
+        data_arr = data_img.get_fdata(dtype=np.float32)
 
         # Flag vertices where the time series is all zeros or NaNs
         bad_vertices_idx = np.where(

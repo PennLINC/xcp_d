@@ -794,6 +794,47 @@ def test_count_voxelwise_confounds(tmp_path, monkeypatch):
     assert _count_voxelwise_confounds() == 2
 
 
+def test_censor_and_drop_dummy_scans_write_float32(tmp_path):
+    """Check that censored and dummy-removed images are float32, whatever the input data type."""
+    from xcp_d.utils.modified_data import _drop_dummy_scans
+
+    n_volumes = 10
+    rng = np.random.default_rng(0)
+    nifti_arr = rng.integers(0, 1000, size=(3, 3, 3, n_volumes)).astype(np.int16)
+    nifti_file = str(tmp_path / 'int16.nii.gz')
+    nb.Nifti1Image(nifti_arr, affine=np.eye(4)).to_filename(nifti_file)
+
+    brain_models = nb.cifti2.BrainModelAxis.from_mask(
+        np.ones((3, 3, 3), dtype=bool),
+        affine=np.eye(4),
+        name='thalamus_left',
+    )
+    series = nb.cifti2.SeriesAxis(start=0, step=2, size=n_volumes)
+    cifti_arr = rng.standard_normal((n_volumes, len(brain_models)))
+    cifti_file = str(tmp_path / 'float64.dtseries.nii')
+    nb.Cifti2Image(cifti_arr, header=(series, brain_models)).to_filename(cifti_file)
+
+    temporal_mask = str(tmp_path / 'tmask.tsv')
+    outliers_arr = np.zeros(n_volumes, dtype=int)
+    outliers_arr[[2, 5]] = 1
+    pd.DataFrame({'denoising': outliers_arr}).to_csv(temporal_mask, sep='\t', index=False)
+
+    for in_file in (nifti_file, cifti_file):
+        dropped_img = _drop_dummy_scans(in_file, dummy_scans=2)
+        dropped_file = str(tmp_path / f'dropped_{os.path.basename(in_file)}')
+        dropped_img.to_filename(dropped_file)
+        assert nb.load(dropped_file).get_data_dtype() == np.float32
+
+        censor = censoring.Censor(in_file=in_file, temporal_mask=temporal_mask)
+        results = censor.run(cwd=str(tmp_path))
+        censored_img = nb.load(results.outputs.out_file)
+        assert censored_img.get_data_dtype() == np.float32
+        assert censored_img.shape[0 if in_file == cifti_file else 3] == n_volumes - 2
+
+    censored_arr = nb.load(results.outputs.out_file).get_fdata()
+    assert np.array_equal(censored_arr, cifti_arr[outliers_arr == 0].astype(np.float32))
+
+
 def test_denoising_column_is_the_censoring_contract():
     """Every temporal-mask consumer reads the denoising column, not framewise_displacement.
 

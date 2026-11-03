@@ -273,7 +273,7 @@ class Censor(SimpleInterface):
 
         # Read in other files
         img = nb.load(self.inputs.in_file)
-        data = img.get_fdata()
+        data = img.get_fdata(dtype=np.float32)
 
         is_nifti = img.ndim > 2
         if is_nifti:
@@ -313,6 +313,9 @@ class Censor(SimpleInterface):
                 header=censored_header,
                 nifti_header=img.nifti_header,
             )
+
+        # The header's data type would otherwise be kept from the input file
+        img_censored.set_data_dtype(np.float32)
 
         # get the output
         self._results['out_file'] = fname_presuffix(

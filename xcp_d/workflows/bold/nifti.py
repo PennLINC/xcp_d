@@ -223,7 +223,7 @@ the following post-processing was performed.
     downcast_data = pe.Node(
         ConvertTo32(),
         name='downcast_data',
-        mem_gb=mem_gb['bold'],
+        mem_gb=mem_gb['downcast'],
     )
 
     workflow.connect([

@@ -61,12 +61,12 @@ def _drop_dummy_scans(bold_file, dummy_scans):
     Returns
     -------
     dropped_image : img_like
-        The BOLD image, with the first X volumes removed.
+        The BOLD image, with the first X volumes removed, as float32.
     """
     # read the bold file
     bold_image = nb.load(bold_file)
 
-    data = bold_image.get_fdata()
+    data = bold_image.get_fdata(dtype=np.float32)
 
     if bold_image.ndim == 2:  # cifti
         dropped_data = data[dummy_scans:, ...]  # time series is the first element
@@ -85,6 +85,9 @@ def _drop_dummy_scans(bold_file, dummy_scans):
         dropped_image = nb.Nifti1Image(
             dropped_data, affine=bold_image.affine, header=bold_image.header
         )
+
+    # The header's data type would otherwise be kept from the input file
+    dropped_image.set_data_dtype(np.float32)
 
     return dropped_image
 

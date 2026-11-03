@@ -561,6 +561,93 @@ def test_interpolate_chunks_match_one_spline(dtype):
     assert np.allclose(interpolated, expected, rtol=1e-6 if dtype == np.float32 else 1e-12)
 
 
+@pytest.mark.parametrize('n_voxelwise_confounds', [0, 1])
+def test_denoise_with_nilearn_float32(n_voxelwise_confounds):
+    """Test that float32 data are denoised in float64 and returned as float32.
+
+    The result must be exactly the result for the same values in float64, rounded to float32.
+    There are enough voxels for several chunks, with a partial chunk at the end.
+    """
+    n_volumes = 100
+    n_voxels = 2 * ((2**20) // n_volumes) + 7
+    rng = np.random.default_rng(0)
+    voxelwise_confounds = [
+        rng.standard_normal((n_volumes, n_voxels)).astype(np.float32)
+        for _ in range(n_voxelwise_confounds)
+    ]
+    data_arr = (
+        1000 + 10 * rng.standard_normal((n_volumes, n_voxels)) + 10 * sum(voxelwise_confounds)
+    ).astype(np.float32)
+    original_arr = data_arr.copy()
+    original_voxelwise_confounds = [arr.copy() for arr in voxelwise_confounds]
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[[0, 40, 41, 42, 99]] = False
+    params = {
+        'confounds': pd.DataFrame(rng.standard_normal((n_volumes, 3))),
+        'sample_mask': sample_mask,
+        'low_pass': 0.08,
+        'high_pass': 0.01,
+        'filter_order': 2,
+        'TR': 2,
+        'num_threads': 1,
+    }
+
+    denoised_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        voxelwise_confounds=voxelwise_confounds or None,
+        **params,
+    )
+    assert denoised_arr.dtype == np.float32
+    assert np.array_equal(data_arr, original_arr)
+
+    for voxelwise_arr, original_voxelwise_arr in zip(
+        voxelwise_confounds,
+        original_voxelwise_confounds,
+        strict=True,
+    ):
+        assert np.array_equal(voxelwise_arr, original_voxelwise_arr)
+
+    # float64 inputs are not modified either, though astype(np.float64) could skip the copy
+    data_arr_64 = data_arr.astype(np.float64)
+    voxelwise_confounds_64 = [arr.astype(np.float64) for arr in voxelwise_confounds]
+    expected_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr_64,
+        voxelwise_confounds=voxelwise_confounds_64 or None,
+        **params,
+    )
+    assert np.array_equal(denoised_arr, expected_arr)
+    assert np.array_equal(data_arr_64, original_arr)
+    for voxelwise_arr, original_voxelwise_arr in zip(
+        voxelwise_confounds_64,
+        original_voxelwise_confounds,
+        strict=True,
+    ):
+        assert np.array_equal(voxelwise_arr, original_voxelwise_arr)
+
+
+def test_create_mem_gb_float32(tmp_path):
+    """Test that _create_mem_gb sizes the data as float32, whatever the data type on disk."""
+    import nibabel as nb
+
+    shape = (10, 20, 30, 40)
+    bold_file = str(tmp_path / 'bold.nii.gz')
+    nb.Nifti1Image(np.zeros(shape, dtype=np.int16), np.eye(4)).to_filename(bold_file)
+    assert nb.load(bold_file).get_data_dtype() == np.int16
+
+    mem_gb = utils._create_mem_gb(bold_file)
+    assert mem_gb['bold'] == np.prod(shape) * 4 / (1024**3)
+    assert mem_gb['volume'] == mem_gb['bold'] / shape[3]
+    # int16 data are not downcast, but are loaded as float32 afterward
+    assert mem_gb['downcast'] == mem_gb['bold']
+
+    # Downcasting float64 data loads them as float64
+    bold_file = str(tmp_path / 'bold64.nii.gz')
+    nb.Nifti1Image(np.zeros(shape, dtype=np.float64), np.eye(4)).to_filename(bold_file)
+    mem_gb = utils._create_mem_gb(bold_file)
+    assert mem_gb['bold'] == np.prod(shape) * 4 / (1024**3)
+    assert mem_gb['downcast'] == np.prod(shape) * 8 / (1024**3)
+
+
 def _naive_lombscargle(y, sample_mask, TR, oversampling_factor=4):
     """Interpolate one time series with explicit per-frequency sums, for comparison."""
     n_volumes = y.size
@@ -623,6 +710,34 @@ def test_interpolate_lombscargle_matches_naive(dtype):
             expected,
             rtol=1e-5 if dtype == np.float32 else 1e-10,
         )
+
+
+def test_interpolate_lombscargle_shared_matrix():
+    """Test that interpolating chunks of voxels with one prebuilt matrix matches building it."""
+    n_volumes, n_voxels, TR = 90, 12, 2
+    rng = np.random.default_rng(0)
+    arr = rng.standard_normal((n_volumes, n_voxels)).cumsum(axis=0)
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[[0, 20, 21, 22, 55, 89]] = False
+
+    expected = utils._interpolate_lombscargle(arr=arr.copy(), sample_mask=sample_mask, TR=TR)
+
+    reconstruction_matrix = utils._lombscargle_reconstruction_matrix(
+        sample_mask=sample_mask,
+        TR=TR,
+    )
+    assert reconstruction_matrix.shape == (n_volumes, sample_mask.sum())
+    interpolated = arr.copy()
+    for voxels in (slice(0, 5), slice(5, n_voxels)):
+        utils._interpolate_lombscargle(
+            arr=interpolated[:, voxels],
+            sample_mask=sample_mask,
+            TR=TR,
+            reconstruction_matrix=reconstruction_matrix,
+        )
+
+    # BLAS may block the matrix products differently for different numbers of voxels
+    assert np.allclose(interpolated, expected, rtol=1e-12, atol=1e-12)
 
 
 def test_interpolate_lombscargle_trend_and_constant():
@@ -884,9 +999,9 @@ def test_estimate_denoise_mem_gb(tmp_path):
     data_gib = 20**3 * n_volumes * 4 / gib
     grid_gib = 100**3 * n_volumes * 4 / gib
 
-    # With only global confounds in one process, writing the float64 output is the peak
+    # With only global confounds in one process, loading the BOLD image is the peak
     estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file, mask_file=mask_file)
-    assert np.isclose(estimate, 0.25 + 2.3 * grid_gib + data_gib + 0.25)
+    assert np.isclose(estimate, 0.25 + 2.3 * grid_gib + data_gib)
 
     # Three voxel-wise confounds in one process: loading the four images is the peak
     estimate = utils._estimate_denoise_mem_gb(
@@ -903,11 +1018,11 @@ def test_estimate_denoise_mem_gb(tmp_path):
         n_voxelwise_confounds=3,
         n_procs=8,
     )
-    assert np.isclose(estimate, 0.25 + 13 * data_gib + 0.3 * 8)
+    assert np.isclose(estimate, 0.25 + 7 * data_gib + 0.4 * 8)
 
 
 def test_estimate_denoise_mem_gb_cifti(tmp_path):
-    """Check the denoising memory estimate for a small CIFTI run, which is read as float64."""
+    """Check the denoising memory estimate for a small CIFTI run, which is read as float32."""
     import nibabel as nb
 
     n_volumes = 50
@@ -921,7 +1036,7 @@ def test_estimate_denoise_mem_gb_cifti(tmp_path):
     bold_arr = np.zeros((n_volumes, len(brain_models)), dtype=np.float32)
     nb.Cifti2Image(bold_arr, header=(series, brain_models)).to_filename(bold_file)
 
-    data_gib = n_volumes * len(brain_models) * 8 / (1024**3)
+    data_gib = n_volumes * len(brain_models) * 4 / (1024**3)
 
     # The data are tiny, so the fixed cost of writing is the peak in one process
     estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file)
@@ -929,7 +1044,7 @@ def test_estimate_denoise_mem_gb_cifti(tmp_path):
 
     # With four processes and only global confounds, denoising is the peak
     estimate = utils._estimate_denoise_mem_gb(bold_file=bold_file, n_procs=4)
-    assert np.isclose(estimate, 0.25 + 6 * data_gib + 0.3 * 4)
+    assert np.isclose(estimate, 0.25 + 4 * data_gib + 0.4 * 4)
 
     # Spectral interpolation adds a (T, T) float64 matrix and 64 MiB per process
     spectral_gib = (n_volumes**2 * 8 + 64 * 1024**2) / (1024**3)
@@ -938,7 +1053,7 @@ def test_estimate_denoise_mem_gb_cifti(tmp_path):
         n_procs=4,
         interpolation='spectral',
     )
-    assert np.isclose(estimate, 0.25 + 6 * data_gib + 0.3 * 4 + 4 * spectral_gib)
+    assert np.isclose(estimate, 0.25 + 4 * data_gib + 0.4 * 4 + 4 * spectral_gib)
 
 
 @pytest.mark.parametrize('have_confounds', [True, False])

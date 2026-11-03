@@ -42,10 +42,10 @@ def compute_registration_qc(
     qc_metadata : dict
         Metadata describing the QC measures.
     """
-    bold_mask_anatspace_arr = nb.load(bold_mask_anatspace).get_fdata()
-    anat_mask_anatspace_arr = nb.load(anat_mask_anatspace).get_fdata()
-    bold_mask_stdspace_arr = nb.load(bold_mask_stdspace).get_fdata()
-    template_mask_arr = nb.load(template_mask).get_fdata()
+    bold_mask_anatspace_arr = nb.load(bold_mask_anatspace).get_fdata(dtype=np.float32)
+    anat_mask_anatspace_arr = nb.load(anat_mask_anatspace).get_fdata(dtype=np.float32)
+    bold_mask_stdspace_arr = nb.load(bold_mask_stdspace).get_fdata(dtype=np.float32)
+    template_mask_arr = nb.load(template_mask).get_fdata(dtype=np.float32)
 
     reg_qc = {
         'coreg_dice': [dice(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
@@ -268,6 +268,14 @@ def compute_dvars(
         zero_variance_voxels = func_sd > variance_tol
         datat = datat[zero_variance_voxels, :]
         func_sd = func_sd[zero_variance_voxels]
+
+    if datat.shape[0] == 0:
+        # No voxel varies (e.g., denoising a run with fewer volumes than confounds),
+        # so DVARS is zero and standardized DVARS is undefined.
+        n_volumes = datat.shape[1]
+        dvars_stdz = np.full(n_volumes, np.nan)
+        dvars_stdz[0] = 0
+        return np.zeros(n_volumes), dvars_stdz
 
     # Compute (non-robust) estimate of lag-1 autocorrelation
     temp_data = regress_poly(0, datat, remove_mean=True)[0].astype(np.float32)
