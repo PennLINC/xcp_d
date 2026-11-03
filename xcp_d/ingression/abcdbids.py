@@ -130,7 +130,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                         │   │   ├── ses-<ses_id>_task-<task_id>_run-<run_id>.nii.gz
                         │   │   ├── ses-<ses_id>_task-<task_id>_run-<run_id>_Atlas.dtseries.nii
                         │   │   ├── Movement_Regressors.txt
-                        │   │   ├── Movement_AbsoluteRMS.txt
+                        │   │   ├── Movement_RelativeRMS.txt
                         │   │   └── brainmask_fs.2.0.nii.gz
                         ├── fsaverage_LR32k
                         │   ├── L.pial.32k_fs_LR.surf.gii
