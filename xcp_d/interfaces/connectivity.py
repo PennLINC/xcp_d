@@ -249,6 +249,15 @@ class _TSVConnectInputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         desc='Temporal mask, after dummy scan removal.',
     )
+    compute_variance = traits.Bool(
+        True,
+        usedefault=True,
+        desc=(
+            'Whether to estimate the variance of the correlations with xDF. '
+            'Only used when a temporal mask is provided. '
+            'If False, the variance outputs are set to None.'
+        ),
+    )
 
 
 class _TSVConnectOutputSpec(TraitedSpec):
@@ -340,13 +349,22 @@ class TSVConnect(SimpleInterface):
             return runtime
 
         censoring_df = pd.read_table(self.inputs.temporal_mask)
+        compute_variance = self.inputs.compute_variance
 
         correlations_dict = correlate_timeseries(
             self.inputs.timeseries,
             temporal_mask=get_col(censoring_df, 'denoising').astype(bool),
+            compute_variance=compute_variance,
         )
 
-        measures = ['r', 'z', 'var_r', 'var_z']
+        measures = ['r', 'z']
+        if compute_variance:
+            measures += ['var_r', 'var_z']
+        else:
+            for measure in ['var_r', 'var_z']:
+                self._results[measure] = None
+                self._results[f'{measure}_exact'] = None
+
         for measure in measures:
             self._results[measure] = fname_presuffix(
                 f'{measure}.tsv',
@@ -374,6 +392,7 @@ class TSVConnect(SimpleInterface):
             correlations_dict = correlate_timeseries(
                 self.inputs.timeseries,
                 temporal_mask=temporal_mask,
+                compute_variance=compute_variance,
             )
             for measure in measures:
                 fname = fname_presuffix(

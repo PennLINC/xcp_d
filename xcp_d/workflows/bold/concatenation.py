@@ -390,7 +390,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         if correlation_lengths and file_format == 'nifti':
             correlate_timeseries = pe.MapNode(
-                TSVConnect(),
+                # Variance outputs are not written for concatenated data
+                TSVConnect(compute_variance=False),
                 run_without_submitting=True,
                 mem_gb=1,
                 name='correlate_timeseries',
