@@ -174,9 +174,7 @@ The following atlases were used in the workflow: {atlas_str}.
         )
         workflow.connect([(inputnode, grab_first_volume, [('bold_file', 'in_file')])])
 
-        # Using the generated transforms, apply them to get everything in the correct MNI form.
-        # Warping one label image takes seconds, so a single thread is enough.
-        # Requesting omp_nthreads lets the scheduler starve this node behind longer jobs.
+        # Using the generated transforms, apply them to get everything in the correct MNI form
         warp_atlases_to_bold_space = pe.MapNode(
             ApplyTransforms(
                 interpolation='GenericLabel',
@@ -372,8 +370,6 @@ def init_parcellate_cifti_wf(
             (vertexwise_coverage, outputnode, [('mask_file', 'vertexwise_coverage')]),
         ])  # fmt:skip
 
-        # Parcellation takes about a second, so run it single-threaded.
-        # Requesting omp_nthreads lets the scheduler starve this node behind longer jobs.
         parcellate_coverage = pe.MapNode(
             CiftiParcellateWorkbench(
                 direction='COLUMN',
@@ -411,7 +407,6 @@ def init_parcellate_cifti_wf(
         ])  # fmt:skip
 
     # Parcellate the data file using the vertex-wise coverage.
-    # This takes about a second, so run it single-threaded (see parcellate_coverage).
     parcellate_data = pe.MapNode(
         CiftiParcellateWorkbench(
             direction='COLUMN',
