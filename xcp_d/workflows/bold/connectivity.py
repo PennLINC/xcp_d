@@ -80,11 +80,10 @@ def init_functional_connectivity_nifti_wf(
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
 with *Nilearn's* *NiftiLabelsMasker* for the atlases.
-Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
-which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
 ignored (when the parcel had at least {min_coverage * 100}% coverage)
 or the whole parcel was set to NaN (when the parcel had less than {min_coverage * 100}% coverage).
+{_describe_correlations(has_multiple_runs)}
 """
 
     inputnode = pe.Node(
@@ -292,12 +291,10 @@ def init_functional_connectivity_cifti_wf(
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
 Connectome Workbench [@marcus2011informatics] for the atlases.
-Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
-which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
-the Connectome Workbench.
 In cases of partial coverage, uncovered vertices (values of all zeros or NaNs) were either
 ignored (when the parcel had at least {min_coverage * 100}% coverage)
 or the whole parcel was set to NaN (when the parcel had less than {min_coverage * 100}% coverage).
+{_describe_correlations(has_multiple_runs)}
 """
 
     inputnode = pe.Node(
@@ -585,3 +582,52 @@ def _compute_run_wise_correlations(has_multiple_runs):
         return False
 
     return bool(config.workflow.output_run_wise_correlations or not has_multiple_runs)
+
+
+def _describe_correlations(has_multiple_runs):
+    """Describe the run-wise correlation outputs for the boilerplate.
+
+    Parameters
+    ----------
+    has_multiple_runs : :obj:`bool`
+        Whether the run will be concatenated with other runs.
+
+    Returns
+    -------
+    :obj:`str`
+        A description of the requested correlation outputs,
+        or an empty string if run-wise correlations are not computed.
+    """
+    if not _compute_run_wise_correlations(has_multiple_runs):
+        return ''
+
+    correlation_outputs = config.workflow.correlation_outputs
+    desc = (
+        'Corresponding pair-wise functional connectivity between all regions was computed for '
+        "each atlas, which was operationalized as the Pearson's correlation of each parcel's "
+        'unsmoothed timeseries, excluding any censored volumes.'
+    )
+    if 'z' in correlation_outputs:
+        desc += ' The correlation coefficients were also Fisher z-transformed.'
+
+    variance_outputs = [out for out in ('var_r', 'var_z') if out in correlation_outputs]
+    if variance_outputs:
+        desc += (
+            ' The variance of each correlation coefficient was estimated with the xDF method '
+            '[@afyouni2019effective], which accounts for autocorrelation in the time series, '
+            'with adaptive truncation of the auto- and cross-correlation functions. '
+            'To account for censoring, a scrubbing-aware adaptation of xDF was used '
+            '(https://github.com/christinachen94/scrubbing-aware-xDF), in which the lagged '
+            'auto- and cross-correlations were computed only from pairs of retained volumes, '
+            'each lag was weighted by the number of such pairs, '
+            'and the number of retained volumes was used as the number of samples. '
+            'Variance estimates lower than the theoretical variance under white noise were '
+            'replaced with the theoretical variance.'
+        )
+        if 'var_z' in variance_outputs:
+            desc += (
+                ' The variance of each Fisher z-transformed correlation coefficient was derived '
+                'from the variance of the correlation coefficient with the delta method.'
+            )
+
+    return desc
