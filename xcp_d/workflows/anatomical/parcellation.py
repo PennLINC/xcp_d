@@ -122,14 +122,16 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
         return workflow
 
     for file_to_parcellate in files_to_parcellate:
+        # Resampling takes under a second, so run it single-threaded.
+        # Requesting omp_nthreads lets the scheduler starve this node behind longer jobs.
         resample_atlas_to_surface = pe.MapNode(
             CiftiCreateDenseFromTemplate(
                 out_file='resampled_atlas.dlabel.nii',
-                num_threads=config.nipype.omp_nthreads,
+                num_threads=1,
             ),
             name=f'resample_atlas_to_{file_to_parcellate}',
             iterfield=['label'],
-            n_procs=config.nipype.omp_nthreads,
+            n_procs=1,
         )
         workflow.connect([
             (inputnode, resample_atlas_to_surface, [

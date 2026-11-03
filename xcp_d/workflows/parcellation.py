@@ -174,18 +174,20 @@ The following atlases were used in the workflow: {atlas_str}.
         )
         workflow.connect([(inputnode, grab_first_volume, [('bold_file', 'in_file')])])
 
-        # Using the generated transforms, apply them to get everything in the correct MNI form
+        # Using the generated transforms, apply them to get everything in the correct MNI form.
+        # Warping one label image takes seconds, so a single thread is enough.
+        # Requesting omp_nthreads lets the scheduler starve this node behind longer jobs.
         warp_atlases_to_bold_space = pe.MapNode(
             ApplyTransforms(
                 interpolation='GenericLabel',
                 input_image_type=3,
                 dimension=3,
-                num_threads=config.nipype.omp_nthreads,
+                num_threads=1,
             ),
             name='warp_atlases_to_bold_space',
             iterfield=['input_image', 'transforms'],
             mem_gb=2,
-            n_procs=config.nipype.omp_nthreads,
+            n_procs=1,
         )
 
         workflow.connect([
@@ -370,16 +372,18 @@ def init_parcellate_cifti_wf(
             (vertexwise_coverage, outputnode, [('mask_file', 'vertexwise_coverage')]),
         ])  # fmt:skip
 
+        # Parcellation takes about a second, so run it single-threaded.
+        # Requesting omp_nthreads lets the scheduler starve this node behind longer jobs.
         parcellate_coverage = pe.MapNode(
             CiftiParcellateWorkbench(
                 direction='COLUMN',
                 only_numeric=True,
                 out_file='parcellated_atlas.pscalar.nii',
-                num_threads=config.nipype.omp_nthreads,
+                num_threads=1,
             ),
             name='parcellate_coverage',
             iterfield=['atlas_label'],
-            n_procs=config.nipype.omp_nthreads,
+            n_procs=1,
         )
         workflow.connect([
             (inputnode, parcellate_coverage, [('atlas_files', 'atlas_label')]),
@@ -407,17 +411,18 @@ def init_parcellate_cifti_wf(
         ])  # fmt:skip
 
     # Parcellate the data file using the vertex-wise coverage.
+    # This takes about a second, so run it single-threaded (see parcellate_coverage).
     parcellate_data = pe.MapNode(
         CiftiParcellateWorkbench(
             direction='COLUMN',
             only_numeric=True,
             out_file=f'parcellated_data.{"ptseries" if compute_mask else "pscalar"}.nii',
-            num_threads=config.nipype.omp_nthreads,
+            num_threads=1,
         ),
         name='parcellate_data',
         iterfield=['atlas_label'],
         mem_gb=2 * mem_gb['bold'],
-        n_procs=config.nipype.omp_nthreads,
+        n_procs=1,
     )
     workflow.connect([
         (inputnode, parcellate_data, [
