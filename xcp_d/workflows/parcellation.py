@@ -180,12 +180,12 @@ The following atlases were used in the workflow: {atlas_str}.
                 interpolation='GenericLabel',
                 input_image_type=3,
                 dimension=3,
-                num_threads=config.nipype.omp_nthreads,
+                num_threads=1,
             ),
             name='warp_atlases_to_bold_space',
             iterfield=['input_image', 'transforms'],
             mem_gb=2,
-            n_procs=config.nipype.omp_nthreads,
+            n_procs=1,
         )
 
         workflow.connect([
@@ -375,11 +375,11 @@ def init_parcellate_cifti_wf(
                 direction='COLUMN',
                 only_numeric=True,
                 out_file='parcellated_atlas.pscalar.nii',
-                num_threads=config.nipype.omp_nthreads,
+                num_threads=1,
             ),
             name='parcellate_coverage',
             iterfield=['atlas_label'],
-            n_procs=config.nipype.omp_nthreads,
+            n_procs=1,
         )
         workflow.connect([
             (inputnode, parcellate_coverage, [('atlas_files', 'atlas_label')]),
@@ -412,12 +412,12 @@ def init_parcellate_cifti_wf(
             direction='COLUMN',
             only_numeric=True,
             out_file=f'parcellated_data.{"ptseries" if compute_mask else "pscalar"}.nii',
-            num_threads=config.nipype.omp_nthreads,
+            num_threads=1,
         ),
         name='parcellate_data',
         iterfield=['atlas_label'],
         mem_gb=2 * mem_gb['bold'],
-        n_procs=config.nipype.omp_nthreads,
+        n_procs=1,
     )
     workflow.connect([
         (inputnode, parcellate_data, [

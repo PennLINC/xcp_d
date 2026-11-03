@@ -223,11 +223,11 @@ def init_brainsprite_figures_wf(
         )
 
         create_scenewise_pngs = pe.MapNode(
-            ShowScene(image_width=900, image_height=800, num_threads=config.nipype.omp_nthreads),
+            ShowScene(image_width=900, image_height=800, num_threads=1),
             name=f'create_scenewise_pngs_{image_type}',
             iterfield=['scene_name_or_number'],
             mem_gb=1,
-            n_procs=config.nipype.omp_nthreads,
+            n_procs=1,
         )
         workflow.connect([
             (modify_pngs_template_scene, create_scenewise_pngs, [('out_file', 'scene_file')]),
