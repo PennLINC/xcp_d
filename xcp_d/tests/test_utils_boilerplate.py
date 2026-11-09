@@ -125,6 +125,14 @@ def test_describe_censoring():
     assert 'limited to 100, 200, and 300 volumes' in desc
 
 
+def test_describe_enorm():
+    """Test boilerplate.describe_enorm."""
+    desc = boilerplate.describe_enorm(head_radius=65)
+    assert 'Euclidean norm' in desc
+    assert 'a radius of 65 mm' in desc
+    assert '@reynolds2024afniproc' in desc
+
+
 def test_describe_regression(tmp_path_factory):
     """Test boilerplate.describe_regression."""
     _check_describe_regression_result('24P', '24 nuisance regressors were selected')

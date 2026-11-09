@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from xcp_d.interfaces.utils import LINCQC, ConvertTo32
+from xcp_d.utils.modified_data import compute_enorm
 
 
 def test_conversion_to_32bit_nifti(ds001419_data, tmp_path_factory):
@@ -114,12 +115,18 @@ def test_conversion_to_32bit_cifti(ds001419_data, tmp_path_factory):
 
 def test_lincqc(ds001419_data, tmp_path):
     """Test the LINCQC interface."""
+    # LINCQC reads enorm from the motion file written by ProcessMotion
+    motion_df = pd.read_table(ds001419_data['confounds_file'])
+    motion_df['enorm'] = compute_enorm(motion_df, head_radius=50)
+    motion_file = tmp_path / 'motion.tsv'
+    motion_df.to_csv(motion_file, sep='\t', index=False)
+
     # Initialize and run interface
     lincqc = LINCQC(
         name_source='sub-01_task-rest_bold.nii.gz',
         bold_file=ds001419_data['nifti_file'],
         dummy_scans=0,
-        motion_file=ds001419_data['confounds_file'],
+        motion_file=str(motion_file),
         cleaned_file=ds001419_data['nifti_file'],
         TR=2.0,
         head_radius=50,
@@ -150,3 +157,10 @@ def test_lincqc(ds001419_data, tmp_path):
     assert 'mean_fd' in qc_metadata
     assert 'Description' in qc_metadata['mean_fd']
     assert 'Units' in qc_metadata['mean_fd']
+
+    # Without a temporal mask, no volumes are censored
+    assert np.isclose(qc_df['mean_enorm'][0], motion_df['enorm'].mean())
+    assert np.isclose(qc_df['mean_enorm_post_censoring'][0], qc_df['mean_enorm'][0])
+    assert qc_df['mean_enorm'][0] <= qc_df['mean_fd'][0]
+    assert qc_metadata['mean_enorm']['Units'] == 'mm'
+    assert 'mean_enorm_post_censoring' in qc_metadata

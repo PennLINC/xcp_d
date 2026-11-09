@@ -294,6 +294,51 @@ def test_tsvconnect_exact_scans(tmp_path_factory):
     )
 
 
+def test_tsvconnect_without_variance(tmp_path_factory):
+    """TSVConnect skips the variance outputs when compute_variance is False."""
+    from xcp_d.interfaces.connectivity import TSVConnect
+
+    tmpdir = tmp_path_factory.mktemp('test_tsvconnect_without_variance')
+    n_volumes = 40
+    rng = np.random.default_rng(0)
+    timeseries_df = pd.DataFrame(rng.random((n_volumes, 2)), columns=['roi_a', 'roi_b'])
+    timeseries = os.path.join(tmpdir, 'timeseries.tsv')
+    timeseries_df.to_csv(timeseries, sep='\t', index=False)
+
+    denoising = np.zeros(n_volumes, dtype=int)
+    denoising[:4] = 1
+    exact = np.zeros(n_volumes, dtype=int)
+    exact[30:] = 1
+    censoring_df = pd.DataFrame({'denoising': denoising, 'exact_26': exact})
+    temporal_mask = os.path.join(tmpdir, 'tmask.tsv')
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
+
+    results = TSVConnect(
+        timeseries=timeseries,
+        temporal_mask=temporal_mask,
+        compute_variance=False,
+    ).run(cwd=tmpdir)
+
+    for output in ['var_r', 'var_z', 'var_r_exact', 'var_z_exact']:
+        assert getattr(results.outputs, output) is None
+
+    for measure in ['r', 'z']:
+        exact_files = getattr(results.outputs, f'{measure}_exact')
+        assert len(exact_files) == 1
+        assert os.path.isfile(exact_files[0])
+
+    r_df = pd.read_table(results.outputs.r, index_col='Node')
+    r_exact_df = pd.read_table(results.outputs.r_exact[0], index_col='Node')
+    assert np.isclose(
+        r_df.loc['roi_a', 'roi_b'],
+        timeseries_df.iloc[4:].corr().loc['roi_a', 'roi_b'],
+    )
+    assert np.isclose(
+        r_exact_df.loc['roi_a', 'roi_b'],
+        timeseries_df.iloc[4:30].corr().loc['roi_a', 'roi_b'],
+    )
+
+
 def _make_pconn_inputs(tmpdir, labels_df, tsv_names):
     """Write a 3-parcel ptseries CIFTI, an atlas labels file, and a TSV matrix.
 

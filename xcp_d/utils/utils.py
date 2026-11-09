@@ -1173,7 +1173,7 @@ def is_number(s):
         return False
 
 
-def correlate_timeseries(timeseries, temporal_mask):
+def correlate_timeseries(timeseries, temporal_mask, compute_variance=True):
     """Correlate timeseries stored in a TSV file.
 
     Parameters
@@ -1185,6 +1185,12 @@ def correlate_timeseries(timeseries, temporal_mask):
         Temporal mask to apply to the time series.
         Outliers are set to 1, non-outliers are set to 0.
         T = number of samples/data points/volumes
+    compute_variance : :obj:`bool`, optional
+        Whether to estimate the variance of the correlations with
+        :func:`correlate_timeseries_xdf`.
+        If False, only the Pearson correlations of the non-outlier volumes and their
+        Fisher z-transforms are computed, which is much faster.
+        Default = True.
 
     Returns
     -------
@@ -1192,6 +1198,7 @@ def correlate_timeseries(timeseries, temporal_mask):
         The output of :func:`correlate_timeseries_xdf`.
         The "r", "z", "var_r", and "var_z" entries are :obj:`pandas.DataFrame` objects,
         with the node names from the TSV file's columns as both the index and the columns.
+        If ``compute_variance`` is False, only the "r" and "z" entries are included.
 
     Raises
     ------
@@ -1236,6 +1243,11 @@ def correlate_timeseries(timeseries, temporal_mask):
         arr[:, ~temporal_mask.astype(bool)] = timeseries_df.values.T
 
     node_names = timeseries_df.columns.values
+    if not compute_variance:
+        # Features without data (e.g., parcels with low coverage) get NaNs, as with xDF
+        r_df = pd.DataFrame(arr[:, ~temporal_mask.astype(bool)].T, columns=node_names).corr()
+        return {'r': r_df, 'z': np.arctanh(r_df)}
+
     correlations_dict = correlate_timeseries_xdf(
         arr=arr,
         temporal_mask=temporal_mask,
