@@ -62,9 +62,15 @@ Both are resolved together by pixi when generating `pixi.lock`.
 3. **The `pixi-lock.yml` GitHub Action runs automatically** on the PR. It checks
    whether `pixi.lock` is stale and, if so, regenerates it.
 
-4. **Lockfile push behavior depends on PR source:**
-   - **Same-repo branch PRs:** the workflow pushes updated `pixi.lock` back to the PR branch.
-   - **Fork PRs:** the workflow does **not** push (by design). In this case, update
+4. **Lockfile behavior depends on PR source:**
+   - **Same-repo branch PRs:** the workflow runs `pixi lock --check`, then restores
+     the committed `pixi.lock` (the check rewrites the workspace package's own
+     version, which changes with every commit, even when it passes). Only if the
+     check failed does it regenerate `pixi.lock` with `datalad run ... -- pixi lock`
+     and push that commit to the PR branch. GitHub holds the checks for the bot's
+     commit as "action required" until a maintainer approves them.
+   - **Fork PRs:** the workflow only checks the lockfile (`pixi lock --check`), with
+     read-only permissions, and does **not** push. If the check fails, update
      `pixi.lock` manually in a Linux environment and push from the contributor branch.
 
 5. **Review the lockfile update.** If `pixi.lock` is treated as binary in your
@@ -138,26 +144,38 @@ In this repository, file changes only control a subset of behavior.
 
 ### GitHub Action: `.github/workflows/pixi-lock.yml`
 
-The workflow is triggered on every `pull_request_target` event. Inside the job:
+The workflow is triggered on every `pull_request` event. It runs one of two jobs,
+depending on where the PR branch lives, plus an aggregate job:
 
-- **Always runs**
-  - `Checkout pull request`
-  - `Check latest commit for dependency edits`
-- **Runs only if the latest commit touched one of these root files**
-  - `pyproject.toml`
-  - `pixi.lock`
-  - Conditional steps:
-    - `Find submitting repository`
-    - `Set git identity`
-    - `prefix-dev/setup-pixi`
-    - `Install the latest version of uv`
-    - `Update lockfile`
-- **Pushes updated lockfile only when both are true**
-  - Latest commit touched `pyproject.toml` or `pixi.lock`
-  - PR source branch is in this same repository (not a fork)
+- **`validate-lockfile`** (fork PRs only; read-only, no persisted credentials)
+  - Always runs `Checkout pull request` and `Check pull request for dependency edits`.
+  - If the PR touched `pyproject.toml` or `pixi.lock`, runs `prefix-dev/setup-pixi`
+    and `pixi lock --check`. It never pushes.
+- **`update-lockfile`** (same-repo PRs only; the only job with `contents: write`)
+  - Always runs `Checkout pull request` (with `persist-credentials: false`) and
+    `Check pull request for dependency edits`.
+  - If the PR touched `pyproject.toml` or `pixi.lock`, runs `prefix-dev/setup-pixi`
+    and `Check lockfile`, which runs `pixi lock --check`, records `stale=true|false`,
+    and resets `pixi.lock` with `git checkout -- pixi.lock`.
+  - If the lockfile is stale, runs `Set git identity`, `Install the latest version
+    of uv`, `Update lockfile` (`uvx datalad run -i pixi.lock -i pyproject.toml
+    -o pixi.lock -- pixi lock`), and `Push updated lockfile` (non-forced). The push
+    step is the only one that receives the token, passed as an `http.extraheader`
+    on the `git push` command line.
+- **`check-lockfile`** (always)
+  - Fails unless exactly the applicable job above succeeded and the other was skipped.
+    This is the job to require as a status check.
 
-Practical implication: editing other files alone still starts the workflow,
-but lockfile update steps are skipped.
+Both lockfile jobs look for `pyproject.toml` or `pixi.lock` edits anywhere in the PR
+(`git diff base...HEAD`), not only in the latest commit. Editing other files alone
+still starts the workflow, but the pixi steps are skipped.
+
+Do not move `pixi lock --check` back under `datalad run`. The check exits 0 but still
+rewrites the workspace package's hatch-vcs version in `pixi.lock`, so running it there
+commits and pushes that rewrite on every run, and each bot push queues another run
+(seen on PennLINC/qsirecon#396).
+
+Third-party actions in this workflow are pinned to commit SHAs with a `# vX.Y.Z` comment.
 
 ### CircleCI: `.circleci/config.yml`
 
