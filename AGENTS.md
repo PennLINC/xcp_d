@@ -218,6 +218,17 @@ XCP-D uses a `@fill_doc` decorator (from `xcp_d.utils.doc`) to inject shared par
 
 XCP-D implements config hashing (`config.hash_config()`) to create unique identifiers for pipeline configurations. This is used to detect when outputs need to be regenerated due to parameter changes.
 
+### GitHub Lockfile Workflow
+
+Two workflows keep `pixi.lock` in sync with `pyproject.toml` on pull requests, split so that the PR's code never runs in a job that can write to the repository (adapted from nipreps/fmriprep#3722). `.maint/INSTRUCTIONS.md` describes them step by step.
+
+- `.github/workflows/pixi-lock.yml` ("Pixi lock") runs on every `pull_request` event (not `pull_request_target`) in one job, `check-lockfile`, with a read-only token and `persist-credentials: false`. It runs `pixi lock --check` and then restores the committed file with `git checkout -- pixi.lock`. If the lockfile is stale on a same-repo PR, it runs `datalad run ... -- pixi lock`, uploads the commit as a `pixi-lock` patch artifact, and fails. On a fork PR it only fails. A PR that deletes `pixi.lock` fails with a request to restore it; a deleted lockfile is never regenerated, because the push workflow accepts only a patch that modifies `pixi.lock`.
+- `.github/workflows/pixi-lock-push.yml` ("Pixi lock push") runs on `workflow_run` after a failed "Pixi lock" run from a same-repo PR. It has `contents: write` and never runs the PR's code. It treats the artifact as untrusted: it checks the zip's entries, that the PR is open and its head still matches the run, and that the patch changes only `pixi.lock`. It then applies only the diff, writes the commit and its DataLad record itself, and pushes non-forced. Keep these checks if you edit it.
+- `workflow_run` uses the copy of `pixi-lock-push.yml` on `main`, so it cannot be tested on a PR; it takes effect after merge. Renaming the "Pixi lock" workflow breaks the link between the two.
+- The reset matters: `pixi lock --check` exits 0 but still rewrites the workspace package's hatch-vcs version in `pixi.lock` on every commit. Until 2026-11, the check ran inside `datalad run`, so that rewrite was committed and pushed, and each bot push queued another run (PennLINC/qsirecon#396). Do not move the check back under `datalad run`.
+- Checks on the bot's commit do not start on their own: GitHub may hold them as "action required" for a maintainer to approve, or not queue them at all.
+- Third-party actions are pinned to commit SHAs with a `# vX.Y.Z` comment.
+- `check-lockfile` looks for `pyproject.toml` or `pixi.lock` edits anywhere in the PR (`git diff base...HEAD`), not only the latest commit, and passes without running pixi otherwise. Require it as the status check.
 ---
 
 ## Cross-Project Development Roadmap
