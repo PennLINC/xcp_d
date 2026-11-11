@@ -76,6 +76,8 @@ Both are resolved together by pixi when generating `pixi.lock`.
    - **Fork PRs:** the workflow only checks the lockfile (`pixi lock --check`), with
      read-only permissions, and does **not** push. If the check fails, update
      `pixi.lock` manually in a Linux environment and push from the contributor branch.
+   - **PRs that delete `pixi.lock`** fail the check with a request to restore it;
+     the workflow does not regenerate a deleted lockfile.
 
 5. **Review the lockfile update.** If `pixi.lock` is treated as binary in your
    Git configuration, GitHub may not render a useful diff. Inspect locally with
@@ -161,7 +163,10 @@ runs the PR's code (pixi and DataLad build the workspace package).
   still starts the workflow, but the pixi steps are skipped and the job passes.
 - If the PR touched those files, runs `prefix-dev/setup-pixi` and `Check lockfile`,
   which runs `pixi lock --check`, records `stale=true|false`, and resets `pixi.lock`
-  with `git checkout -- pixi.lock`.
+  with `git checkout -- pixi.lock`. If the PR deletes `pixi.lock`, the step fails
+  with an error asking the author to restore it; a deleted lockfile is never
+  regenerated, because the push workflow accepts only a patch that modifies
+  `pixi.lock`, not one that creates it.
 - If the lockfile is stale and the PR is from a branch of this repository, runs
   `Set git identity`, `Install the latest version of uv`, `Update lockfile`
   (`uvx datalad run -i pixi.lock -i pyproject.toml -o pixi.lock -- pixi lock`),

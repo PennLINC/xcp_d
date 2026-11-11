@@ -52,6 +52,12 @@ jobs:
         if: ${{ steps.dependencies.outputs.changed == 'true' }}
         id: check
         run: |
+          # Only an existing lockfile is regenerated: the push workflow accepts a
+          # patch that modifies pixi.lock, never one that creates it
+          if ! git cat-file -e HEAD:pixi.lock 2>/dev/null; then
+            echo "::error::This pull request deletes pixi.lock. Restore it from the base branch, then run \`pixi lock\` on Linux if it needs updating."
+            exit 1
+          fi
           if pixi lock --check; then
             echo "stale=false" >> "$GITHUB_OUTPUT"
             echo "Lockfile up to date."
