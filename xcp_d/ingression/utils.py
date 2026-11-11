@@ -300,7 +300,7 @@ def collect_hcp_confounds(
     mvreg_file = os.path.join(task_dir_orig, 'Movement_Regressors.txt')
     if not os.path.isfile(mvreg_file):
         raise FileNotFoundError(f'File DNE: {mvreg_file}')
-    rmsd_file = os.path.join(task_dir_orig, 'Movement_AbsoluteRMS.txt')
+    rmsd_file = os.path.join(task_dir_orig, 'Movement_RelativeRMS.txt')
     if not os.path.isfile(rmsd_file):
         raise FileNotFoundError(f'File DNE: {rmsd_file}')
 
@@ -332,7 +332,11 @@ def collect_hcp_confounds(
         nifti=bold_file,
         work_dir=work_dir,
     )
-    rmsd = np.loadtxt(rmsd_file)
+    # Like fMRIPrep's rmsd, Movement_RelativeRMS.txt is the frame-to-frame RMS displacement.
+    # HCP writes a placeholder 0 for the first volume, which has no previous volume,
+    # so replace it with NaN to match fMRIPrep.
+    rmsd = np.atleast_1d(np.loadtxt(rmsd_file)).astype(float)
+    rmsd[0] = np.nan
 
     brainreg = pd.DataFrame(
         {'global_signal': mean_gs, 'white_matter': mean_wm, 'csf': mean_csf, 'rmsd': rmsd}
@@ -377,7 +381,7 @@ def collect_ukbiobank_confounds(
     if not os.path.isfile(par_file):
         mc_dir = os.path.join(task_dir_orig, 'mc')
         raise FileNotFoundError(f'File DNE: {par_file}. Contents: {os.listdir(mc_dir)}')
-    rmsd_file = os.path.join(task_dir_orig, 'mc', 'prefiltered_func_data_mcf_abs.rms')
+    rmsd_file = os.path.join(task_dir_orig, 'mc', 'prefiltered_func_data_mcf_rel.rms')
     if not os.path.isfile(rmsd_file):
         raise FileNotFoundError(f'File DNE: {rmsd_file}')
 
@@ -394,7 +398,9 @@ def collect_ukbiobank_confounds(
     )
     _expand_motion_columns(confounds_df)
     confounds_df['framewise_displacement'] = 0  # Placeholder; XCP-D recalculates FD.
-    confounds_df['rmsd'] = np.loadtxt(rmsd_file)
+    # MCFLIRT's relative RMS has one row fewer than the number of volumes.
+    # Prepend NaN for the first volume, as fMRIPrep does for its rmsd column.
+    confounds_df['rmsd'] = np.concatenate(([np.nan], np.atleast_1d(np.loadtxt(rmsd_file))))
 
     # Global signal is the primary regressor for UKB denoising.
     confounds_df['global_signal'] = extract_mean_signal(

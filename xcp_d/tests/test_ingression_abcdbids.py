@@ -67,7 +67,7 @@ def _make_dcan_skeleton(tmp_path, sub_id='01', ses_id='01'):
     n_vols = _SHAPE_4D[-1]
     mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'
     (task_dir / 'Movement_Regressors.txt').write_text(mvreg)
-    (task_dir / 'Movement_AbsoluteRMS.txt').write_text(
+    (task_dir / 'Movement_RelativeRMS.txt').write_text(
         '\n'.join('0.5' for _ in range(n_vols)) + '\n'
     )
     (task_dir / f'{task_name}_Atlas.dtseries.nii').write_bytes(b'')
@@ -108,7 +108,7 @@ def _add_dcan_subject(in_dir, sub_id, ses_id='01'):
     n_vols = _SHAPE_4D[-1]
     mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'
     (task_dir / 'Movement_Regressors.txt').write_text(mvreg)
-    (task_dir / 'Movement_AbsoluteRMS.txt').write_text(
+    (task_dir / 'Movement_RelativeRMS.txt').write_text(
         '\n'.join('0.5' for _ in range(n_vols)) + '\n'
     )
     (task_dir / f'{task_name}_Atlas.dtseries.nii').write_bytes(b'')
@@ -278,7 +278,7 @@ def test_convert_dcan_to_bids_single_subject_runs_even_when_dataset_description_
     (task_dir / 'ses-01_task-rest_run-1.nii.gz').write_bytes(b'')
     (task_dir / 'brainmask_fs.2.0.nii.gz').write_bytes(b'')
     (task_dir / 'Movement_Regressors.txt').write_text('0 0 0 0 0 0\n')
-    (task_dir / 'Movement_AbsoluteRMS.txt').write_text('0\n')
+    (task_dir / 'Movement_RelativeRMS.txt').write_text('0\n')
     (task_dir / 'ses-01_task-rest_run-1_Atlas.dtseries.nii').write_bytes(b'')
     fsaverage = files_dir / 'fsaverage_LR32k'
     fsaverage.mkdir()
