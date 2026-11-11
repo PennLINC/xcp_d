@@ -151,6 +151,45 @@ def test_nifti_parcellate_atlas_labels_mismatch(
     assert np.array_equal(coverage_df['coverage'].to_numpy(), np.array(expected_coverage))
 
 
+def test_nifti_parcellate_large_labels(tmp_path_factory):
+    """Check that atlas labels above 2**24, which float32 can't hold exactly, stay distinct."""
+    tmpdir = tmp_path_factory.mktemp('test_nifti_parcellate_large_labels')
+
+    labels = [2**24, 2**24 + 1]
+    assert np.float32(labels[0]) == np.float32(labels[1])
+    arr = np.zeros((3, 2, 2), dtype=np.int32)
+    arr[0] = labels[0]
+    arr[1] = labels[1]
+    atlas_file = os.path.join(tmpdir, 'atlas.nii.gz')
+    nb.Nifti1Image(arr, np.eye(4)).to_filename(atlas_file)
+
+    bold_arr = np.zeros(arr.shape, dtype=np.float32)
+    bold_arr[0] = 1
+    bold_arr[1] = 2
+    bold_file = os.path.join(tmpdir, 'bold.nii.gz')
+    nb.Nifti1Image(bold_arr, np.eye(4)).to_filename(bold_file)
+
+    mask_file = os.path.join(tmpdir, 'mask.nii.gz')
+    nb.Nifti1Image(np.ones(arr.shape, dtype=np.int32), np.eye(4)).to_filename(mask_file)
+    lut_file = os.path.join(tmpdir, 'lut.tsv')
+    pd.DataFrame({'index': labels, 'name': ['Region A', 'Region B']}).to_csv(
+        lut_file,
+        sep='\t',
+        index=False,
+    )
+
+    parcellator = NiftiParcellate(
+        filtered_file=bold_file,
+        mask=mask_file,
+        atlas=atlas_file,
+        atlas_labels=lut_file,
+        min_coverage=0.5,
+    )
+    results = parcellator.run(cwd=tmpdir)
+    timeseries_df = pd.read_table(results.outputs.timeseries)
+    assert np.array_equal(timeseries_df.to_numpy(), np.array([[1, 2]]))
+
+
 def test_nifti_parcellate_float32_coverage(tmp_path_factory, monkeypatch):
     """Check that parcels with float32 coverage equal to min_coverage are kept."""
     from nilearn.maskers import NiftiLabelsMasker
@@ -225,6 +264,15 @@ def test_tsvconnect_uses_denoising_column(tmp_path_factory):
 
     results = TSVConnect(timeseries=timeseries, temporal_mask=temporal_mask).run(cwd=tmpdir)
     correlations_df = pd.read_table(results.outputs.r, index_col='Node')
+
+    # The tables are written as float32, which needs at most 9 significant digits.
+    # float64 values would be written with up to 17.
+    for measure in ('r', 'z', 'var_r', 'var_z'):
+        values_df = pd.read_table(getattr(results.outputs, measure), index_col='Node', dtype=str)
+        for value in values_df.to_numpy().ravel():
+            mantissa = value.lower().split('e')[0]
+            significant_digits = mantissa.lstrip('-').replace('.', '').lstrip('0')
+            assert len(significant_digits) <= 9, f'{measure}: {value}'
 
     # Correlating on `denoising` drops 4 volumes; correlating on `framewise_displacement`
     # would drop only 2, giving a different value.

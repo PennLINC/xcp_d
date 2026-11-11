@@ -517,7 +517,7 @@ def _plot_single_slice(img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, root_dir):
     coord = nb.affines.apply_affine(img.affine, [i_slice, 0, 0])[0]
 
     # Display a sagittal slice (adjust 'display_mode' and 'cut_coords' as needed)
-    data = img.get_fdata()
+    data = img.get_fdata(dtype=np.float32)
     vmin = np.percentile(data, 2)
     vmax = np.percentile(data, 98)
     slicer = plotting.plot_anat(
