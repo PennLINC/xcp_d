@@ -45,6 +45,45 @@ def test_collect_participants(datasets):
     assert found_labels == ['01']
 
 
+def test_collect_cifti_data_with_description_filter(tmp_path):
+    """CIFTI description filters must not constrain companion NIfTI selection."""
+    (tmp_path / 'dataset_description.json').write_text(
+        json.dumps({'Name': 'test', 'BIDSVersion': '1.9.0', 'DatasetType': 'derivative'})
+    )
+    filenames = (
+        'sub-01/anat/sub-01_desc-preproc_T1w.nii.gz',
+        'sub-01/anat/sub-01_space-MNI152NLin6Asym_desc-brain_mask.nii.gz',
+        'sub-01/anat/sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5',
+        'sub-01/anat/sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5',
+        'sub-01/func/sub-01_task-rest_space-fsLR_den-91k_bold.dtseries.nii',
+        'sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz',
+    )
+    for filename in filenames:
+        filepath = tmp_path / filename
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        filepath.write_bytes(b'')
+
+    subj_data = xbids.collect_data(
+        layout=BIDSLayout(tmp_path, validate=False),
+        input_type='fmriprep',
+        participant_label='01',
+        bids_filters={
+            'anat_brainmask': {'space': 'MNI152NLin6Asym'},
+            'bold': {'desc': None, 'task': 'rest'},
+        },
+        file_format='cifti',
+        anat_session=Query.NONE,
+        func_sessions=[Query.NONE],
+    )
+
+    assert subj_data['bold'] == [
+        str(tmp_path / 'sub-01/func/sub-01_task-rest_space-fsLR_den-91k_bold.dtseries.nii')
+    ]
+    assert subj_data['anat_brainmask'] == str(
+        tmp_path / 'sub-01/anat/sub-01_space-MNI152NLin6Asym_desc-brain_mask.nii.gz'
+    )
+
+
 def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
     # Dataset without mesh files
